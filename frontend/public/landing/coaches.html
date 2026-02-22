@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Future Skiller — Fuer Coaches</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; overflow-x: hidden; }
+    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
+    .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass-light { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    .glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+    .glow-orange { box-shadow: 0 0 20px rgba(249, 115, 22, 0.3); }
+    .glow-purple { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
+    .gradient-text { background: linear-gradient(90deg, #38bdf8, #818cf8, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .gradient-text-purple { background: linear-gradient(90deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .gradient-blue { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+    .gradient-orange { background: linear-gradient(135deg, #f97316, #eab308); }
+    .gradient-purple { background: linear-gradient(135deg, #a855f7, #ec4899); }
+    .animate-gradient { background-size: 200% 200%; animation: gradient-shift 6s ease infinite; }
+    @keyframes gradient-shift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+    @keyframes pulse-glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+    .pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+    .hero-orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-50 glass">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3">
+        <div class="w-10 h-10 gradient-blue rounded-xl flex items-center justify-center font-bold text-lg shadow-lg">S</div>
+        <span class="text-xl font-bold" style="font-family: 'Outfit', sans-serif;">Future Skiller</span>
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm text-slate-400">
+        <a href="kids.html" class="hover:text-white transition-colors">Jugendliche</a>
+        <a href="parents.html" class="hover:text-white transition-colors">Eltern</a>
+        <a href="companies.html" class="hover:text-white transition-colors">Unternehmen</a>
+        <a href="ihk.html" class="hover:text-white transition-colors">IHK</a>
+        <a href="arbeitsagentur.html" class="hover:text-white transition-colors">Arbeitsagentur</a>
+      </div>
+      <a href="#join" class="gradient-purple text-white font-semibold py-2 px-6 rounded-xl text-sm hover:opacity-90 transition-opacity">
+        Coach werden
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative min-h-screen flex items-center justify-center pt-20">
+    <div class="hero-orb w-96 h-96 bg-purple-500/15 top-20 -right-48 pulse-glow"></div>
+    <div class="hero-orb w-72 h-72 bg-pink-500/10 bottom-32 left-10 pulse-glow" style="animation-delay: 2s;"></div>
+
+    <div class="max-w-4xl mx-auto px-6 text-center relative z-10 space-y-8">
+      <div class="inline-block px-4 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-mono tracking-wider">
+        DER REISEBEGLEITER — Ihre Rolle im SkillR Universum
+      </div>
+
+      <h1 class="text-5xl md:text-7xl font-extrabold leading-tight">
+        Begleiten Sie<br/>
+        <span class="gradient-text-purple animate-gradient">die naechste Generation.</span>
+      </h1>
+
+      <p class="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+        Der erfahrene Wandergeselle, der den Weg kennt.
+        Verbinden Sie Ihre Coaching-Expertise mit KI-gestuetzter Skalierung —
+        und erreichen Sie tausende Jugendliche gleichzeitig.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+        <a href="#role" class="gradient-purple text-white font-bold py-4 px-12 rounded-2xl shadow-lg hover:shadow-purple-600/30 transition-all text-lg inline-block">
+          Ihre Rolle entdecken
+        </a>
+        <a href="#agents" class="glass text-white font-semibold py-4 px-12 rounded-2xl hover:bg-white/10 transition-all text-lg inline-block">
+          Die KI-Agenten
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- The Vision -->
+  <section class="py-24 px-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="glass rounded-3xl p-12 text-center space-y-6 glow-purple">
+        <svg class="mx-auto" xmlns="http://www.w3.org/2000/svg" width="56" height="56" fill="none" stroke="#a855f7" stroke-width="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <h2 class="text-2xl md:text-3xl font-bold">Ein Coach fuer jeden Jugendlichen</h2>
+        <p class="text-slate-400 text-lg">
+          In Deutschland gibt es 2.5 Millionen Jugendliche zwischen 14 und 18.
+          Es gibt nicht genug Berufsberater fuer alle. Aber es gibt eine Loesung:
+          KI-Agenten, trainiert von echten Coaches.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Your Role -->
+  <section id="role" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto space-y-16">
+      <div class="text-center space-y-4">
+        <h2 class="text-3xl md:text-4xl font-bold">Was Coaches bei uns tun</h2>
+        <p class="text-slate-400 max-w-2xl mx-auto">Sie sind nicht ersetzbar. Sie sind der Massstab, an dem die KI sich orientiert.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="glass rounded-2xl p-8 space-y-4 glow-purple">
+          <div class="w-14 h-14 gradient-purple rounded-xl flex items-center justify-center text-2xl shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-purple-400">Wissen einbringen</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Ihre Erfahrung in Berufsorientierung, Coaching-Methoden und Gespraechsfuehrung
+            fliesst in die Dialogstrategien der KI-Agenten ein. Sie definieren die Qualitaet.
+          </p>
+        </div>
+
+        <div class="glass rounded-2xl p-8 space-y-4 glow-blue">
+          <div class="w-14 h-14 gradient-blue rounded-xl flex items-center justify-center text-2xl shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-blue-400">Qualitaet sichern</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Ueberpruefen Sie KI-generierte Dialoge, geben Sie Feedback zu Gespraechsqualitaet
+            und helfen Sie, die Agenten kontinuierlich zu verbessern.
+          </p>
+        </div>
+
+        <div class="glass rounded-2xl p-8 space-y-4 glow-orange">
+          <div class="w-14 h-14 gradient-orange rounded-xl flex items-center justify-center text-2xl shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-orange-400">Reichweite multiplizieren</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Statt 20 Jugendliche pro Woche persoenlich zu begleiten, erreichen Sie tausende —
+            ohne Qualitaetsverlust, weil die KI nach Ihren Standards arbeitet.
+          </p>
+        </div>
+
+        <div class="glass rounded-2xl p-8 space-y-4" style="box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);">
+          <div class="w-14 h-14 rounded-xl flex items-center justify-center text-2xl shadow-lg" style="background: linear-gradient(135deg, #10b981, #06b6d4);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-emerald-400">Neue Einnahmequelle</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Coaches, die aktiv zum System beitragen, werden verguetet —
+            durch Content-Lizenzen, Qualitaetssicherungs-Mandate und Beratungs-Auftraege.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI Agents -->
+  <section id="agents" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto space-y-12">
+      <div class="text-center space-y-4">
+        <h2 class="text-3xl md:text-4xl font-bold">Vier KI-Agenten. Ein Erlebnis.</h2>
+        <p class="text-slate-400 max-w-2xl mx-auto">Die Jugendlichen erleben einen fliessenden Dialog. Im Hintergrund arbeiten vier spezialisierte Agenten zusammen.</p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="glass rounded-2xl p-6 space-y-3 text-center hover:scale-105 transition-transform">
+          <div class="w-12 h-12 gradient-blue rounded-xl flex items-center justify-center mx-auto shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <h3 class="font-bold text-sm text-blue-400">Entdecker</h3>
+          <p class="text-xs text-slate-400">Fuehrt durch die Exploration. Bietet Optionen, ueberrascht mit Gegensaetzen.</p>
+        </div>
+
+        <div class="glass rounded-2xl p-6 space-y-3 text-center hover:scale-105 transition-transform">
+          <div class="w-12 h-12 gradient-purple rounded-xl flex items-center justify-center mx-auto shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3 class="font-bold text-sm text-purple-400">Reflektor</h3>
+          <p class="text-xs text-slate-400">Level-2-Reflexion. Stellt Coaching-Fragen, die Faehigkeiten sichtbar machen.</p>
+        </div>
+
+        <div class="glass rounded-2xl p-6 space-y-3 text-center hover:scale-105 transition-transform">
+          <div class="w-12 h-12 gradient-orange rounded-xl flex items-center justify-center mx-auto shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h3 class="font-bold text-sm text-orange-400">Verifizierer</h3>
+          <p class="text-xs text-slate-400">Verknuepft Interaktionen mit Skill-Evidenz. Baut das Portfolio auf.</p>
+        </div>
+
+        <div class="glass rounded-2xl p-6 space-y-3 text-center hover:scale-105 transition-transform">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto shadow-lg" style="background: linear-gradient(135deg, #10b981, #06b6d4);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          </div>
+          <h3 class="font-bold text-sm text-emerald-400">Vermittler</h3>
+          <p class="text-xs text-slate-400">Mediiert zwischen Profil und Angeboten. Immer mit Zustimmung.</p>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl p-6 text-center glow-purple">
+        <p class="text-sm text-purple-300">
+          Als Coach definieren Sie die Dialogstrategien, Reflexionsfragen und Qualitaetsstandards,
+          nach denen diese Agenten arbeiten. <strong>Sie sind der Mensch hinter der Maschine.</strong>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Coaching Methods -->
+  <section class="py-24 px-6">
+    <div class="max-w-5xl mx-auto space-y-12">
+      <h2 class="text-3xl md:text-4xl font-bold text-center">Ihre Methoden. Skaliert.</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="glass-light rounded-2xl p-6 space-y-3">
+          <h3 class="font-bold text-lg">Gegensatzsuche</h3>
+          <p class="text-sm text-slate-400">
+            Ihr bewusstes Gegenvorschlagen — wenn jemand sagt &bdquo;Ich mag Holz&ldquo;,
+            fragen Sie &bdquo;Was waere das Gegenteil?&ldquo; — wird zur Kernmethode der KI.
+          </p>
+        </div>
+        <div class="glass-light rounded-2xl p-6 space-y-3">
+          <h3 class="font-bold text-lg">Level-2-Reflexion</h3>
+          <p class="text-sm text-slate-400">
+            Die tieferen Fragen, die ueber &bdquo;Was magst du?&ldquo; hinausgehen:
+            &bdquo;Was genau daran fasziniert dich? Wann hast du das zuletzt gespuert?&ldquo;
+          </p>
+        </div>
+        <div class="glass-light rounded-2xl p-6 space-y-3">
+          <h3 class="font-bold text-lg">Moeglichkeitsraum</h3>
+          <p class="text-sm text-slate-400">
+            Die Kunst, den Horizont zu erweitern, ohne zu dirigieren.
+            Optionen aufzeigen, Perspektiven oeffnen, Neugier wecken.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA -->
+  <section id="join" class="py-24 px-6 relative">
+    <div class="hero-orb w-96 h-96 bg-purple-500/10 left-1/2 -translate-x-1/2 top-0"></div>
+    <div class="max-w-3xl mx-auto text-center relative z-10 space-y-8">
+      <h2 class="text-3xl md:text-5xl font-extrabold">Werden Sie Reisebegleiter.</h2>
+      <p class="text-slate-400 text-lg">Ihre Expertise + unsere Technologie = individuelle Begleitung fuer alle.</p>
+      <a href="mailto:coaches@futureskiller.de" class="inline-block gradient-purple text-white font-bold py-4 px-16 rounded-2xl shadow-lg hover:shadow-purple-600/40 transition-all text-lg">
+        Bewerben als Coach
+      </a>
+      <p class="text-xs text-slate-500">Wir suchen Berufsorientierungs-Coaches, Paedagogen und Mentor:innen.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="glass py-8 px-6 mt-12">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 gradient-blue rounded-lg flex items-center justify-center font-bold text-xs shadow-lg">S</div>
+        <span>&copy; 2026 Future Skiller</span>
+      </div>
+      <div class="flex gap-6">
+        <a href="kids.html" class="hover:text-white transition-colors">Jugendliche</a>
+        <a href="parents.html" class="hover:text-white transition-colors">Eltern</a>
+        <a href="companies.html" class="hover:text-white transition-colors">Unternehmen</a>
+        <a href="ihk.html" class="hover:text-white transition-colors">IHK</a>
+        <a href="arbeitsagentur.html" class="hover:text-white transition-colors">Arbeitsagentur</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

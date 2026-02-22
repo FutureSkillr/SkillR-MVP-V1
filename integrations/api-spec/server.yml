@@ -1,0 +1,1695 @@
+openapi: 3.0.1
+info:
+  title: server api
+  version: 1.1.0
+servers:
+  - url: http://127.0.0.1:4000
+    description: Local Dev Server
+  - url: https://maindrec.cellcoder.de/
+    description: Live Server
+
+tags:
+  - name: status
+    description: Status and Version Information
+  - name: session
+    description: User Session Management
+  - name: memory
+    description: Memory Handling
+  - name: qna
+    description: QnA Data Handling
+  - name: career
+    description: Career Handling
+  - name: honeycomb
+    description: Honeycomb Handling
+
+paths:
+  ###########################################
+  ###########################################
+  ## Auth
+  ###########################################
+  ###########################################
+
+  /auth/google/login:
+    get:
+      tags:
+        - session
+      summary: login with google
+      operationId: GetAuthGoogleLogin
+      security: []
+      parameters:
+        - name: app
+          in: query
+          description: application which is requesting the login
+          required: true
+          schema:
+            type: string
+            enum:
+              - record
+              - qna
+        - name: redirect_path
+          in: query
+          description: path to redirect to after login
+          schema:
+            type: string
+            example: "/profile/"
+      responses:
+        302:
+          description: success
+          headers:
+            Location:
+              content:
+                text/plain:
+                  schema:
+                    enum:
+                      - https://accounts.google.com/o/oauth2/v2/auth?client_id=...
+
+  /auth/google:
+    get:
+      tags:
+        - session
+      summary: google auth callback, redirect to app
+      operationId: GetAuthGoogleCallback
+      security: []
+      responses:
+        302:
+          description: success
+          headers:
+            Location:
+              content:
+                text/plain:
+                  schema:
+                    enum:
+                      - https://maindrec.cellcoder.de/record/
+        400:
+          $ref: "#/components/responses/400"
+
+  /auth/logout:
+    get:
+      tags:
+        - session
+      summary: logout user
+      operationId: GetAuthLogout
+      security: []
+      parameters:
+        - name: token
+          in: query
+          description: app token, only added as measure to prevent CSRF attacks with stray links
+          required: true
+          schema:
+            type: string
+      responses:
+        302:
+          description: success
+          headers:
+            Location:
+              content:
+                text/plain:
+                  schema:
+                    enum:
+                      - https://maindrec.cellcoder.de/
+
+  ###########################################
+  ###########################################
+  ## Status
+  ###########################################
+  ###########################################
+
+  /api/v1/status/ping:
+    get:
+      tags:
+        - status
+      summary: ping / pong
+      operationId: GetStatusPing
+      security: []
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - msg
+                properties:
+                  status:
+                    type: string
+                    default: "ok"
+                  msg:
+                    type: string
+                    default: "pong"
+
+  /api/v1/status/version:
+    get:
+      tags:
+        - status
+      summary: get version
+      operationId: GetStatusVersion
+      security: []
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - version
+                properties:
+                  version:
+                    type: string
+                    default: "1.0.0"
+
+  /api/v1/status/logs:
+    get:
+      tags:
+        - status
+      summary: debug logs
+      operationId: GetStatusLogs
+      responses:
+        200:
+          description: success
+          content:
+            text/plain:
+              schema:
+                type: string
+                default: ""
+
+  ###########################################
+  ###########################################
+  ## User
+  ###########################################
+  ###########################################
+
+  /api/v1/user/status:
+    get:
+      tags:
+        - session
+      summary: get user status (authenticated / not authenticated)
+      operationId: GetUserAuthenticated
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+        401:
+          $ref: "#/components/responses/401"
+
+  /api/v1/user/session:
+    get:
+      tags:
+        - session
+      summary: get user session information
+      operationId: GetUserSessionInfo
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSessionInfo"
+        401:
+          $ref: "#/components/responses/401"
+
+  /api/v1/user/profile:
+    get:
+      tags:
+        - session
+      summary: get user profile information
+      operationId: GetUserProfile
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        401:
+          $ref: "#/components/responses/401"
+
+  /api/v1/user/roles:
+    get:
+      tags:
+        - session
+      summary: get user roles and presets
+      operationId: GetUserRoles
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - categories
+                  - roles
+                properties:
+                  categories:
+                    $ref: "#/components/schemas/UserRoleCategories"
+                  roles:
+                    $ref: "#/components/schemas/UserRoles"
+        401:
+          $ref: "#/components/responses/401"
+
+  /api/v1/user/session/refresh:
+    post:
+      tags:
+        - session
+      summary: refresh user session
+      operationId: PostUserSessionRefresh
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSessionInfo"
+        400:
+          $ref: "#/components/responses/400"
+        401:
+          $ref: "#/components/responses/401"
+
+  /api/v1/user/info:
+    get:
+      tags:
+        - session
+      summary: get user information
+      operationId: GetUserInfoByToken
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserInformation"
+        401:
+          $ref: "#/components/responses/401"
+
+  /api/v1/user/logout:
+    get:
+      tags:
+        - session
+      summary: logout user
+      operationId: GetUserLogout
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+        401:
+          $ref: "#/components/responses/401"
+
+  ###########################################
+  ###########################################
+  ## Memory
+  ###########################################
+  ###########################################
+
+  /api/v1/memory:
+    get:
+      tags:
+        - memory
+      summary: get list of memories (compact form)
+      operationId: GetMemoryList
+      parameters:
+        - name: limit
+          in: query
+          description: limit the number of memories returned
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: startDate
+          in: query
+          description: start date for memory items (rfc3339 + iso8601 compatible with timezone)
+          schema:
+            type: string
+            format: date-time
+            example: 2025-03-05T09:41:07Z
+        - name: endDate
+          in: query
+          description: end date for memory items (rfc3339 + iso8601 compatible with timezone)
+          schema:
+            type: string
+            format: date-time
+            example: 2025-03-06T09:41:07Z
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompactMemoryList"
+        401:
+          $ref: "#/components/responses/401"
+
+    post:
+      tags:
+        - memory
+      summary: post a new memory item
+      operationId: PostMemory
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: type of memory, f.e. "record"
+                  default: "record"
+                audio:
+                  type: string
+                  format: binary
+                image:
+                  type: string
+                  format: binary
+                location_lat:
+                  type: number
+                  format: float
+                  default: 0.0
+                location_lon:
+                  type: number
+                  format: float
+                  default: 0.0
+      responses:
+        200:
+          description: created memory item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompactMemory"
+        400:
+          $ref: "#/components/responses/400"
+        401:
+          $ref: "#/components/responses/401"
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"
+
+  /api/v1/memory/{id}:
+    get:
+      tags:
+        - memory
+      summary: get memory by id
+      operationId: GetMemoryById
+      parameters:
+        - name: id
+          in: path
+          description: memory id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Memory"
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          $ref: "#/components/responses/404"
+
+    patch:
+      tags:
+        - memory
+      parameters:
+        - name: id
+          in: path
+          description: memory id
+          required: true
+          schema:
+            type: string
+      summary: update the given memory item (only supports transcript modification for now)
+      operationId: UpdateMemoryById
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                transcript:
+                  type: string
+                  description: modified/updated transcript
+
+      responses:
+        200:
+          description: updated memory item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompactMemory"
+        400:
+          $ref: "#/components/responses/400"
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          $ref: "#/components/responses/404"
+
+    delete:
+      tags:
+        - memory
+      parameters:
+        - name: id
+          in: path
+          description: memory id
+          required: true
+          schema:
+            type: string
+      summary: delete given memory item
+      operationId: DeleteMemoryById
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          $ref: "#/components/responses/404"
+
+  /api/v1/memory/{id}/add_tags:
+    post:
+      tags:
+        - memory
+      parameters:
+        - name: id
+          in: path
+          description: memory id
+          required: true
+          schema:
+            type: string
+      summary: add tags to the given memory item
+      operationId: AddTagsToMemoryById
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tags
+              properties:
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+        400:
+          $ref: "#/components/responses/400"
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          $ref: "#/components/responses/404"
+
+  ###########################################
+  ###########################################
+  ## Resources
+  ###########################################
+  ###########################################
+
+  /res/audio/{id}:
+    get:
+      tags:
+        - memory
+      summary: get audio by id
+      operationId: GetAudioById
+      parameters:
+        - name: id
+          in: path
+          description: memory id
+          required: true
+          schema:
+            type: string
+        - name: res-token
+          in: query
+          description: resource token for accessing audio
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: success
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        401:
+          $ref: "#/components/responses/401NoContent"
+        403:
+          $ref: "#/components/responses/403NoContent"
+        404:
+          $ref: "#/components/responses/404NoContent"
+
+  /res/image/{id}:
+    get:
+      tags:
+        - memory
+      summary: get image by id
+      operationId: GetImageById
+      parameters:
+        - name: id
+          in: path
+          description: memory id
+          required: true
+          schema:
+            type: string
+        - name: res-token
+          in: query
+          description: resource token for accessing images
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: success
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        401:
+          $ref: "#/components/responses/401NoContent"
+        403:
+          $ref: "#/components/responses/403NoContent"
+        404:
+          $ref: "#/components/responses/404NoContent"
+
+  ###########################################
+  ###########################################
+  ## QnA
+  ###########################################
+  ###########################################
+
+  /api/v1/qna/topics:
+    get:
+      tags:
+        - qna
+      summary: get topics for user
+      operationId: GetQnATopicsForUser
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QnATopics"
+        401:
+          $ref: "#/components/responses/401"
+
+  /api/v1/qna/topics/{topicID}:
+    get:
+      tags:
+        - qna
+      summary: get qna interactions for a topic
+      operationId: GetQnAInteractionsForTopicForUser
+      parameters:
+        - name: topicID
+          in: path
+          description: topic id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QnAInteractions"
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          $ref: "#/components/responses/404"
+
+  /api/v1/qna/interactions:
+    get:
+      tags:
+        - qna
+      summary: get qna interactions for a user
+      operationId: GetQnAInteractionsForUser
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QnAInteractions"
+        401:
+          $ref: "#/components/responses/401"
+    post:
+      tags:
+        - qna
+      summary: create a new qna interaction
+      operationId: PostQnAInteractionForUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddQnAInteraction"
+        required: true
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+        401:
+          $ref: "#/components/responses/401"
+
+  /api/v1/qna/interactions/{qnaInteractionID}:
+    post:
+      tags:
+        - qna
+      summary: create a new message (question) for a qna interaction
+      operationId: PostQnAInteractionQuestionForUser
+      parameters:
+        - name: qnaInteractionID
+          in: path
+          description: qna interaction id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddQnAInteractionQuestion"
+        required: true
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+        401:
+          $ref: "#/components/responses/401"
+
+  ###########################################
+  ###########################################
+  ## Career
+  ###########################################
+  ###########################################
+
+  /api/v1/career/docs:
+    get:
+      tags:
+        - career
+      summary: return list of items
+      responses:
+        "200":
+          description: List of Items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CareerDocumentItem"
+
+  /api/v1/career/docById/{doc_id}:
+    get:
+      tags:
+        - career
+      summary: return item
+      parameters:
+        - in: path
+          name: doc_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareerDocument"
+    post:
+      tags:
+        - career
+      summary: extend, modify item
+      parameters:
+        - in: path
+          name: doc_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CareerPathReview"
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareerDocument"
+
+  /res/career/pdfById/{doc_id}:
+    get:
+      tags:
+        - career
+      summary: return Career PDF
+      parameters:
+        - in: path
+          name: doc_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: success
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  ###########################################
+  ###########################################
+  ## Honeycomb
+  ###########################################
+  ###########################################
+
+  /api/v1/honeycomb:
+    get:
+      tags:
+        - honeycomb
+      summary: return list of honeycomb items
+      responses:
+        "200":
+          description: List of Items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HoneycombList"
+
+  /api/v1/honeycomb/{data_id}:
+    get:
+      tags:
+        - honeycomb
+      summary: return course data for the user
+      parameters:
+        - in: path
+          name: data_id
+          required: true
+          description: id of the course or training
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of Items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HoneycombData"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+
+  /api/v1/honeycomb/{data_id}/{module_id}/{task_id}/submit:
+    post:
+      tags:
+        - honeycomb
+      summary: task submit
+      parameters:
+        - in: path
+          name: data_id
+          required: true
+          description: id of the course or training
+          schema:
+            type: string
+        - in: path
+          name: module_id
+          required: true
+          description: id of the module
+          schema:
+            type: string
+        - in: path
+          name: task_id
+          required: true
+          description: id of the task
+          schema:
+            type: string
+      responses:
+        200:
+          description: updated honeycomb data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HoneycombData"
+        400:
+          $ref: "#/components/responses/400"
+        401:
+          $ref: "#/components/responses/401"
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"
+
+  /api/v1/honeycomb/course/{course_id}/modified:
+    get:
+      tags:
+        - honeycomb
+      summary: return last modification timestamp for scope (implicit scope is course for now)
+      parameters:
+        - in: path
+          name: course_id
+          required: true
+          description: id of the course or training
+          schema:
+            type: string
+      responses:
+        "200":
+          description: timestamp of last modification
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  modified:
+                    type: string
+                    format: date-time
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"
+
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  responses:
+    200:
+      description: operation successful
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APISuccessResponse"
+    400:
+      description: input (or verifier nonce/state/..) validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    401:
+      description: unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    403:
+      description: forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    404:
+      description: item not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    500:
+      description: internal error, f.e. database not reachable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+
+    401NoContent:
+      description: unauthorized (NoContent Response)
+    403NoContent:
+      description: forbidden (NoContent Response)
+    404NoContent:
+      description: item not found (NoContent Response)
+
+  schemas:
+    APISuccessResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          default: "ok"
+
+    APIErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          default: "error"
+
+    ###########################################
+    ###########################################
+    ## User
+    ###########################################
+    ###########################################
+
+    UserInformation:
+      description: user information
+      type: object
+      required:
+        - name
+        - given_name
+        - family_name
+        - picture
+        - tier
+      properties:
+        name:
+          type: string
+          default: "John Doe"
+        given_name:
+          type: string
+          default: "John"
+        family_name:
+          type: string
+          default: "Doe"
+        picture:
+          type: string
+          default: "https://lh3.googleusercontent.com/a-/AOh14Gj..."
+        tier:
+          type: string
+          default: "free"
+
+    UserSessionInfo:
+      description: user session information
+      type: object
+      required:
+        - expires
+        - app
+      properties:
+        expires:
+          type: string
+          format: date-time
+          default: "2021-01-01T00:00:00Z"
+        app:
+          description: application which was used for login
+          type: string
+          default: "record"
+
+    UserProfile:
+      description: user profile information
+      type: object
+      required:
+        - userInfo
+        - clientReference
+        - sessionInfo
+        - roles
+      properties:
+        userInfo:
+          $ref: "#/components/schemas/UserInformation"
+        clientReference:
+          description: client reference id (f.e. google id) used for payment/order processing
+          type: string
+        email:
+          description: user email address (optional) for contact purposes (f.e. payment notifications)
+          type: string
+        sessionInfo:
+          $ref: "#/components/schemas/UserSessionInfo"
+        roles:
+          $ref: "#/components/schemas/UserRoles"
+
+    UserRoles:
+      description: user role presets (categories and tags) to be used for memory items, first item is the default
+      type: array
+      items:
+        type: object
+        required:
+          - name
+          - categories
+          - tags
+        properties:
+          name:
+            type: string
+          label_color:
+            type: string
+          label_icon_key:
+            type: string
+          categories:
+            $ref: "#/components/schemas/UserRoleCategoryPreset"
+          tags:
+            $ref: "#/components/schemas/UserRoleTagPreset"
+
+    UserRoleCategoryPreset:
+      description: a category preset
+      type: array
+      items:
+        type: string
+
+    UserRoleTagPreset:
+      description: a tag preset
+      type: array
+      items:
+        type: string
+
+    UserRoleCategories:
+      description: user role categories
+      type: object
+      additionalProperties:
+        type: object
+        additionalProperties:
+          type: string
+      example: { "category_code": { "en": "Category", "de": "Kategorie" } }
+
+    ###########################################
+    ###########################################
+    ## Memory
+    ###########################################
+    ###########################################
+
+    CompactMemoryList:
+      type: object
+      required:
+        - memories
+      properties:
+        memories:
+          type: array
+          items:
+            $ref: "#/components/schemas/CompactMemory"
+
+    CompactMemory:
+      type: object
+      required:
+        - id
+        - type
+        - has_audio
+        - has_image
+        - created_at
+      properties:
+        id:
+          type: string
+          default: "1234567890"
+        type:
+          type: string
+          description: type of memory, f.e. "record"
+          default: "record"
+        has_audio:
+          type: boolean
+          default: false
+        has_image:
+          type: boolean
+          default: false
+        description:
+          description: optional description
+          type: string
+          default: ""
+        transcript:
+          description: optional transcript
+          type: string
+          default: ""
+        transcript_status:
+          description: transcription status
+          type: string
+          default: "processed"
+        review_status:
+          description: review status
+          type: string
+          default: "y"
+        location:
+          type: object
+          required:
+            - lat
+            - lon
+          properties:
+            lat:
+              type: number
+              default: 0.0
+            lon:
+              type: number
+              default: 0.0
+        created_at:
+          description: creation timestamp (rfc3339 + iso8601 compatible with timezone)
+          type: string
+          format: date-time
+          example: 2025-03-05T09:41:07Z
+        tags:
+          $ref: "#/components/schemas/MemoryTagList"
+
+    Memory:
+      type: object
+      required:
+        - id
+        - type
+        - audio
+        - image
+        - created_at
+      properties:
+        id:
+          type: string
+          default: "1234567890"
+        type:
+          type: string
+          description: type of memory, f.e. "record"
+          default: "record"
+        audio:
+          type: string
+          default: "https://maindrec.cellcoder.de/res/audio/1234567890.mp3?res-token=..."
+        image:
+          type: string
+          default: "https://maindrec.cellcoder.de/res/image/1234567890.jpg?res-token=..."
+        description:
+          description: optional description
+          type: string
+          default: ""
+        transcript:
+          description: optional transcript
+          type: string
+          default: ""
+        transcript_status:
+          description: transcription status
+          type: string
+          default: "processed"
+        review_status:
+          description: review status
+          type: string
+          default: "y"
+        location:
+          type: object
+          required:
+            - lat
+            - lon
+          properties:
+            lat:
+              type: number
+              default: 0.0
+            lon:
+              type: number
+              default: 0.0
+        created_at:
+          description: creation timestamp (rfc3339 + iso8601 compatible with timezone)
+          type: string
+          format: date-time
+          example: 2025-03-05T09:41:07Z
+        tags:
+          $ref: "#/components/schemas/MemoryTagList"
+
+    MemoryTagList:
+      type: array
+      items:
+        type: string
+
+    ###########################################
+    ###########################################
+    ## QnA
+    ###########################################
+    ###########################################
+
+    QnATopic:
+      type: object
+      required:
+        - topicName
+        - id
+      properties:
+        topicName:
+          type: string
+          example: "Topic #1"
+        id:
+          description: unique id for this qna topic
+          type: string
+          example: "12345"
+
+    QnATopics:
+      type: array
+      items:
+        $ref: "#/components/schemas/QnATopic"
+
+    QnAInteraction:
+      type: object
+      required:
+        - id
+        - topicID
+        - messages
+        - summary
+      properties:
+        id:
+          description: unique id for this qna interaction
+          type: string
+          example: "23456"
+        topicID:
+          description: id of the topic this interaction belongs to
+          type: string
+          example: "12345"
+        messages:
+          type: array
+          items:
+            type: object
+            required:
+              - messageType
+              - content
+              - timestamp
+            properties:
+              messageType:
+                type: string
+                enum:
+                  - answer
+                  - question
+                example: "answer"
+                description: qna interaction message type
+              content:
+                type: string
+                example: "test content"
+                description: question or answer content
+              timestamp:
+                type: string
+                format: date-time
+                description: timestamp for the server side creation of this message
+              location:
+                type: object
+                description: optional location for questions
+                required:
+                  - lat
+                  - lon
+                properties:
+                  lat:
+                    type: number
+                    example: 51.3243
+                  lon:
+                    type: number
+                    example: 13.2323
+        summary:
+          type: string
+
+    QnAInteractions:
+      type: array
+      items:
+        $ref: "#/components/schemas/QnAInteraction"
+
+    AddQnAInteraction:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          example: "test content"
+          description: question or answer content
+        location:
+          type: object
+          description: optional location for questions
+          required:
+            - lat
+            - lon
+          properties:
+            lat:
+              type: number
+              example: 51.3243
+            lon:
+              type: number
+              example: 13.2323
+
+    AddQnAInteractionQuestion:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          example: "test content"
+          description: question or answer content
+        location:
+          type: object
+          description: optional location for questions
+          required:
+            - lat
+            - lon
+          properties:
+            lat:
+              type: number
+              example: 51.3243
+            lon:
+              type: number
+              example: 13.2323
+
+    ###########################################
+    ###########################################
+    ## Career
+    ###########################################
+    ###########################################
+
+    DateRange:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date
+          example: "2020-01-01"
+        to:
+          type: string
+          format: date
+          example: "2023-12-31"
+
+    CareerEntry:
+      type: object
+      description: a single career entry
+      properties:
+        date:
+          $ref: "#/components/schemas/DateRange"
+        position:
+          type: string
+          example: "Senior Marketing Manager"
+        role:
+          type: string
+          example: "Führungskraft"
+        expertlevel:
+          type: string
+          enum: ["Anfänger", "Fortgeschritten", "Experte"]
+        company:
+          type: string
+          example: "Musterfirma GmbH"
+        location:
+          type: string
+          example: "Berlin"
+        tasks:
+          type: array
+          items:
+            type: string
+          example:
+            - "Entwicklung von Marketing-Strategien"
+            - "Leitung des Social Media Teams"
+
+    CareerPath:
+      type: object
+      description: a list of career entries gathered from a document (candidate)
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/CareerEntry"
+
+    CareerPathReview:
+      type: object
+      description: information about the career and additional metadata
+      properties:
+        annotation:
+          description: additional annotation
+          type: string
+        careerPath:
+          $ref: "#/components/schemas/CareerPath"
+
+    CareerDocument:
+      allOf:
+        - $ref: "#/components/schemas/CareerDocumentItem"
+        - $ref: "#/components/schemas/CareerDocumentData"
+
+    CareerDocumentData:
+      type: object
+      properties:
+        pdfUrl:
+          description: url to the pdf
+          type: string
+          example: "https://maindrec.cellcoder.de/res/career/pdfById/1234567890?token=..."
+        originalCareerPath:
+          $ref: "#/components/schemas/CareerPath"
+        reviewedCareerPath:
+          $ref: "#/components/schemas/CareerPathReview"
+
+    CareerDocumentItem:
+      type: object
+      properties:
+        name:
+          description: name of the document (or candidate)
+          type: string
+        title:
+          description: title of the document
+          type: string
+        documentId:
+          description: id for this document
+          type: string
+        subject:
+          description: subject of the document
+          type: string
+          example: "Lebenslauf"
+        keywords:
+          description: keywords
+          type: array
+          items:
+            type: string
+          example:
+            - "Lebenslauf"
+            - "Bewerbung"
+            - "CV"
+        creationDate:
+          description: creation date
+          type: string
+          format: date
+          example: "2023-12-10"
+        modDate:
+          description: modification date
+          type: string
+          format: date
+          example: "2023-12-11"
+        processingDate:
+          description: processing date
+          type: string
+          format: date
+          example: "2023-12-12"
+        reviewState:
+          description: state of review
+          enum: ["open", "in review", "reviewed"]
+        processingState:
+          description: state of processing
+          enum: ["queued", "processing", "processed"]
+
+    ###########################################
+    ###########################################
+    ## Honeycomb
+    ###########################################
+    ###########################################
+
+    HoneycombList:
+      type: object
+      description: list of honeycomb items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/HoneycombListEntry"
+
+    HoneycombListEntry:
+      type: object
+      description: a single honeycomb item
+      properties:
+        id:
+          type: string
+          example: "1234"
+        name:
+          type: string
+          example: "Marketing Manager"
+        description:
+          type: string
+          example: "Marketing Manager Training"
+
+    HoneycombData:
+      type: object
+      description: all honeycomb data for a candidate and specific course
+      properties:
+        id:
+          type: string
+          description: Course Identifier
+          example: "marketing101"
+        app:
+          type: string
+          description: App Name to be shown (v10.10)
+          example: "Training"
+        name:
+          type: string
+          description: Course Name (v10.20)
+          example: "Marketing Manager"
+        description_short:
+          type: string
+          description: Course Description SHORT (v10.60)
+          example: "Marketing Manager Training"
+        description_s:
+          type: string
+          description: String for Description (v10.80)
+          example: "Beschreibung"
+        description:
+          type: string
+          description: Course Description LONG (v10.90)
+          example: "Marketing Manager Training"
+        progress_s:
+          type: string
+          description: Progress text as string (v10.30)
+          example: "Gesamtfortschritt"
+        progress:
+          type: string
+          description: Progress as String (v10.50)
+          example: "5/10"
+        progress_p:
+          type: number
+          description: Progress as Number 0..100 (v10.40)
+          example: 50
+        modules:
+          description: Modules (v10.70)
+          type: array
+          items:
+            $ref: "#/components/schemas/HoneycombModule"
+
+    HoneycombModule:
+      type: object
+      description: a single honeycomb module
+      properties:
+        id:
+          type: string
+          description: Module Name (v10.70.1)
+          example: "1234"
+        app:
+          type: string
+          description: Module (v20.10)
+          example: "Praxis Modul"
+        name_short:
+          type: string
+          description: Module Name (v10.70.2)
+          example: "Verkaufsgespräch"
+        name:
+          type: string
+          description: Module Name (v20.20)
+          example: "Verkaufsgespräch 101"
+        duration:
+          type: string
+          description: geschätzte Bearbeitungsdauer (v20.30.1)
+          example: "90 min"
+        severity:
+          type: string
+          description: geschätzter Schwierigkeitsgrad (v20.30.2)
+          example: "leicht"
+        badge:
+          type: boolean
+          description: erfüllt-Badge zeigen (v20.40)
+          example: false
+        progress_p:
+          type: number
+          description: Module Progress as Number 0..100 (v20.50 / v10.70.3)
+          example: 10
+        content_s:
+          type: string
+          description: String für Inhalt (v20.60)
+          example: "Inhalt"
+        content:
+          type: string
+          description: Module Beschreibung (v20.70)
+          example: "In diesem Module: <p><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul></p> usw."
+        requirements_s:
+          type: string
+          description: String für Voraussetzungen (v20.80)
+          example: "Voraussetzungen"
+        requirements:
+          type: string
+          description: Voraussetzungen (v20.110)
+          example: "<ul><li>dies</li><li>das</li></ul>"
+        requirements_modules:
+          type: array
+          description: Module Requirements (v20.120)
+          items:
+            type: string
+            description: Module ID
+            example: "1234"
+        goals_s:
+          type: string
+          description: String für Ziele (v20.90)
+          example: "Ziele"
+        goals:
+          type: string
+          description: Ziele (v20.100)
+          example: "<ul><li>jenes</li><li>dieses</li></ul>"
+        goals_modules:
+          type: array
+          description: Module Goals (v20.121)
+          items:
+            type: string
+            description: Module ID
+            example: "1234"
+        can_start:
+          type: boolean
+          description: Voraussetzungen erfüllt / Startbar (v10.70.4)
+          example: true
+        tasks_open_s:
+          type: string
+          description: open tasks string (v30.10)
+          example: "Offen"
+        tasks_progress_s:
+          type: string
+          description: in progress tasks string (v30.20)
+          example: "In Arbeit"
+        tasks_done_s:
+          type: string
+          description: closed tasks string (v30.30)
+          example: "Erledigt"
+        tasks:
+          type: array
+          description: List of Tasks (v30.40)
+          items:
+            $ref: "#/components/schemas/HoneycombModuleTask"
+
+    HoneycombModuleTask:
+      type: object
+      description: a single honeycomb module task
+      properties:
+        id:
+          type: string
+          description: Task Id (v30.40.1)
+          example: "1234"
+        state:
+          type: string
+          description: Task Status (open, in progress, done)
+          example: "open"
+        name_short:
+          type: string
+          description: Task Title SHORT (v30.40.2)
+          example: "Anrufe"
+        name:
+          type: string
+          description: Task Title LANG (v30.50)
+          example: "Anruftraining"
+        description_short:
+          type: string
+          description: Task Beschreibung SHORT (v30.40.3)
+          example: "Anrufe tätigen für Dummies"
+        description:
+          type: string
+          description: Task Beschreibung LANG (v30.60)
+          example: "Anruftraining für Anfänger usw."
+        sources_s:
+          type: string
+          description: String für Quellen (v30.70)
+          example: "Quellen"
+        sources:
+          type: array
+          description: Quellen (v30.80)
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+                description: url (v30.80.1)
+                example: "https://example.com/"
+              title:
+                type: string
+                description: url title (v30.80.2)
+                example: "Example Homepage"
+        answer_placeholder_s:
+          type: string
+          description: Platzhalter für Textarea (v30.90)
+          example: "Gib hier Deinen Kommentar ein"
+        complete_s:
+          type: string
+          description: String für fertig button (v30.100)
+          example: "Fertig"
+        memory_id:
+          type: string
+          default: "1234567890"

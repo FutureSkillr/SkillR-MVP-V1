@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Future Skiller — Fuer IHK & Kammern</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; overflow-x: hidden; }
+    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
+    .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass-light { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    .glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+    .glow-orange { box-shadow: 0 0 20px rgba(249, 115, 22, 0.3); }
+    .glow-purple { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
+    .glow-amber { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+    .gradient-text { background: linear-gradient(90deg, #38bdf8, #818cf8, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .gradient-text-amber { background: linear-gradient(90deg, #f59e0b, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .gradient-blue { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+    .gradient-orange { background: linear-gradient(135deg, #f97316, #eab308); }
+    .gradient-purple { background: linear-gradient(135deg, #a855f7, #ec4899); }
+    .gradient-amber { background: linear-gradient(135deg, #f59e0b, #f97316); }
+    .animate-gradient { background-size: 200% 200%; animation: gradient-shift 6s ease infinite; }
+    @keyframes gradient-shift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+    @keyframes pulse-glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+    .pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+    .hero-orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-50 glass">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3">
+        <div class="w-10 h-10 gradient-blue rounded-xl flex items-center justify-center font-bold text-lg shadow-lg">S</div>
+        <span class="text-xl font-bold" style="font-family: 'Outfit', sans-serif;">Future Skiller</span>
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm text-slate-400">
+        <a href="kids.html" class="hover:text-white transition-colors">Jugendliche</a>
+        <a href="parents.html" class="hover:text-white transition-colors">Eltern</a>
+        <a href="companies.html" class="hover:text-white transition-colors">Unternehmen</a>
+        <a href="coaches.html" class="hover:text-white transition-colors">Coaches</a>
+        <a href="arbeitsagentur.html" class="hover:text-white transition-colors">Arbeitsagentur</a>
+      </div>
+      <a href="#dashboard" class="gradient-amber text-white font-semibold py-2 px-6 rounded-xl text-sm hover:opacity-90 transition-opacity">
+        Dashboard entdecken
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative min-h-screen flex items-center justify-center pt-20">
+    <div class="hero-orb w-96 h-96 bg-amber-500/15 top-20 -left-48 pulse-glow"></div>
+    <div class="hero-orb w-72 h-72 bg-orange-500/10 bottom-32 right-10 pulse-glow" style="animation-delay: 2s;"></div>
+
+    <div class="max-w-4xl mx-auto px-6 text-center relative z-10 space-y-8">
+      <div class="inline-block px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono tracking-wider">
+        DER WEGWEISER — Ihre Rolle im SkillR Universum
+      </div>
+
+      <h1 class="text-5xl md:text-7xl font-extrabold leading-tight">
+        Berufsorientierung<br/>
+        <span class="gradient-text-amber animate-gradient">neu gedacht.</span>
+      </h1>
+
+      <p class="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+        Die Zunft, die den Rahmen der Wanderschaft definiert.
+        Machen Sie die Ausbildungslandschaft sichtbar, attraktiv und messbar —
+        dort, wo Jugendliche tatsaechlich sind.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+        <a href="#value" class="gradient-amber text-white font-bold py-4 px-12 rounded-2xl shadow-lg hover:shadow-amber-600/30 transition-all text-lg inline-block">
+          Mehrwert entdecken
+        </a>
+        <a href="#dashboard" class="glass text-white font-semibold py-4 px-12 rounded-2xl hover:bg-white/10 transition-all text-lg inline-block">
+          Kammer-Dashboard
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quote -->
+  <section class="py-24 px-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="glass rounded-3xl p-12 text-center space-y-6 glow-amber">
+        <svg class="mx-auto" xmlns="http://www.w3.org/2000/svg" width="56" height="56" fill="none" stroke="#f59e0b" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <blockquote class="text-2xl md:text-3xl font-bold leading-snug" style="font-family: 'Outfit';">
+          &bdquo;Das ist ein geiles Vorbereitungstool.&ldquo;
+        </blockquote>
+        <p class="text-slate-400 text-lg">
+          Das sagen IHK-Vertreter, wenn sie sehen, wie Jugendliche ueber echte Interessen
+          den Weg in die Ausbildung finden — statt ueber Pflichtpraktika und Broschueren.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Value Propositions -->
+  <section id="value" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto space-y-16">
+      <div class="text-center space-y-4">
+        <h2 class="text-3xl md:text-4xl font-bold">Warum Kammern von SkillR profitieren</h2>
+        <p class="text-slate-400 max-w-2xl mx-auto">Jede Kammer hat ein Einzugsgebiet. Jedes Einzugsgebiet hat Jugendliche, die sich orientieren muessen.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="glass rounded-2xl p-8 space-y-4 glow-amber">
+          <div class="w-14 h-14 gradient-amber rounded-xl flex items-center justify-center shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-amber-400">Sichtbarkeit der Ausbildungslandschaft</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Alle Ausbildungsberufe in Ihrem Einzugsgebiet — sichtbar, attraktiv und
+            in den Kontext echter Interessen eingebettet. Nicht als abstrakte Liste,
+            sondern als Teil einer Entdeckungsreise.
+          </p>
+        </div>
+
+        <div class="glass rounded-2xl p-8 space-y-4 glow-blue">
+          <div class="w-14 h-14 gradient-blue rounded-xl flex items-center justify-center shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-blue-400">Anonymisierte Aggregate Analytics</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Welche Branchen interessieren Jugendliche in Ihrer Region wirklich?
+            Wo gibt es Nachfrage, aber kein Angebot? Datenbasierte Entscheidungen
+            fuer Ihre Ausbildungsplanung.
+          </p>
+        </div>
+
+        <div class="glass rounded-2xl p-8 space-y-4 glow-purple">
+          <div class="w-14 h-14 gradient-purple rounded-xl flex items-center justify-center shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-purple-400">Bessere Kandidatenqualitaet</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Jugendliche, die ueber echtes Interesse kommen, sind motivierter.
+            Weniger Abbrueche, hoehere Zufriedenheit bei Unternehmen und Auszubildenden.
+          </p>
+        </div>
+
+        <div class="glass rounded-2xl p-8 space-y-4" style="box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);">
+          <div class="w-14 h-14 rounded-xl flex items-center justify-center shadow-lg" style="background: linear-gradient(135deg, #10b981, #06b6d4);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-emerald-400">Zukunftsberufe registrieren</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Neue Ausbildungskonzepte, die noch nicht im Standardkatalog stehen?
+            Bei SkillR koennen Sie Positionen registrieren, die es morgen geben wird —
+            und die Jugendlichen schon heute darauf aufmerksam machen.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chamber Dashboard -->
+  <section id="dashboard" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto space-y-12">
+      <div class="text-center space-y-4">
+        <h2 class="text-3xl md:text-4xl font-bold">Ihr Kammer-Dashboard</h2>
+        <p class="text-slate-400">Alle Daten Ihrer Region — aggregiert, anonymisiert, handlungsrelevant.</p>
+      </div>
+
+      <!-- Mock Dashboard -->
+      <div class="glass rounded-3xl p-8 md:p-12 space-y-8 glow-amber">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h3 class="text-lg font-bold">IHK Muenchen und Oberbayern</h3>
+            <p class="text-xs text-slate-400">Berichtsmonat: Januar 2026</p>
+          </div>
+          <div class="flex gap-2">
+            <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-semibold">2.847 aktive Reisende</span>
+            <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-semibold">+12% ggue. Vormonat</span>
+          </div>
+        </div>
+
+        <!-- Interest Trends -->
+        <div class="space-y-4">
+          <h4 class="text-sm font-semibold text-slate-300">Top Interesse-Trends in der Region</h4>
+          <div class="space-y-3">
+            <div class="flex items-center gap-4">
+              <span class="text-xs text-slate-400 w-28 shrink-0">Nachhaltigkeit</span>
+              <div class="flex-1 h-3 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full gradient-amber rounded-full" style="width: 78%;"></div>
+              </div>
+              <span class="text-xs text-amber-400 font-semibold w-12 text-right">78%</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-xs text-slate-400 w-28 shrink-0">IT & Digital</span>
+              <div class="flex-1 h-3 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full gradient-blue rounded-full" style="width: 65%;"></div>
+              </div>
+              <span class="text-xs text-blue-400 font-semibold w-12 text-right">65%</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-xs text-slate-400 w-28 shrink-0">Handwerk</span>
+              <div class="flex-1 h-3 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full gradient-purple rounded-full" style="width: 52%;"></div>
+              </div>
+              <span class="text-xs text-purple-400 font-semibold w-12 text-right">52%</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-xs text-slate-400 w-28 shrink-0">Gastronomie</span>
+              <div class="flex-1 h-3 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full gradient-orange rounded-full" style="width: 41%;"></div>
+              </div>
+              <span class="text-xs text-orange-400 font-semibold w-12 text-right">41%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="glass-light rounded-xl p-4 text-center space-y-1">
+            <div class="text-2xl font-extrabold text-amber-400" style="font-family: 'Outfit';">324</div>
+            <div class="text-[10px] text-slate-500">Ausbildungsberufe gelistet</div>
+          </div>
+          <div class="glass-light rounded-xl p-4 text-center space-y-1">
+            <div class="text-2xl font-extrabold text-blue-400" style="font-family: 'Outfit';">1.2k</div>
+            <div class="text-[10px] text-slate-500">Offene Stellen integriert</div>
+          </div>
+          <div class="glass-light rounded-xl p-4 text-center space-y-1">
+            <div class="text-2xl font-extrabold text-purple-400" style="font-family: 'Outfit';">89%</div>
+            <div class="text-[10px] text-slate-500">Reise-Abschlussquote</div>
+          </div>
+          <div class="glass-light rounded-xl p-4 text-center space-y-1">
+            <div class="text-2xl font-extrabold text-emerald-400" style="font-family: 'Outfit';">47</div>
+            <div class="text-[10px] text-slate-500">Matching-Kontakte / Monat</div>
+          </div>
+        </div>
+
+        <p class="text-center text-xs text-slate-500 italic">Vorschau mit Beispieldaten — Ihr regionales Dashboard wird individuell konfiguriert</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it integrates -->
+  <section class="py-24 px-6">
+    <div class="max-w-5xl mx-auto space-y-12">
+      <h2 class="text-3xl md:text-4xl font-bold text-center">Integration in Ihr Oekosystem</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="glass rounded-2xl p-6 space-y-4">
+          <div class="w-12 h-12 gradient-amber rounded-xl flex items-center justify-center shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          </div>
+          <h3 class="font-bold">Datenimport</h3>
+          <p class="text-sm text-slate-400">Bestehende Ausbildungsdaten aus Ihrem System koennen direkt importiert werden. Kein manuelles Einpflegen noetig.</p>
+        </div>
+        <div class="glass rounded-2xl p-6 space-y-4">
+          <div class="w-12 h-12 gradient-blue rounded-xl flex items-center justify-center shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3 class="font-bold">Datenschutz</h3>
+          <p class="text-sm text-slate-400">Kein direkter Zugriff auf Schueler-Profile. Nur anonymisierte, aggregierte Daten. DSGVO-konform von Anfang an.</p>
+        </div>
+        <div class="glass rounded-2xl p-6 space-y-4">
+          <div class="w-12 h-12 gradient-purple rounded-xl flex items-center justify-center shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <h3 class="font-bold">Whitelabel-Option</h3>
+          <p class="text-sm text-slate-400">Auf Wunsch kann das Kammer-Dashboard in Ihrem Corporate Design erscheinen. Ihre Marke, unsere Technologie.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA -->
+  <section class="py-24 px-6 relative">
+    <div class="hero-orb w-96 h-96 bg-amber-500/10 left-1/2 -translate-x-1/2 top-0"></div>
+    <div class="max-w-3xl mx-auto text-center relative z-10 space-y-8">
+      <h2 class="text-3xl md:text-5xl font-extrabold">Die Ausbildungslandschaft sichtbar machen.</h2>
+      <p class="text-slate-400 text-lg">Erreichen Sie Jugendliche ueber echtes Interesse — nicht ueber Pflichtveranstaltungen.</p>
+      <a href="mailto:kammer@futureskiller.de" class="inline-block gradient-amber text-white font-bold py-4 px-16 rounded-2xl shadow-lg hover:shadow-amber-600/40 transition-all text-lg">
+        Demo anfordern
+      </a>
+      <p class="text-xs text-slate-500">Individuelle Praesentation fuer Ihre Kammer — kostenlos und unverbindlich.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="glass py-8 px-6 mt-12">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 gradient-blue rounded-lg flex items-center justify-center font-bold text-xs shadow-lg">S</div>
+        <span>&copy; 2026 Future Skiller</span>
+      </div>
+      <div class="flex gap-6">
+        <a href="kids.html" class="hover:text-white transition-colors">Jugendliche</a>
+        <a href="parents.html" class="hover:text-white transition-colors">Eltern</a>
+        <a href="companies.html" class="hover:text-white transition-colors">Unternehmen</a>
+        <a href="coaches.html" class="hover:text-white transition-colors">Coaches</a>
+        <a href="arbeitsagentur.html" class="hover:text-white transition-colors">Arbeitsagentur</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

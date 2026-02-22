@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Future Skiller — Fuer Eltern</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; overflow-x: hidden; }
+    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
+    .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass-light { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    .glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+    .glow-orange { box-shadow: 0 0 20px rgba(249, 115, 22, 0.3); }
+    .glow-purple { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
+    .gradient-text { background: linear-gradient(90deg, #38bdf8, #818cf8, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .gradient-text-warm { background: linear-gradient(90deg, #f97316, #eab308, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .gradient-blue { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+    .gradient-orange { background: linear-gradient(135deg, #f97316, #eab308); }
+    .gradient-purple { background: linear-gradient(135deg, #a855f7, #ec4899); }
+    .animate-gradient { background-size: 200% 200%; animation: gradient-shift 6s ease infinite; }
+    @keyframes gradient-shift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+    @keyframes pulse-glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+    .pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+    .hero-orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-50 glass">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3">
+        <div class="w-10 h-10 gradient-blue rounded-xl flex items-center justify-center font-bold text-lg shadow-lg">S</div>
+        <span class="text-xl font-bold" style="font-family: 'Outfit', sans-serif;">Future Skiller</span>
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm text-slate-400">
+        <a href="kids.html" class="hover:text-white transition-colors">Jugendliche</a>
+        <a href="companies.html" class="hover:text-white transition-colors">Unternehmen</a>
+        <a href="coaches.html" class="hover:text-white transition-colors">Coaches</a>
+        <a href="ihk.html" class="hover:text-white transition-colors">IHK</a>
+        <a href="arbeitsagentur.html" class="hover:text-white transition-colors">Arbeitsagentur</a>
+      </div>
+      <a href="/" class="gradient-orange text-white font-semibold py-2 px-6 rounded-xl text-sm hover:opacity-90 transition-opacity">
+        App starten
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative min-h-screen flex items-center justify-center pt-20">
+    <div class="hero-orb w-96 h-96 bg-orange-500/15 top-20 -right-48 pulse-glow"></div>
+    <div class="hero-orb w-72 h-72 bg-amber-500/10 bottom-32 left-10 pulse-glow" style="animation-delay: 2s;"></div>
+
+    <div class="max-w-4xl mx-auto px-6 text-center relative z-10 space-y-8">
+      <div class="inline-block px-4 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-mono tracking-wider">
+        DER MOTIVATOR — Ihre Rolle im SkillR Universum
+      </div>
+
+      <h1 class="text-5xl md:text-7xl font-extrabold leading-tight">
+        Verstehen, was<br/>
+        <span class="gradient-text-warm animate-gradient">Ihr Kind entdeckt.</span>
+      </h1>
+
+      <p class="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+        Transparenz ohne Ueberwachung. Fortschritt ohne Druck.<br/>
+        Begleiten Sie die Reise Ihres Kindes — ohne sie zu steuern.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+        <a href="#features" class="gradient-orange text-white font-bold py-4 px-12 rounded-2xl shadow-lg hover:shadow-orange-600/30 transition-all text-lg inline-block">
+          Mehr erfahren
+        </a>
+        <a href="kids.html" class="glass text-white font-semibold py-4 px-12 rounded-2xl hover:bg-white/10 transition-all text-lg inline-block">
+          Was erlebt mein Kind?
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Core Promise -->
+  <section class="py-24 px-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="glass rounded-3xl p-12 text-center space-y-6 glow-orange">
+        <svg class="mx-auto" xmlns="http://www.w3.org/2000/svg" width="56" height="56" fill="none" stroke="#f97316" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <blockquote class="text-2xl md:text-3xl font-bold leading-snug" style="font-family: 'Outfit';">
+          &bdquo;Ich verstehe, was mein Kind da macht, und finde es gut.&ldquo;
+        </blockquote>
+        <p class="text-slate-400 text-lg">
+          Dieses Gefuehl geben wir Ihnen. Nicht durch Kontrolle — sondern durch ehrliche Transparenz.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto space-y-16">
+      <div class="text-center space-y-4">
+        <h2 class="text-3xl md:text-4xl font-bold">Was Sie als Eltern sehen</h2>
+        <p class="text-slate-400 max-w-2xl mx-auto">Einblick in die Entwicklung — mit klaren Grenzen zum Schutz der Privatsphaere.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- What you SEE -->
+        <div class="space-y-6">
+          <h3 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            Das sehen Sie
+          </h3>
+          <div class="space-y-4">
+            <div class="glass-light rounded-xl p-5 space-y-2">
+              <h4 class="font-semibold text-sm">Interesse-Cluster</h4>
+              <p class="text-xs text-slate-400">Welche Themenfelder begeistern Ihr Kind? Sehen Sie auf einen Blick, wo die Neugier am groessten ist.</p>
+            </div>
+            <div class="glass-light rounded-xl p-5 space-y-2">
+              <h4 class="font-semibold text-sm">VUCA-Fortschritt</h4>
+              <p class="text-xs text-slate-400">Wie weit ist die Reise? Welche Dimensionen sind bereits erkundet? Feiern Sie Meilensteine gemeinsam.</p>
+            </div>
+            <div class="glass-light rounded-xl p-5 space-y-2">
+              <h4 class="font-semibold text-sm">Skill-Radar</h4>
+              <p class="text-xs text-slate-400">Das uebergeordnete Staerken-Profil — eine visuelle Zusammenfassung der entdeckten Faehigkeiten.</p>
+            </div>
+            <div class="glass-light rounded-xl p-5 space-y-2">
+              <h4 class="font-semibold text-sm">Meilenstein-Benachrichtigungen</h4>
+              <p class="text-xs text-slate-400">Erfahren Sie, wenn Ihr Kind einen wichtigen Punkt der Reise erreicht hat.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- What you DON'T see -->
+        <div class="space-y-6">
+          <h3 class="text-lg font-bold text-red-400 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            Das sehen Sie bewusst nicht
+          </h3>
+          <div class="space-y-4">
+            <div class="glass-light rounded-xl p-5 space-y-2 border-l-2 border-red-500/30">
+              <h4 class="font-semibold text-sm">Gespraeche</h4>
+              <p class="text-xs text-slate-400">Die Dialoge zwischen Ihrem Kind und dem KI-Coach sind privat. Das schuetzt die Offenheit.</p>
+            </div>
+            <div class="glass-light rounded-xl p-5 space-y-2 border-l-2 border-red-500/30">
+              <h4 class="font-semibold text-sm">Einzelne Antworten</h4>
+              <p class="text-xs text-slate-400">Was genau gesagt wurde, bleibt zwischen Ihrem Kind und dem Coach.</p>
+            </div>
+            <div class="glass-light rounded-xl p-5 space-y-2 border-l-2 border-red-500/30">
+              <h4 class="font-semibold text-sm">Bewertungen</h4>
+              <p class="text-xs text-slate-400">Es gibt keine Noten, kein Richtig oder Falsch. Nur Entdeckung.</p>
+            </div>
+          </div>
+          <div class="glass rounded-xl p-5 space-y-2 glow-orange">
+            <p class="text-sm text-orange-300 font-medium">Warum diese Grenze?</p>
+            <p class="text-xs text-slate-400">Jugendliche oeffnen sich nur, wenn sie wissen, dass ihre Antworten privat bleiben. Diese Grenze schuetzt die Qualitaet der Ergebnisse.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Parent Dashboard Preview -->
+  <section class="py-24 px-6">
+    <div class="max-w-5xl mx-auto space-y-12">
+      <div class="text-center space-y-4">
+        <h2 class="text-3xl md:text-4xl font-bold">Ihr Eltern-Dashboard</h2>
+        <p class="text-slate-400">Klarheit auf einen Blick — ohne Informationsflut.</p>
+      </div>
+
+      <!-- Mock Dashboard -->
+      <div class="glass rounded-3xl p-8 md:p-12 space-y-8 glow-blue">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold">Lenas Reise</h3>
+            <p class="text-xs text-slate-400">Letzte Aktivitaet: Heute, 16:45</p>
+          </div>
+          <div class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-semibold">Aktiv</div>
+        </div>
+
+        <!-- VUCA Progress -->
+        <div class="grid grid-cols-4 gap-4">
+          <div class="glass-light rounded-xl p-4 text-center space-y-2">
+            <div class="text-2xl font-extrabold text-blue-400" style="font-family: 'Outfit';">V</div>
+            <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full gradient-blue rounded-full" style="width: 75%;"></div>
+            </div>
+            <span class="text-[10px] text-slate-500">3 / 4</span>
+          </div>
+          <div class="glass-light rounded-xl p-4 text-center space-y-2">
+            <div class="text-2xl font-extrabold text-purple-400" style="font-family: 'Outfit';">U</div>
+            <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full gradient-purple rounded-full" style="width: 50%;"></div>
+            </div>
+            <span class="text-[10px] text-slate-500">2 / 4</span>
+          </div>
+          <div class="glass-light rounded-xl p-4 text-center space-y-2">
+            <div class="text-2xl font-extrabold text-orange-400" style="font-family: 'Outfit';">C</div>
+            <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full gradient-orange rounded-full" style="width: 100%;"></div>
+            </div>
+            <span class="text-[10px] text-slate-500">4 / 4</span>
+          </div>
+          <div class="glass-light rounded-xl p-4 text-center space-y-2">
+            <div class="text-2xl font-extrabold text-emerald-400" style="font-family: 'Outfit';">A</div>
+            <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full rounded-full" style="width: 25%; background: linear-gradient(135deg, #10b981, #06b6d4);"></div>
+            </div>
+            <span class="text-[10px] text-slate-500">1 / 4</span>
+          </div>
+        </div>
+
+        <!-- Interest Clusters -->
+        <div class="space-y-3">
+          <h4 class="text-sm font-semibold text-slate-300">Top Interesse-Cluster</h4>
+          <div class="flex flex-wrap gap-2">
+            <span class="px-3 py-1.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-medium">Nachhaltigkeit</span>
+            <span class="px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-300 text-xs font-medium">Design & Kreativitaet</span>
+            <span class="px-3 py-1.5 rounded-full bg-orange-500/20 text-orange-300 text-xs font-medium">Technologie</span>
+            <span class="px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-medium">Kommunikation</span>
+          </div>
+        </div>
+
+        <p class="text-center text-xs text-slate-500 italic">Vorschau — echtes Dashboard kommt bald</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Trust -->
+  <section class="py-24 px-6">
+    <div class="max-w-5xl mx-auto space-y-12">
+      <h2 class="text-3xl md:text-4xl font-bold text-center">Warum Eltern uns vertrauen</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="glass rounded-2xl p-6 space-y-4">
+          <div class="w-12 h-12 gradient-blue rounded-xl flex items-center justify-center shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3 class="font-bold">Datenschutz</h3>
+          <p class="text-sm text-slate-400">Alle persoenlichen Daten liegen in Firebase mit hoechsten Sicherheitsstandards. Keine Weitergabe an Dritte.</p>
+        </div>
+        <div class="glass rounded-2xl p-6 space-y-4">
+          <div class="w-12 h-12 gradient-orange rounded-xl flex items-center justify-center shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3 class="font-bold">Keine Zeitverschwendung</h3>
+          <p class="text-sm text-slate-400">Jede Minute auf der Plattform fuehrt zu echtem Selbstwissen. Das ist keine Social-Media-App.</p>
+        </div>
+        <div class="glass rounded-2xl p-6 space-y-4">
+          <div class="w-12 h-12 gradient-purple rounded-xl flex items-center justify-center shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <h3 class="font-bold">Kein Druck</h3>
+          <p class="text-sm text-slate-400">Keine Noten, keine Empfehlungen, kein &bdquo;Du solltest X werden&ldquo;. Ihr Kind entscheidet selbst.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA -->
+  <section class="py-24 px-6 relative">
+    <div class="hero-orb w-96 h-96 bg-orange-500/10 left-1/2 -translate-x-1/2 top-0"></div>
+    <div class="max-w-3xl mx-auto text-center relative z-10 space-y-8">
+      <h2 class="text-3xl md:text-5xl font-extrabold">Schenken Sie Ihrem Kind eine Reise.</h2>
+      <p class="text-slate-400 text-lg">Kostenlos. Sicher. Und in 5 Minuten gestartet.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="/" class="inline-block gradient-orange text-white font-bold py-4 px-12 rounded-2xl shadow-lg hover:shadow-orange-600/40 transition-all text-lg">
+          Gemeinsam starten
+        </a>
+        <a href="kids.html" class="inline-block glass text-white font-semibold py-4 px-12 rounded-2xl hover:bg-white/10 transition-all text-lg">
+          Seite fuer Jugendliche
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="glass py-8 px-6 mt-12">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 gradient-blue rounded-lg flex items-center justify-center font-bold text-xs shadow-lg">S</div>
+        <span>&copy; 2026 Future Skiller</span>
+      </div>
+      <div class="flex gap-6">
+        <a href="kids.html" class="hover:text-white transition-colors">Jugendliche</a>
+        <a href="companies.html" class="hover:text-white transition-colors">Unternehmen</a>
+        <a href="coaches.html" class="hover:text-white transition-colors">Coaches</a>
+        <a href="ihk.html" class="hover:text-white transition-colors">IHK</a>
+        <a href="arbeitsagentur.html" class="hover:text-white transition-colors">Arbeitsagentur</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

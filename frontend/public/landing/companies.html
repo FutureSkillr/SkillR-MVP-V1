@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Future Skiller — Fuer Unternehmen</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; overflow-x: hidden; }
+    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
+    .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass-light { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    .glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+    .glow-orange { box-shadow: 0 0 20px rgba(249, 115, 22, 0.3); }
+    .glow-purple { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
+    .gradient-text { background: linear-gradient(90deg, #38bdf8, #818cf8, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .gradient-text-warm { background: linear-gradient(90deg, #f97316, #eab308, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .gradient-text-emerald { background: linear-gradient(90deg, #10b981, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .gradient-blue { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+    .gradient-orange { background: linear-gradient(135deg, #f97316, #eab308); }
+    .gradient-purple { background: linear-gradient(135deg, #a855f7, #ec4899); }
+    .gradient-emerald { background: linear-gradient(135deg, #10b981, #06b6d4); }
+    .animate-gradient { background-size: 200% 200%; animation: gradient-shift 6s ease infinite; }
+    @keyframes gradient-shift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+    @keyframes pulse-glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+    .pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+    .hero-orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-50 glass">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3">
+        <div class="w-10 h-10 gradient-blue rounded-xl flex items-center justify-center font-bold text-lg shadow-lg">S</div>
+        <span class="text-xl font-bold" style="font-family: 'Outfit', sans-serif;">Future Skiller</span>
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm text-slate-400">
+        <a href="kids.html" class="hover:text-white transition-colors">Jugendliche</a>
+        <a href="parents.html" class="hover:text-white transition-colors">Eltern</a>
+        <a href="coaches.html" class="hover:text-white transition-colors">Coaches</a>
+        <a href="ihk.html" class="hover:text-white transition-colors">IHK</a>
+        <a href="arbeitsagentur.html" class="hover:text-white transition-colors">Arbeitsagentur</a>
+      </div>
+      <a href="#contact" class="gradient-emerald text-white font-semibold py-2 px-6 rounded-xl text-sm hover:opacity-90 transition-opacity">
+        Partner werden
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative min-h-screen flex items-center justify-center pt-20">
+    <div class="hero-orb w-96 h-96 bg-emerald-500/15 top-20 -left-48 pulse-glow"></div>
+    <div class="hero-orb w-72 h-72 bg-cyan-500/10 bottom-32 right-10 pulse-glow" style="animation-delay: 2s;"></div>
+
+    <div class="max-w-4xl mx-auto px-6 text-center relative z-10 space-y-8">
+      <div class="inline-block px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono tracking-wider">
+        DER MENTOR — Ihre Rolle im SkillR Universum
+      </div>
+
+      <h1 class="text-5xl md:text-7xl font-extrabold leading-tight">
+        Oeffnen Sie<br/>
+        <span class="gradient-text-emerald animate-gradient">Ihre Werkstatt.</span>
+      </h1>
+
+      <p class="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+        Der Meister, der sein Wissen teilt. Zeigen Sie Jugendlichen, was Ihre Branche wirklich ausmacht —
+        und gewinnen Sie die Talente, die wirklich zu Ihnen passen.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+        <a href="#model" class="gradient-emerald text-white font-bold py-4 px-12 rounded-2xl shadow-lg hover:shadow-emerald-600/30 transition-all text-lg inline-block">
+          Partnermodell entdecken
+        </a>
+        <a href="#how" class="glass text-white font-semibold py-4 px-12 rounded-2xl hover:bg-white/10 transition-all text-lg inline-block">
+          So funktioniert's
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- The Problem -->
+  <section class="py-24 px-6">
+    <div class="max-w-5xl mx-auto space-y-12">
+      <div class="text-center space-y-4">
+        <h2 class="text-3xl md:text-4xl font-bold">Das Recruiting-Problem</h2>
+        <p class="text-slate-400 max-w-2xl mx-auto text-lg">
+          Jugendliche kennen Ihr Unternehmen nicht. Und die, die sich bewerben,
+          wissen oft nicht, worauf sie sich einlassen.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="glass-light rounded-2xl p-6 space-y-3 border-t-2 border-red-500/40">
+          <div class="text-3xl font-extrabold text-red-400" style="font-family: 'Outfit';">47%</div>
+          <p class="text-sm text-slate-400">der Ausbildungsplaetze bleiben unbesetzt — nicht aus Mangel an Jugendlichen, sondern aus Mangel an Sichtbarkeit.</p>
+        </div>
+        <div class="glass-light rounded-2xl p-6 space-y-3 border-t-2 border-orange-500/40">
+          <div class="text-3xl font-extrabold text-orange-400" style="font-family: 'Outfit';">25%</div>
+          <p class="text-sm text-slate-400">der Auszubildenden brechen ab — oft, weil Erwartung und Realitaet nicht zusammenpassen.</p>
+        </div>
+        <div class="glass-light rounded-2xl p-6 space-y-3 border-t-2 border-emerald-500/40">
+          <div class="text-3xl font-extrabold text-emerald-400" style="font-family: 'Outfit';">3x</div>
+          <p class="text-sm text-slate-400">hoehere Passung, wenn Kandidaten ueber echtes Interesse statt zufaellige Bewerbungen kommen.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto space-y-16">
+      <div class="text-center space-y-4">
+        <h2 class="text-3xl md:text-4xl font-bold">Bildungssponsoring statt Werbung</h2>
+        <p class="text-slate-400 max-w-2xl mx-auto">Sichtbarkeit durch Wissen, nicht durch Budget. So erreichen Sie Jugendliche authentisch.</p>
+      </div>
+
+      <!-- Step by step -->
+      <div class="space-y-8">
+        <div class="glass rounded-2xl p-8 flex flex-col md:flex-row gap-8 items-start">
+          <div class="w-12 h-12 gradient-emerald rounded-xl flex items-center justify-center text-lg font-bold shadow-lg shrink-0">1</div>
+          <div class="space-y-3">
+            <h3 class="text-xl font-bold">Beschreiben Sie Ihren Moeglichkeitsraum</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">
+              Nicht &bdquo;Wir suchen Azubis&ldquo;, sondern: Was kann jemand bei Ihnen werden?
+              Welche Wachstumspfade gibt es? Was macht Ihr Unternehmen besonders?
+              Je tiefer Ihr Profil, desto besser die Matches.
+            </p>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-8 flex flex-col md:flex-row gap-8 items-start">
+          <div class="w-12 h-12 gradient-blue rounded-xl flex items-center justify-center text-lg font-bold shadow-lg shrink-0">2</div>
+          <div class="space-y-3">
+            <h3 class="text-xl font-bold">Steuern Sie Expertenwissen bei</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">
+              Wenn ein Jugendlicher auf seiner Reise &bdquo;Holz&ldquo; erkundet und Ihr Forstbetrieb einzigartige
+              Einblicke bieten kann — dann tauchen Sie in der Geschichte auf. Transparent gekennzeichnet als
+              &bdquo;Unterstuetzt von [Ihr Unternehmen]&ldquo;.
+            </p>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-8 flex flex-col md:flex-row gap-8 items-start">
+          <div class="w-12 h-12 gradient-purple rounded-xl flex items-center justify-center text-lg font-bold shadow-lg shrink-0">3</div>
+          <div class="space-y-3">
+            <h3 class="text-xl font-bold">Erhalten Sie qualifizierte Matches</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">
+              Wenn das Interessenprofil eines Jugendlichen zu Ihrem Moeglichkeitsraum passt,
+              wird ein Kontakt vorgeschlagen — aber nur mit ausdruecklicher Zustimmung des Jugendlichen.
+              Kein Spam. Kein Kaltakquise. Nur echtes Interesse.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Partnership Tiers -->
+  <section id="model" class="py-24 px-6">
+    <div class="max-w-5xl mx-auto space-y-12">
+      <div class="text-center space-y-4">
+        <h2 class="text-3xl md:text-4xl font-bold">Partnermodelle</h2>
+        <p class="text-slate-400">Waehlen Sie das Modell, das zu Ihrem Engagement passt.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- Basic -->
+        <div class="glass rounded-2xl p-8 space-y-6">
+          <div class="space-y-2">
+            <span class="text-xs font-mono text-slate-500 tracking-wider">BASIS</span>
+            <h3 class="text-xl font-bold">Sichtbarkeit</h3>
+          </div>
+          <ul class="space-y-3 text-sm text-slate-400">
+            <li class="flex items-start gap-2">
+              <svg class="mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Positionen ueber IHK-Daten gelistet
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Grundlegendes Unternehmensprofil
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span class="text-slate-500">Kein eigenes Sponsoring-Content</span>
+            </li>
+          </ul>
+          <div class="pt-2">
+            <span class="text-2xl font-bold">Kostenlos</span>
+          </div>
+        </div>
+
+        <!-- Premium -->
+        <div class="glass rounded-2xl p-8 space-y-6 glow-blue border-blue-500/20 relative">
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full gradient-blue text-xs font-bold shadow-lg">
+            Empfohlen
+          </div>
+          <div class="space-y-2">
+            <span class="text-xs font-mono text-blue-400 tracking-wider">PREMIUM</span>
+            <h3 class="text-xl font-bold">Moeglichkeitsraum</h3>
+          </div>
+          <ul class="space-y-3 text-sm text-slate-400">
+            <li class="flex items-start gap-2">
+              <svg class="mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Alles aus Basis
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Detailliertes Moeglichkeitsraum-Profil
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Wachstumspfade & Unternehmenskultur
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Matching-Vorschlaege bei Passung
+            </li>
+          </ul>
+          <div class="pt-2">
+            <span class="text-2xl font-bold">Pro Monat</span>
+            <span class="text-xs text-slate-500 block">Preis auf Anfrage</span>
+          </div>
+        </div>
+
+        <!-- Sponsoring -->
+        <div class="glass rounded-2xl p-8 space-y-6">
+          <div class="space-y-2">
+            <span class="text-xs font-mono text-purple-400 tracking-wider">SPONSORING</span>
+            <h3 class="text-xl font-bold">Bildungspartner</h3>
+          </div>
+          <ul class="space-y-3 text-sm text-slate-400">
+            <li class="flex items-start gap-2">
+              <svg class="mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Alles aus Premium
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Eigene Inhalte in relevanten Reisen
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Transparente Kennzeichnung als Sponsor
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Erfolgsbasiertes Matching
+            </li>
+          </ul>
+          <div class="pt-2">
+            <span class="text-2xl font-bold">Individuell</span>
+            <span class="text-xs text-slate-500 block">Basierend auf Branche & Umfang</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Example -->
+  <section class="py-24 px-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="glass rounded-3xl p-8 md:p-12 space-y-6" style="box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);">
+        <span class="text-xs font-mono text-emerald-400 tracking-wider">BEISPIEL</span>
+        <h3 class="text-2xl font-bold">So sieht Bildungssponsoring aus</h3>
+        <div class="glass-light rounded-2xl p-6 space-y-4">
+          <div class="flex items-start gap-4">
+            <div class="w-10 h-10 gradient-blue rounded-lg flex items-center justify-center shrink-0 shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            </div>
+            <div>
+              <p class="text-sm text-slate-300">Ein 15-Jaehriger erkundet das Thema <strong class="text-blue-400">&bdquo;Kochen&ldquo;</strong> auf seiner VUCA-Reise. Die KI fuehrt ihn virtuell nach Brasilien zum Thema Kaffeeanbau...</p>
+            </div>
+          </div>
+          <div class="border-l-2 border-emerald-500/30 pl-6 ml-5 space-y-2">
+            <p class="text-xs text-emerald-400 font-semibold">Unterstuetzt von Nescafe Fachexperten</p>
+            <p class="text-sm text-slate-400">
+              &bdquo;Die Roestung entscheidet ueber den Geschmack. Unser Roestmeister in Santos erklaert,
+              warum verschiedene Bohnensorten bei unterschiedlichen Temperaturen...&ldquo;
+            </p>
+          </div>
+          <p class="text-xs text-slate-500 italic">Der Jugendliche lernt etwas Echtes. Ihr Unternehmen wird als Wissensquelle wahrgenommen — nicht als Werbung.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA -->
+  <section id="contact" class="py-24 px-6 relative">
+    <div class="hero-orb w-96 h-96 bg-emerald-500/10 left-1/2 -translate-x-1/2 top-0"></div>
+    <div class="max-w-3xl mx-auto text-center relative z-10 space-y-8">
+      <h2 class="text-3xl md:text-5xl font-extrabold">Werden Sie Teil des Oekosystems.</h2>
+      <p class="text-slate-400 text-lg">Finden Sie die Talente, die wirklich zu Ihnen passen — durch echtes Interesse, nicht durch Zufall.</p>
+      <a href="mailto:partner@futureskiller.de" class="inline-block gradient-emerald text-white font-bold py-4 px-16 rounded-2xl shadow-lg hover:shadow-emerald-600/40 transition-all text-lg">
+        Gespraech vereinbaren
+      </a>
+      <p class="text-xs text-slate-500">Wir melden uns innerhalb von 48 Stunden.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="glass py-8 px-6 mt-12">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 gradient-blue rounded-lg flex items-center justify-center font-bold text-xs shadow-lg">S</div>
+        <span>&copy; 2026 Future Skiller</span>
+      </div>
+      <div class="flex gap-6">
+        <a href="kids.html" class="hover:text-white transition-colors">Jugendliche</a>
+        <a href="parents.html" class="hover:text-white transition-colors">Eltern</a>
+        <a href="coaches.html" class="hover:text-white transition-colors">Coaches</a>
+        <a href="ihk.html" class="hover:text-white transition-colors">IHK</a>
+        <a href="arbeitsagentur.html" class="hover:text-white transition-colors">Arbeitsagentur</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

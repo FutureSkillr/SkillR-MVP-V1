@@ -1,0 +1,11 @@
+{
+  "name": "future-skiller-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Admin CLI tools for Future Skiller",
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "inquirer": "^12.0.0"
+  }
+}

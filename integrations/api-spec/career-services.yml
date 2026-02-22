@@ -1,0 +1,351 @@
+openapi: 3.0.3
+info:
+  title: career services api
+  version: 1.0.0
+  description: Career Item Management API
+servers:
+  - url: http://127.0.0.1:8080
+    description: Dev
+
+tags:
+  - name: user
+    description: User Management
+  - name: career
+    description: Career API
+
+paths:
+## currently this is done via memory service
+#  /user/access:
+#    post:
+#      tags:
+#        - user
+#      summary: user login/create or access check - access request
+#      operationId: UserAccessRequest
+#      requestBody:
+#        content:
+#          application/json:
+#            schema:
+#              type: object
+#              properties:
+#                uid:
+#                  type: string
+#                given_name:
+#                  type: string
+#                family_name:
+#                  type: string
+#                email:
+#                  type: string
+#                email_valid:
+#                  type: boolean
+#      responses:
+#        200:
+#          description: success response
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/UserAccessResponse"
+#        403:
+#          $ref: "#/components/responses/403"
+
+  /careerManagement/{ctx_id}/candidateDocuments:
+    get:
+      tags:
+        - career
+      summary: return list of items
+      parameters: 
+        - in: path
+          name: ctx_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of Items
+          content:
+            application/json:    
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CareerDocumentItem'
+
+  /careerManagement/{ctx_id}/candidateDocumentById/{doc_id}:
+    get:
+      tags:
+        - career
+      summary: return item
+      parameters: 
+        - in: path
+          name: ctx_id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: doc_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item
+          content:
+            application/json:    
+              schema:
+                $ref: '#/components/schemas/CareerDocument'
+    post:
+      tags:
+        - career
+      summary: extend, modify item
+      parameters: 
+        - in: path
+          name: ctx_id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: doc_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CareerPathReview'
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerDocument'
+
+  /careerManagement/{ctx_id}/candidatePDFById/{doc_id}:
+    get:
+      tags:
+        - career
+      summary: return Career Item
+      parameters: 
+        - in: path
+          name: ctx_id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: doc_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: success
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+security:
+  - ApiKeyAuth: []
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+
+  responses:
+    200:
+      description: operation successful
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APISuccessResponse"
+    400:
+      description: input (or verifier nonce/state/..) validation error, f.e. a missing field or wrong type
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    401:
+      description: unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    403:
+      description: forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    404:
+      description: item not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    500:
+      description: internal error, f.e. database not reachable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    401NoContent:
+      description: unauthorized (NoContent Response)
+    403NoContent:
+      description: forbidden (NoContent Response)
+    404NoContent:
+      description: item not found (NoContent Response)
+
+  schemas:
+    APISuccessResponse:
+      description: default api success response
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          default: "ok"
+
+    APIErrorResponse:
+      description: default api error response
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          default: "error"
+
+#    UserAccessResponse:
+#      description: response for an user access request
+#      type: object
+#      required:
+#        - ctx_id
+#      properties:
+#        ctx_id:
+#          type: string
+
+##
+
+    DateRange:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date
+          example: "2020-01-01"
+        to:
+          type: string
+          format: date
+          example: "2023-12-31"
+
+    CareerEntry:
+      type: object
+      description: a single career entry
+      properties:
+        date:
+          $ref: '#/components/schemas/DateRange'
+        position:
+          type: string
+          example: "Senior Marketing Manager"
+        role:
+          type: string
+          example: "Führungskraft"
+        expertlevel:
+          type: string
+          enum: ["Anfänger", "Fortgeschritten", "Experte"]
+        company:
+          type: string
+          example: "Musterfirma GmbH"
+        location:
+          type: string
+          example: "Berlin"
+        tasks:
+          type: array
+          items:
+            type: string
+          example:
+            - "Entwicklung von Marketing-Strategien"
+            - "Leitung des Social Media Teams"
+
+    CareerPath:
+      type: object
+      description: a list of career entries gathered from a document (candidate)
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CareerEntry'
+
+    CareerPathReview:
+      type: object
+      description: information about the career and additional metadata
+      properties:
+        annotation:
+          description: additional annotation
+          type: string
+        careerPath:
+          $ref: '#/components/schemas/CareerPath'
+
+    CareerDocument:
+      allOf:
+        - $ref: '#/components/schemas/CareerDocumentItem'
+        - $ref: '#/components/schemas/CareerDocumentData'
+
+    CareerDocumentData:
+      type: object
+      properties:
+        originalCareerPath:
+          $ref: '#/components/schemas/CareerPath'
+        reviewedCareerPath:
+          $ref: '#/components/schemas/CareerPathReview'
+    
+    CareerDocumentItem:
+      type: object
+      properties:
+        name:
+          description: name of the document (or candidate)
+          type: string
+        title:
+          description: title of the document
+          type: string
+        documentId:
+          description: id for this document
+          type: string
+        subject:
+          description: subject of the document
+          type: string
+          example: "Lebenslauf"
+        keywords:
+          description: keywords
+          type: array
+          items:
+            type: string
+          example:
+            - "Lebenslauf"
+            - "Bewerbung"
+            - "CV"
+        creationDate:
+          description: creation date
+          type: string
+          format: date
+          example: "2023-12-10"
+        modDate:
+          description: modification date
+          type: string
+          format: date
+          example: "2023-12-11"
+        processingDate:
+          description: processing date
+          type: string
+          format: date
+          example: "2023-12-12"
+        reviewState:
+          description: state of review
+          enum: ["open", "in review", "reviewed"]
+        processingState:
+          description: state of processing
+          enum: ["queued", "processing", "processed"]

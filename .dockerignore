@@ -1,0 +1,38 @@
+# Version control
+.git
+.gitignore
+
+# Claude Code
+.claude
+
+# Documentation (not needed in image)
+docs/
+concepts/
+engineering/
+README.md
+CLAUDE.md
+
+# API specs (not needed in image)
+integrations/
+
+# Admin scripts (not needed in image)
+scripts/
+
+# Frontend build artifacts and local env
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# GitHub
+.github/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

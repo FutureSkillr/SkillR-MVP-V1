@@ -1,0 +1,38 @@
+{
+  "name": "future-skiller",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:server": "tsx watch server/index.ts",
+    "dev:all": "concurrently \"npm run dev:server\" \"npm run dev\"",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@google/genai": "^1.35.0",
+    "firebase": "^12.9.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "recharts": "^3.6.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.7.0",
+    "concurrently": "^9.1.2",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "tsx": "^4.19.2",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

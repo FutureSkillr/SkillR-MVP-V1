@@ -1,0 +1,485 @@
+openapi: 3.0.3
+info:
+  title: honeycomb services api
+  version: 1.0.0
+  description: Honeycomb Item Management API
+servers:
+  - url: http://127.0.0.1:8080
+    description: Dev
+
+tags:
+  - name: user
+    description: User Management
+  - name: honeycomb
+    description: Honeycomb API
+
+paths:
+  ## currently this is done via memory service
+  #  /user/access:
+  #    post:
+  #      tags:
+  #        - user
+  #      summary: user login/create or access check - access request
+  #      operationId: UserAccessRequest
+  #      requestBody:
+  #        content:
+  #          application/json:
+  #            schema:
+  #              type: object
+  #              properties:
+  #                uid:
+  #                  type: string
+  #                given_name:
+  #                  type: string
+  #                family_name:
+  #                  type: string
+  #                email:
+  #                  type: string
+  #                email_valid:
+  #                  type: boolean
+  #      responses:
+  #        200:
+  #          description: success response
+  #          content:
+  #            application/json:
+  #              schema:
+  #                $ref: "#/components/schemas/UserAccessResponse"
+  #        403:
+  #          $ref: "#/components/responses/403"
+
+  /honeycomb/{ctx_id}/list:
+    get:
+      tags:
+        - honeycomb
+      summary: return list of honeycomb items
+      parameters:
+        - in: path
+          name: ctx_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Honeycomb List
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HoneycombList"
+
+  /honeycomb/{ctx_id}/data/{data_id}:
+    get:
+      tags:
+        - honeycomb
+      summary: return course data for the user
+      parameters:
+        - in: path
+          name: ctx_id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: data_id
+          required: true
+          description: id of the course or training
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Honeycomb Course Data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HoneycombData"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+
+  /honeycomb/{ctx_id}/data/{data_id}/{module_id}/{task_id}/submit:
+    post:
+      tags:
+        - honeycomb
+      summary: task submit
+      parameters:
+        - in: path
+          name: ctx_id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: data_id
+          required: true
+          description: id of the course or training
+          schema:
+            type: string
+        - in: path
+          name: module_id
+          required: true
+          description: id of the module
+          schema:
+            type: string
+        - in: path
+          name: task_id
+          required: true
+          description: id of the task
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Honeycomb Course Data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HoneycombData"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+
+
+  /honeycomb/{ctx_id}/course/{course_id}/modified:
+    get:
+      tags:
+        - honeycomb
+      summary: return last modification timestamp for scope (implicit scope is course for now)
+      parameters:
+        - in: path
+          name: ctx_id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: course_id
+          required: true
+          description: id of the course or training
+          schema:
+            type: string
+      responses:
+        "200":
+          description: timestamp of last modification
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  modified:
+                    type: string
+                    format: date-time
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+
+security:
+  - ApiKeyAuth: []
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+
+  responses:
+    200:
+      description: operation successful
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APISuccessResponse"
+    400:
+      description: input (or verifier nonce/state/..) validation error, f.e. a missing field or wrong type
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    401:
+      description: unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    403:
+      description: forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    404:
+      description: item not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    500:
+      description: internal error, f.e. database not reachable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIErrorResponse"
+    401NoContent:
+      description: unauthorized (NoContent Response)
+    403NoContent:
+      description: forbidden (NoContent Response)
+    404NoContent:
+      description: item not found (NoContent Response)
+
+  schemas:
+    APISuccessResponse:
+      description: default api success response
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          default: "ok"
+
+    APIErrorResponse:
+      description: default api error response
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          default: "error"
+
+    #    UserAccessResponse:
+    #      description: response for an user access request
+    #      type: object
+    #      required:
+    #        - ctx_id
+    #      properties:
+    #        ctx_id:
+    #          type: string
+
+    ##
+
+    HoneycombList:
+      type: object
+      description: list of honeycomb items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/HoneycombListEntry"
+
+    HoneycombListEntry:
+      type: object
+      description: a single honeycomb item
+      properties:
+        id:
+          type: string
+          example: "1234"
+        name:
+          type: string
+          example: "Marketing Manager"
+        description:
+          type: string
+          example: "Marketing Manager Training"
+
+    HoneycombData:
+      type: object
+      description: all honeycomb data for a candidate and specific course
+      properties:
+        id:
+          type: string
+          description: Course Identifier
+          example: "marketing101"
+        app:
+          type: string
+          description: App Name to be shown (v10.10)
+          example: "Training"
+        name:
+          type: string
+          description: Course Name (v10.20)
+          example: "Marketing Manager"
+        description_short:
+          type: string
+          description: Course Description SHORT (v10.60)
+          example: "Marketing Manager Training"
+        description_s:
+          type: string
+          description: String for Description (v10.80)
+          example: "Beschreibung"
+        description:
+          type: string
+          description: Course Description LONG (v10.90)
+          example: "Marketing Manager Training"
+        progress_s:
+          type: string
+          description: Progress text as string (v10.30)
+          example: "Gesamtfortschritt"
+        progress:
+          type: string
+          description: Progress as String (v10.50)
+          example: "5/10"
+        progress_p:
+          type: number
+          description: Progress as Number 0..100 (v10.40)
+          example: 50
+        modules:
+          description: Modules (v10.70)
+          type: array
+          items:
+            $ref: "#/components/schemas/HoneycombModule"
+
+    HoneycombModule:
+      type: object
+      description: a single honeycomb module
+      properties:
+        id:
+          type: string
+          description: Module Name (v10.70.1)
+          example: "1234"
+        app:
+          type: string
+          description: Module (v20.10)
+          example: "Praxis Modul"
+        name_short:
+          type: string
+          description: Module Name (v10.70.2)
+          example: "Verkaufsgespräch"
+        name:
+          type: string
+          description: Module Name (v20.20)
+          example: "Verkaufsgespräch 101"
+        duration:
+          type: string
+          description: geschätzte Bearbeitungsdauer (v20.30.1)
+          example: "90 min"
+        severity:
+          type: string
+          description: geschätzter Schwierigkeitsgrad (v20.30.2)
+          example: "leicht"
+        badge:
+          type: boolean
+          description: erfüllt-Badge zeigen (v20.40)
+          example: false
+        progress_p:
+          type: number
+          description: Module Progress as Number 0..100 (v20.50 / v10.70.3)
+          example: 10
+        content_s:
+          type: string
+          description: String für Inhalt (v20.60)
+          example: "Inhalt"
+        content:
+          type: string
+          description: Module Beschreibung (v20.70)
+          example: "In diesem Module: <p><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul></p> usw."
+        requirements_s:
+          type: string
+          description: String für Voraussetzungen (v20.80)
+          example: "Voraussetzungen"
+        requirements:
+          type: string
+          description: Voraussetzungen (v20.110)
+          example: "<ul><li>dies</li><li>das</li></ul>"
+        requirements_modules:
+          type: array
+          description: Module Requirements (v20.120)
+          items:
+            type: string
+            description: Module ID
+            example: "1234"
+        goals_s:
+          type: string
+          description: String für Ziele (v20.90)
+          example: "Ziele"
+        goals:
+          type: string
+          description: Ziele (v20.100)
+          example: "<ul><li>jenes</li><li>dieses</li></ul>"
+        goals_modules:
+          type: array
+          description: Module Goals (v20.121)
+          items:
+            type: string
+            description: Module ID
+            example: "1234"
+        can_start:
+          type: boolean
+          description: Voraussetzungen erfüllt / Startbar (v10.70.4)
+          example: true
+        tasks_open_s:
+          type: string
+          description: open tasks string (v30.10)
+          example: "Offen"
+        tasks_progress_s:
+          type: string
+          description: in progress tasks string (v30.20)
+          example: "In Arbeit"
+        tasks_done_s:
+          type: string
+          description: closed tasks string (v30.30)
+          example: "Erledigt"
+        tasks:
+          type: array
+          description: List of Tasks (v30.40)
+          items:
+            $ref: "#/components/schemas/HoneycombModuleTask"
+
+    HoneycombModuleTask:
+      type: object
+      description: a single honeycomb module task
+      properties:
+        id:
+          type: string
+          description: Task Id (v30.40.1)
+          example: "1234"
+        state:
+          type: string
+          description: Task Status (open, in progress, done)
+          example: "open"
+        name_short:
+          type: string
+          description: Task Title SHORT (v30.40.2)
+          example: "Anrufe"
+        name:
+          type: string
+          description: Task Title LANG (v30.50)
+          example: "Anruftraining"
+        description_short:
+          type: string
+          description: Task Beschreibung SHORT (v30.40.3)
+          example: "Anrufe tätigen für Dummies"
+        description:
+          type: string
+          description: Task Beschreibung LANG (v30.60)
+          example: "Anruftraining für Anfänger usw."
+        sources_s:
+          type: string
+          description: String für Quellen (v30.70)
+          example: "Quellen"
+        sources:
+          type: array
+          description: Quellen (v30.80)
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+                description: url (v30.80.1)
+                example: "https://example.com/"
+              title:
+                type: string
+                description: url title (v30.80.2)
+                example: "Example Homepage"
+        answer_placeholder_s:
+          type: string
+          description: Platzhalter für Textarea (v30.90)
+          example: "Gib hier Deinen Kommentar ein"
+        complete_s:
+          type: string
+          description: String für fertig button (v30.100)
+          example: "Fertig"
+        memory_id:
+          type: string
+          default: "1234567890"
