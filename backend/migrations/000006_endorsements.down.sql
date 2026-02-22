@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS endorsement_invites CASCADE;
+DROP TABLE IF EXISTS endorsements CASCADE;

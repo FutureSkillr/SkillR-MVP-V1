@@ -1,0 +1,641 @@
+{"type":"Metric","data":{"name":"vus","type":"gauge","contains":"default","thresholds":[],"submetrics":null},"metric":"vus"}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:06:51.307895+01:00","value":5,"tags":{}}}
+{"type":"Metric","data":{"name":"vus_max","type":"gauge","contains":"default","thresholds":[],"submetrics":null},"metric":"vus_max"}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:06:51.307895+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:06:52.307905+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:06:52.307905+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:06:53.307055+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:06:53.307055+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:06:54.307784+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:06:54.307784+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:06:55.307794+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:06:55.307794+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:06:56.307826+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:06:56.307826+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:06:57.307922+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:06:57.307922+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:06:58.307867+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:06:58.307867+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:06:59.30709+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:06:59.30709+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:00.307905+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:00.307905+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:01.30788+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:01.30788+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:02.306942+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:02.306942+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:03.307776+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:03.307776+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:04.307779+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:04.307779+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:05.307813+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:05.307813+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:06.307906+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:06.307906+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:07.307855+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:07.307855+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:08.30778+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:08.30778+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:09.30787+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:09.30787+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:10.30782+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:10.30782+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:11.307038+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:11.307038+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:12.307898+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:12.307898+01:00","value":5,"tags":{}}}
+{"type":"Metric","data":{"name":"checks","type":"rate","contains":"default","thresholds":["rate>0.99"],"submetrics":null},"metric":"checks"}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:13.044777+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:13.044777+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"type":"Metric","data":{"name":"data_sent","type":"counter","contains":"data","thresholds":[],"submetrics":null},"metric":"data_sent"}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:07:13.04506+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"type":"Metric","data":{"name":"data_received","type":"counter","contains":"data","thresholds":[],"submetrics":null},"metric":"data_received"}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:07:13.04506+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"type":"Metric","data":{"name":"iteration_duration","type":"trend","contains":"time","thresholds":[],"submetrics":null},"metric":"iteration_duration"}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:07:13.04506+01:00","value":22737.143167,"tags":{"group":"","scenario":"default"}}}
+{"type":"Metric","data":{"name":"iterations","type":"counter","contains":"default","thresholds":[],"submetrics":null},"metric":"iterations"}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:07:13.04506+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:13.307968+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:13.307968+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:14.307148+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:14.307148+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:15.306997+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:15.306997+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:16.307143+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:16.307143+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:16.493712+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:16.493712+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:07:16.493868+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:07:16.493868+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:07:16.493868+01:00","value":26185.950667,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:07:16.493868+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:17.307098+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:17.307098+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:17.907146+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:17.907146+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:07:17.907421+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:07:17.907421+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:07:17.907421+01:00","value":27599.431792,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:07:17.907421+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:18.307887+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:18.307887+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:18.552341+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:18.552341+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:07:18.552479+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:07:18.552479+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:07:18.552479+01:00","value":28244.477875,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:07:18.552479+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:19.307824+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:19.307824+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:19.334396+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:19.334396+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:07:19.334533+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:07:19.334533+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:07:19.334533+01:00","value":29026.6245,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:07:19.334533+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:20.306979+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:20.306979+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:21.307914+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:21.307914+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:22.307795+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:22.307795+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:23.307862+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:23.307862+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:24.307244+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:24.307244+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:25.307781+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:25.307781+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:26.308028+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:26.308028+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:27.307176+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:27.307176+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:28.307861+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:28.307861+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:29.307799+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:29.307799+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:30.30778+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:30.30778+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:31.307785+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:31.307785+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:32.307814+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:32.307814+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:33.307797+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:33.307797+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:34.307908+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:34.307908+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:34.493432+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:34.493432+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:07:34.493507+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:07:34.493507+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:07:34.493507+01:00","value":21448.422375,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:07:34.493507+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:35.307792+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:35.307792+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:36.307865+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:36.307865+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:36.750896+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:36.750896+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:07:36.750974+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:07:36.750974+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:07:36.750974+01:00","value":18198.484667,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:07:36.750974+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:37.307816+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:37.307816+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:38.307997+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:38.307997+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:39.307089+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:39.307089+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:40.30779+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:40.30779+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:41.307823+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:41.307823+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:41.354936+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:41.354936+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:07:41.355+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:07:41.355+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:07:41.355+01:00","value":23447.546042,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:07:41.355+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:42.307086+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:42.307086+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:43.307808+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:43.307808+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:44.307366+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:44.307366+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:44.656551+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:44.656551+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:07:44.6567+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:07:44.6567+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:07:44.6567+01:00","value":28162.818292,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:07:44.6567+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:45.307158+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:45.307158+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:46.30786+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:46.30786+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:47.307791+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:47.307791+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:48.307052+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:48.307052+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:49.307792+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:49.307792+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:50.282077+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:50.282077+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:07:50.282152+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:07:50.282152+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:07:50.282152+01:00","value":30947.599875,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:07:50.282152+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:50.307816+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:50.307816+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:51.307823+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:51.307823+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:52.307778+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:52.307778+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:53.307868+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:53.307868+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:54.307805+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:54.307805+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:55.307857+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:55.307857+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:56.307795+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:56.307795+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:56.356211+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:56.356211+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:07:56.356334+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:07:56.356334+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:07:56.356334+01:00","value":21862.816625,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:07:56.356334+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:56.814327+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:07:56.814327+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:07:56.814519+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:07:56.814519+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:07:56.814519+01:00","value":20063.534584,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:07:56.814519+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:57.307819+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:57.307819+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:58.307788+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:58.307788+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:07:59.307868+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:07:59.307868+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:00.307823+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:00.307823+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:01.307823+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:01.307823+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:02.307223+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:02.307223+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:03.307799+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:03.307799+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:04.307861+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:04.307861+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:05.004081+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:05.004081+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:08:05.004208+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:08:05.004208+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:08:05.004208+01:00","value":23649.199583,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:08:05.004208+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:05.307832+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:05.307832+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:06.30786+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:06.30786+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:07.307824+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:07.307824+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:08.30694+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:08.30694+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:08.80181+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:08.80181+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:08:08.801904+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:08:08.801904+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:08:08.801904+01:00","value":24145.185375,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:08:08.801904+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:09.307766+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:09.307766+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:10.307817+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:10.307817+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:11.307811+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:11.307811+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:12.307801+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:12.307801+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:13.30719+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:13.30719+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:14.307325+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:14.307325+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:15.307068+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:15.307068+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:16.307207+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:16.307207+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:17.307244+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:17.307244+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:18.307264+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:18.307264+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:18.703439+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:18.703439+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:08:18.70352+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:08:18.70352+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:08:18.70352+01:00","value":28421.356792,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:08:18.70352+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:19.3078+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:19.3078+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:20.307839+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:20.307839+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:21.307823+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:21.307823+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:22.30722+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:22.30722+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:23.307799+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:23.307799+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:24.306909+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:24.306909+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:25.307451+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:25.307451+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:26.295611+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:26.295611+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:08:26.295674+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:08:26.295674+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:08:26.295674+01:00","value":29481.125208,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:08:26.295674+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:26.306904+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:26.306904+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:27.307808+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:27.307808+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:28.307778+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:28.307778+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:29.307319+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:29.307319+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:29.624945+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:29.624945+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:08:29.625033+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:08:29.625033+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:08:29.625033+01:00","value":33268.678125,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:08:29.625033+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:30.307802+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:30.307802+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:31.307775+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:31.307775+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:32.307637+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:32.307637+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:33.186881+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:33.186881+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:08:33.186982+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:08:33.186982+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:08:33.186982+01:00","value":28182.747,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:08:33.186982+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:33.307767+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:33.307767+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:34.307224+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:34.307224+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:35.307848+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:35.307848+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:36.307927+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:36.307927+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:37.307308+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:37.307308+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:38.08842+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:38.08842+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:08:38.088531+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:08:38.088531+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:08:38.088531+01:00","value":29286.610958,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:08:38.088531+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:38.307174+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:38.307174+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:39.307783+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:39.307783+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:40.307184+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:40.307184+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:41.307803+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:41.307803+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:42.307243+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:42.307243+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:43.307838+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:43.307838+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:44.307196+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:44.307196+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:45.307802+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:45.307802+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:46.306944+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:46.306944+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:46.373523+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:46.373523+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:08:46.373657+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:08:46.373657+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:08:46.373657+01:00","value":27670.12175,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:08:46.373657+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:47.30779+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:47.30779+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:48.307827+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:48.307827+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:49.307838+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:49.307838+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:50.307995+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:50.307995+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:51.307911+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:51.307911+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:52.307244+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:52.307244+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:53.307781+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:53.307781+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:54.307222+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:54.307222+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:55.307279+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:55.307279+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:55.639851+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:55.639851+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:08:55.639899+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:08:55.639899+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:08:55.639899+01:00","value":29344.215041,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:08:55.639899+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:56.307226+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:56.307226+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:56.525421+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:08:56.525421+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:08:56.525511+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:08:56.525511+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:08:56.525511+01:00","value":26900.456083,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:08:56.525511+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:57.3072+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:57.3072+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:58.307831+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:58.307831+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:08:59.307172+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:08:59.307172+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:00.307182+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:00.307182+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:01.30727+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:01.30727+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:02.307807+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:02.307807+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:03.307887+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:03.307887+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:03.65797+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:03.65797+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:09:03.658047+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:09:03.658047+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:09:03.658047+01:00","value":25569.499584,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:09:03.658047+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:04.307772+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:04.307772+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:05.307256+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:05.307256+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:06.307792+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:06.307792+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:07.307211+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:07.307211+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:07.584881+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:07.584881+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:09:07.585037+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:09:07.585037+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:09:07.585037+01:00","value":34398.036542,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:09:07.585037+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:08.30718+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:08.30718+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:09.307236+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:09.307236+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:10.307157+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:10.307157+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:10.867243+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:10.867243+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:09:10.867342+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:09:10.867342+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:09:10.867342+01:00","value":24493.657084,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:09:10.867342+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:11.307806+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:11.307806+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:12.307554+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:12.307554+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:13.307794+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:13.307794+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:14.30787+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:14.30787+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:15.307803+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:15.307803+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:16.307824+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:16.307824+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:17.307852+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:17.307852+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:17.663563+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:17.663563+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:09:17.663648+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:09:17.663648+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:09:17.663648+01:00","value":22023.740666,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:09:17.663648+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:18.307798+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:18.307798+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:19.307781+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:19.307781+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:20.307811+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:20.307811+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:21.307809+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:21.307809+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:22.307811+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:22.307811+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:23.306921+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:23.306921+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:24.307829+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:24.307829+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:25.307788+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:25.307788+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:26.307824+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:26.307824+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:27.307788+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:27.307788+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:28.307773+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:28.307773+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:28.992973+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:28.992973+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:09:28.993072+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:09:28.993072+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:09:28.993072+01:00","value":32467.538208,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:09:28.993072+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:29.30782+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:29.30782+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:30.307798+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:30.307798+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:31.30754+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:31.30754+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:32.307794+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:32.307794+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:33.307826+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:33.307826+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:34.307824+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:34.307824+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:34.546266+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:34.546266+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:09:34.54634+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:09:34.54634+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:09:34.54634+01:00","value":30888.281,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:09:34.54634+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:35.307023+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:35.307023+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:36.307799+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:36.307799+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:37.307805+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:37.307805+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:38.307787+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:38.307787+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:39.307898+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:39.307898+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:40.007855+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:40.007855+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:09:40.007973+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:09:40.007973+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:09:40.007973+01:00","value":29140.610375,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:09:40.007973+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:40.307813+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:40.307813+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:41.307857+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:41.307857+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:42.307909+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:42.307909+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:43.307848+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:43.307848+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:43.600432+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:43.600432+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:09:43.600515+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:09:43.600515+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:09:43.600515+01:00","value":36015.450041,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:09:43.600515+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:44.30778+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:44.30778+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:45.307787+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:45.307787+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:46.307807+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:46.307807+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:47.307804+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:47.307804+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:48.30782+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:48.30782+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:49.307836+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:49.307836+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:49.913294+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:49.913294+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:09:49.913419+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:09:49.913419+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:09:49.913419+01:00","value":32249.759042,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:09:49.913419+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:50.307833+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:50.307833+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:51.307271+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:51.307271+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:52.307872+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:52.307872+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:53.307864+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:53.307864+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:54.307812+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:54.307812+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:55.307847+01:00","value":5,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:55.307847+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:55.359279+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:55.359279+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:09:55.359379+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:09:55.359379+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:09:55.359379+01:00","value":26366.289792,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:09:55.359379+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:56.308042+01:00","value":4,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:56.308042+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:57.307837+01:00","value":4,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:57.307837+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:58.307328+01:00","value":4,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:58.307328+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:58.793204+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:09:58.793204+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:09:58.793305+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:09:58.793305+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:09:58.793305+01:00","value":24246.952875,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:09:58.793305+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:09:59.307859+01:00","value":3,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:09:59.307859+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:00.30779+01:00","value":3,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:00.30779+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:01.307783+01:00","value":3,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:01.307783+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:02.306987+01:00","value":3,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:02.306987+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:03.307858+01:00","value":3,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:03.307858+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:04.307791+01:00","value":3,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:04.307791+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:05.307799+01:00","value":3,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:05.307799+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:06.307791+01:00","value":3,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:06.307791+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:07.307869+01:00","value":3,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:07.307869+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:10:07.537051+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:10:07.537051+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:10:07.537277+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:10:07.537277+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:10:07.537277+01:00","value":27529.280042,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:10:07.537277+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:08.307844+01:00","value":2,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:08.307844+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:09.307804+01:00","value":2,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:09.307804+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:10.307936+01:00","value":2,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:10.307936+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:10:11.022934+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:10:11.022934+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:10:11.023055+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:10:11.023055+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:10:11.023055+01:00","value":27422.526958,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:10:11.023055+01:00","value":1,"tags":{"group":"","scenario":"default"}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:11.307404+01:00","value":1,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:11.307404+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:12.30809+01:00","value":1,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:12.30809+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:13.307078+01:00","value":1,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:13.307078+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:14.307543+01:00","value":1,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:14.307543+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:15.306999+01:00","value":1,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:15.306999+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:16.307345+01:00","value":1,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:16.307345+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:17.307817+01:00","value":1,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:17.307817+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:18.307329+01:00","value":1,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:18.307329+01:00","value":5,"tags":{}}}
+{"metric":"vus","type":"Point","data":{"time":"2026-02-21T20:10:19.307799+01:00","value":1,"tags":{}}}
+{"metric":"vus_max","type":"Point","data":{"time":"2026-02-21T20:10:19.307799+01:00","value":5,"tags":{}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:10:19.676801+01:00","value":1,"tags":{"check":"no credential leak in responses","group":"","scenario":"default"}}}
+{"metric":"checks","type":"Point","data":{"time":"2026-02-21T20:10:19.676801+01:00","value":1,"tags":{"check":"no stack trace in responses","group":"","scenario":"default"}}}
+{"metric":"data_sent","type":"Point","data":{"time":"2026-02-21T20:10:19.676889+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"data_received","type":"Point","data":{"time":"2026-02-21T20:10:19.676889+01:00","value":0,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iteration_duration","type":"Point","data":{"time":"2026-02-21T20:10:19.676889+01:00","value":29763.441458,"tags":{"group":"","scenario":"default"}}}
+{"metric":"iterations","type":"Point","data":{"time":"2026-02-21T20:10:19.676889+01:00","value":1,"tags":{"group":"","scenario":"default"}}}

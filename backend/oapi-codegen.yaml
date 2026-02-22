@@ -1,0 +1,10 @@
+# oapi-codegen configuration
+# Usage: oapi-codegen -config oapi-codegen.yaml ../integrations/api-spec/portfolio-api.yml
+package: generated
+output: internal/generated/api.go
+generate:
+  echo-server: true
+  models: true
+  embedded-spec: false
+output-options:
+  skip-prune: false

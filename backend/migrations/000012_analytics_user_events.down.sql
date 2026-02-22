@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS engagement_state CASCADE;
+DROP TABLE IF EXISTS user_events CASCADE;

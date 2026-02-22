@@ -1,0 +1,81 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        GIT_SHA: ${GIT_SHA:-local}
+    # Skip entrypoint.sh (which starts embedded CSS) — use standalone solid service instead
+    entrypoint: ["/app/server"]
+    ports:
+      - "127.0.0.1:9090:8080"
+    env_file: .env.local
+    environment:
+      - PORT=8080
+      - DATABASE_URL=postgres://futureskiller:localdev@postgres:5432/futureskiller?sslmode=disable
+      - REDIS_URL=redis://redis:6379/0
+      - RUN_MIGRATIONS=true
+      - STATIC_DIR=/app/static
+      - MIGRATIONS_PATH=/app/migrations
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/vertexai-sa.json
+      - GCP_PROJECT_ID=gen-lang-client-0456368718
+      - GCP_REGION=europe-west3
+      - ADMIN_SEED_EMAIL=admin@futureskiller.local
+      - ADMIN_SEED_PASSWORD=Admin1local
+      - SOLID_POD_URL=http://solid:3000
+      - SOLID_POD_ENABLED=true
+      - SOLID_POD_ADMIN_EMAIL=admin@futureskiller.local
+      - SOLID_POD_ADMIN_PASSWORD=skillr
+    volumes:
+      - ./credentials:/app/credentials:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      solid:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "127.0.0.1:15432:5432"
+    environment:
+      POSTGRES_USER: futureskiller
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: futureskiller
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U futureskiller"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  solid:
+    image: solidproject/community-server:7
+    command: ["-c", "/config/css-local.json", "-p", "3000", "-b", "http://localhost:3000", "-f", "/data"]
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - solid-data:/data
+      - ./solid/config:/config:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  pgdata:
+  solid-data:

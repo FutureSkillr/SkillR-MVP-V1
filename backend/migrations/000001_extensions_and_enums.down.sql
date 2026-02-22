@@ -1,0 +1,13 @@
+DROP FUNCTION IF EXISTS trigger_set_updated_at() CASCADE;
+DROP TYPE IF EXISTS vuca_dimension CASCADE;
+DROP TYPE IF EXISTS journey_type CASCADE;
+DROP TYPE IF EXISTS endorsement_invite_status CASCADE;
+DROP TYPE IF EXISTS endorser_role CASCADE;
+DROP TYPE IF EXISTS agent_execution_status CASCADE;
+DROP TYPE IF EXISTS artifact_type CASCADE;
+DROP TYPE IF EXISTS evidence_type CASCADE;
+DROP TYPE IF EXISTS interaction_modality CASCADE;
+DROP TYPE IF EXISTS session_type CASCADE;
+DROP TYPE IF EXISTS auth_provider CASCADE;
+DROP TYPE IF EXISTS user_role CASCADE;
+DROP EXTENSION IF EXISTS "uuid-ossp" CASCADE;

@@ -1,0 +1,180 @@
+site_name: Future SkillR — Handbuch
+site_url: ""
+site_description: Dokumentation fuer Future SkillR — Die Reise nach VUCA
+site_author: Future SkillR Team
+repo_url: https://github.com/FutureSkillr/MVP72
+repo_name: FutureSkillr/MVP72
+edit_uri: edit/main/manual/docs/
+
+theme:
+  name: material
+  language: de
+  custom_dir: overrides
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    scheme: slate
+    primary: custom
+    accent: custom
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/rocket-launch
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - https://unpkg.com/tablesort@5.3.0/dist/tablesort.min.js
+  - javascripts/tablesort.js
+
+plugins:
+  - search:
+      lang: de
+  - git-revision-date-localized:
+      type: date
+      locale: de
+      enable_creation_date: true
+      fallback_to_build_date: true
+      enable_git_follow: false
+      strict: false
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.snippets:
+      auto_append:
+        - docs/includes/abbreviations.md
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/FutureSkillr/MVP72
+  generator: false
+
+nav:
+  - Uebersicht:
+      - index.md
+      - Was ist Future SkillR?: uebersicht/was-ist-future-skiller.md
+      - Die Reise nach VUCA: uebersicht/die-reise-nach-vuca.md
+      - FAQ: uebersicht/faq.md
+  - Jugendliche:
+      - jugendliche/index.md
+      - So funktioniert es: jugendliche/so-funktioniert-es.md
+      - Dein Skill-Profil: jugendliche/dein-skill-profil.md
+      - VUCA Bingo: jugendliche/vuca-bingo.md
+      - Dein KI-Coach: jugendliche/ki-coach.md
+      - Datenschutz: jugendliche/datenschutz.md
+  - Eltern:
+      - eltern/index.md
+      - Warum Future SkillR?: eltern/warum-future-skiller.md
+      - Sicherheit & Datenschutz: eltern/sicherheit-und-datenschutz.md
+      - Was sieht mein Kind?: eltern/was-sieht-mein-kind.md
+      - Haeufige Fragen: eltern/haeufige-fragen.md
+  - Unternehmen:
+      - unternehmen/index.md
+      - Bildungssponsoring: unternehmen/bildungssponsoring.md
+      - Sichtbarkeit statt Werbung: unternehmen/sichtbarkeit-statt-werbung.md
+      - Showrooms: unternehmen/showrooms.md
+      - Partner werden: unternehmen/partner-werden.md
+  - Coaches:
+      - coaches/index.md
+      - Die Methodik: coaches/die-methodik.md
+      - VUCA Framework: coaches/vuca-framework.md
+      - Gegensatzsuche: coaches/gegensatzsuche.md
+      - Level-2-Reflexion: coaches/level2-reflexion.md
+      - Lernreisen: coaches/lernreisen.md
+  - Kammern:
+      - kammern/index.md
+      - Ausbildungslandschaft: kammern/ausbildungslandschaft.md
+      - Bedarfserfassung: kammern/bedarfserfassung.md
+      - Matching-Perspektive: kammern/matching-perspektive.md
+      - Pilot-Programm: kammern/pilot-programm.md
+  - Architektur:
+      - architektur/index.md
+      - Tech-Stack: architektur/tech-stack.md
+      - Systemuebersicht: architektur/system-uebersicht.md
+      - Datenmodell: architektur/datenmodell.md
+      - API-Gateway: architektur/api-gateway.md
+      - Chat & Dialog: architektur/chat-dialog.md
+      - Feature Toggles: architektur/feature-toggles.md
+      - Sicherheit: architektur/sicherheit.md
+      - Entscheidungen:
+          - architektur/entscheidungen/index.md
+  - API:
+      - api/index.md
+      - Server-API: api/server-api.md
+      - Gemini-Proxy: api/gemini-proxy.md
+      - Lernreise-API: api/lernreise-api.md
+  - Betrieb:
+      - betrieb/index.md
+      - Quickstart: betrieb/quickstart.md
+      - Deployment: betrieb/deployment.md
+      - Lokales Staging: betrieb/local-staging.md
+      - Monitoring: betrieb/monitoring.md
+      - Kosten: betrieb/kosten.md
+  - Entwicklung:
+      - entwicklung/index.md
+      - Projekt-Setup: entwicklung/projekt-setup.md
+      - Konventionen: entwicklung/konventionen.md
+      - Tests: entwicklung/tests.md
+      - Design-System: entwicklung/design-system.md
+      - Feature Requests: entwicklung/feature-requests.md
+  - Roadmap:
+      - roadmap/index.md
+      - MVP-Uebersicht: roadmap/mvp-uebersicht.md
+      - "MVP1: Es funktioniert": roadmap/mvp1.md
+      - "MVP2: Das bin ich": roadmap/mvp2.md
+      - "MVP3: Sicher unterwegs": roadmap/mvp3.md
+      - "MVP4: Meine Daten": roadmap/mvp4.md
+      - "MVP5: Sponsor Showrooms": roadmap/mvp5.md
+      - "V1.0: Zeig es der Welt": roadmap/v1.md
+      - "V2.0: Oekosystem": roadmap/v2.md
+      - "V3.0: maindfull.LEARNING Plattform": roadmap/v3.md
