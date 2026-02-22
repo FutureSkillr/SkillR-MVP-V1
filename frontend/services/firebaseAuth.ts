@@ -16,7 +16,7 @@ import {
 import { getFirebaseErrorMessage } from './firebaseErrors';
 import type { AuthUser, AuthProvider, UserRole } from '../types/auth';
 
-const SESSION_KEY = 'future-skiller-session';
+const SESSION_KEY = 'skillr-session';
 
 async function firebaseUserToAuthUser(
   fbUser: FirebaseUser,

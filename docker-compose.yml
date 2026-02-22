@@ -11,7 +11,7 @@ services:
     env_file: .env.local
     environment:
       - PORT=8080
-      - DATABASE_URL=postgres://futureskiller:localdev@postgres:5432/futureskiller?sslmode=disable
+      - DATABASE_URL=postgres://skillr:localdev@postgres:5432/skillr?sslmode=disable
       - REDIS_URL=redis://redis:6379/0
       - RUN_MIGRATIONS=true
       - STATIC_DIR=/app/static
@@ -19,11 +19,11 @@ services:
       - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/vertexai-sa.json
       - GCP_PROJECT_ID=gen-lang-client-0456368718
       - GCP_REGION=europe-west3
-      - ADMIN_SEED_EMAIL=admin@futureskiller.local
+      - ADMIN_SEED_EMAIL=admin@skillr.local
       - ADMIN_SEED_PASSWORD=Admin1local
       - SOLID_POD_URL=http://solid:3000
       - SOLID_POD_ENABLED=true
-      - SOLID_POD_ADMIN_EMAIL=admin@futureskiller.local
+      - SOLID_POD_ADMIN_EMAIL=admin@skillr.local
       - SOLID_POD_ADMIN_PASSWORD=skillr
     volumes:
       - ./credentials:/app/credentials:ro
@@ -40,13 +40,13 @@ services:
     ports:
       - "127.0.0.1:15432:5432"
     environment:
-      POSTGRES_USER: futureskiller
+      POSTGRES_USER: skillr
       POSTGRES_PASSWORD: localdev
-      POSTGRES_DB: futureskiller
+      POSTGRES_DB: skillr
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U futureskiller"]
+      test: ["CMD-SHELL", "pg_isready -U skillr"]
       interval: 5s
       timeout: 3s
       retries: 5

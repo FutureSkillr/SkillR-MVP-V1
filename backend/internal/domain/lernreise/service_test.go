@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/FutureSkillr/MVP72/backend/internal/honeycomb"
+	"skillr-mvp-v1/backend/internal/honeycomb"
 )
 
 // ── Mock implementations ────────────────────────────────────────────────────

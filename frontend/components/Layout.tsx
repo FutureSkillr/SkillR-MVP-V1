@@ -68,7 +68,7 @@ export const Layout: React.FC<LayoutProps> = ({
               </button>
             )}
             <h1 className="text-lg font-bold">
-              <span className="gradient-text">Future Skiller</span>
+              <span className="gradient-text">SkillR</span>
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -148,7 +148,7 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Footer */}
       <footer className="glass-light px-4 py-3 text-center">
         <p className="text-xs text-slate-500">
-          Future Skiller &mdash; Bist Du ein SkillR?
+          SkillR &mdash; Bist Du ein SkillR?
         </p>
       </footer>
 

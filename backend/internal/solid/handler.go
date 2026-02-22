@@ -6,7 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/FutureSkillr/MVP72/backend/internal/middleware"
+	"skillr-mvp-v1/backend/internal/middleware"
 )
 
 // Handler exposes Pod operations as HTTP endpoints.

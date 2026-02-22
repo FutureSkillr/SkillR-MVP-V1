@@ -9,7 +9,7 @@ import (
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
 
-	"github.com/FutureSkillr/MVP72/backend/internal/model"
+	"skillr-mvp-v1/backend/internal/model"
 )
 
 type AgentStore struct {

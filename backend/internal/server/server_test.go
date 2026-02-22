@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/FutureSkillr/MVP72/backend/internal/config"
+	"skillr-mvp-v1/backend/internal/config"
 )
 
 func TestSecurityHeaders(t *testing.T) {

@@ -68,7 +68,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         {/* Logo */}
         <div className="text-center space-y-3">
           <h1 className="text-3xl font-extrabold">
-            <span className="gradient-text">Future Skiller</span>
+            <span className="gradient-text">SkillR</span>
           </h1>
           <p className="text-slate-400 text-sm">
             {mode === 'login'

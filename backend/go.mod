@@ -1,4 +1,4 @@
-module github.com/FutureSkillr/MVP72/backend
+module skillr-mvp-v1/backend
 
 go 1.24
 

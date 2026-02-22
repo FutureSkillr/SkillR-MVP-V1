@@ -1,12 +1,12 @@
-# Future Skiller — Project Makefile
+# SkillR — Project Makefile
 # Usage: make <target> [GEMINI_API_KEY=...]
 
 .DEFAULT_GOAL := help
 
-PROJECT_ID   := future-skillr
+PROJECT_ID   := skillr
 REGION       := europe-west3
-SERVICE      := future-skillr
-IMAGE_NAME   := future-skillr
+SERVICE      := skillr
+IMAGE_NAME   := skillr
 TAG          := latest
 
 # ─── Prerequisites ────────────────────────────────────────────────────
@@ -100,7 +100,7 @@ api-gen:
 
 .PHONY: help
 help:
-	@echo "Future Skiller Makefile"
+	@echo "SkillR Makefile"
 	@echo ""
 	@echo "  make install          Install frontend dependencies"
 	@echo "  make run-local        Install deps + start dev server"

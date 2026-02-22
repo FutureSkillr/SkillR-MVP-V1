@@ -1,9 +1,9 @@
-site_name: Future SkillR — Handbuch
+site_name: SkillR — Handbuch
 site_url: ""
-site_description: Dokumentation fuer Future SkillR — Die Reise nach VUCA
-site_author: Future SkillR Team
-repo_url: https://github.com/FutureSkillr/MVP72
-repo_name: FutureSkillr/MVP72
+site_description: Dokumentation fuer SkillR — Die Reise nach VUCA
+site_author: SkillR Team
+repo_url: ""
+repo_name: SkillR-MVP-V1
 edit_uri: edit/main/manual/docs/
 
 theme:

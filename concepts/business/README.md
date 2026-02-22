@@ -10,3 +10,5 @@ Business model and strategy concepts for the SkillR app. Platform-only concepts 
 | [BC-006](BC-006-eltern-als-enabler.md) | Eltern als Enabler und Gatekeeper | CORE | draft |
 | [BC-007](BC-007-bildungssponsoring.md) | Bildungssponsoring (Sponsored Content) | SELECT | draft |
 | [BC-010](BC-010-kostenmodell.md) | Kostenmodell (Development & Operating Costs) | CORE | draft |
+| [BC-011](BC-011-sponsor-showrooms.md) | Sponsor Showrooms | SELECT | draft |
+| [BC-012](BC-012-partner-branding.md) | Partner Branding | SELECT | draft |

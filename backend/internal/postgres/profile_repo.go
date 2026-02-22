@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/FutureSkillr/MVP72/backend/internal/domain/profile"
+	"skillr-mvp-v1/backend/internal/domain/profile"
 )
 
 type ProfileRepository struct {

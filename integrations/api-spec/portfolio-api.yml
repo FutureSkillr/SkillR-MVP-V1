@@ -1,0 +1,3735 @@
+openapi: 3.0.3
+info:
+  title: skill-proof-profile-portfolio-api
+  description: |
+    Go backend API for the Future SkillR platform.
+    Manages skill profiles, portfolio evidence, endorsements, artifacts,
+    travel journal (Erinnerungsraum), engagement tracking, reflections,
+    AI execution via VertexAI, prompt management, and agent orchestration.
+
+    Authentication: All endpoints require a Firebase JWT token in the
+    Authorization header (Bearer scheme), except public verification endpoints
+    which use query parameter tokens. Admin endpoints require role=admin
+    in Firebase custom claims.
+
+    AI Architecture: All AI calls go through VertexAI with service account
+    auth (TC-018). Prompts are loaded from Firebase Firestore at runtime.
+  version: 1.0.0
+  contact:
+    name: Future SkillR Team
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://future-skillr-api-{hash}.run.app
+    description: Cloud Run (production)
+    variables:
+      hash:
+        default: "xxxxx"
+
+tags:
+  - name: profile
+    description: Skill profile management and computation
+  - name: evidence
+    description: Portfolio evidence entries
+  - name: endorsements
+    description: Third-party endorsements and verification
+  - name: artifacts
+    description: External artifact uploads and management
+  - name: journal
+    description: Erinnerungsraum — travel journal and interactions
+  - name: engagement
+    description: XP, streaks, levels, and leaderboards
+  - name: reflections
+    description: Level 2 reflection results and capability scoring
+  - name: sessions
+    description: Journey session management
+  - name: ai
+    description: AI execution via VertexAI — chat, extraction, generation, TTS/STT
+  - name: prompts
+    description: Prompt template management (admin only)
+  - name: agents
+    description: Agent configuration and orchestration (admin only)
+  - name: pods
+    description: SOLID Pod management — provisioning, linking, data proxy, import/export (TC-019)
+  - name: consent
+    description: Agent consent management — grant/revoke per-agent access, training opt-in, audit trail (TC-020)
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ──────────────────────────────────────────────
+  # Profile
+  # ──────────────────────────────────────────────
+  /api/v1/portfolio/profile:
+    get:
+      tags: [profile]
+      operationId: getProfile
+      summary: Get current user's computed skill profile
+      description: |
+        Returns the latest computed skill profile for the authenticated user.
+        Includes skill categories, top interests, top strengths, completeness score,
+        and evidence summary.
+      responses:
+        "200":
+          description: Skill profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SkillProfile"
+        "404":
+          description: No profile computed yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/profile/compute:
+    post:
+      tags: [profile]
+      operationId: computeProfile
+      summary: Trigger profile recomputation from all evidence
+      description: |
+        Triggers the Profile Computation Agent to recompute the user's skill profile
+        from all available evidence: interactions, reflections, endorsements, artifacts.
+        Returns the newly computed profile.
+      responses:
+        "200":
+          description: Profile recomputed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SkillProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/profile/history:
+    get:
+      tags: [profile]
+      operationId: getProfileHistory
+      summary: Profile snapshots over time
+      description: Returns historical profile snapshots for growth visualization.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Profile history retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  snapshots:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SkillProfile"
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/profile/public/{userId}:
+    get:
+      tags: [profile]
+      operationId: getPublicProfile
+      summary: Public profile view (with consent)
+      description: |
+        Returns a public-facing profile for a user who has granted public visibility.
+        Does not require authentication but respects the user's visibility settings.
+      security: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Public profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicProfile"
+        "403":
+          description: Profile is not publicly visible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/portfolio/profile/export:
+    get:
+      tags: [profile]
+      operationId: exportProfile
+      summary: Export profile as PDF or JSON
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [pdf, json]
+      responses:
+        "200":
+          description: Profile exported
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SkillProfile"
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ──────────────────────────────────────────────
+  # Evidence
+  # ──────────────────────────────────────────────
+  /api/v1/portfolio/evidence:
+    get:
+      tags: [evidence]
+      operationId: listEvidence
+      summary: List all portfolio entries for current user
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: evidence_type
+          in: query
+          schema:
+            type: string
+            enum: [auto, manual, endorsed]
+      responses:
+        "200":
+          description: Evidence entries retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PortfolioEntry"
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [evidence]
+      operationId: createEvidence
+      summary: Create evidence entry (auto or manual)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEvidenceRequest"
+      responses:
+        "201":
+          description: Evidence entry created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioEntry"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/evidence/{id}:
+    get:
+      tags: [evidence]
+      operationId: getEvidence
+      summary: Get single evidence entry with interaction chain
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Evidence entry retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioEntryDetailed"
+        "404":
+          description: Evidence not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/evidence/by-dimension/{dim}:
+    get:
+      tags: [evidence]
+      operationId: getEvidenceByDimension
+      summary: Evidence filtered by skill dimension
+      parameters:
+        - name: dim
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - change
+              - uncertainty
+              - complexity
+              - ambiguity
+              - creativity
+              - initiative
+              - resilience
+              - persistence
+              - teamwork
+              - communication
+              - analytical-thinking
+              - problem-solving
+      responses:
+        "200":
+          description: Filtered evidence entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PortfolioEntry"
+                  dimension:
+                    type: string
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/evidence/verify/{id}:
+    get:
+      tags: [evidence]
+      operationId: verifyEvidence
+      summary: Public verification endpoint
+      description: |
+        Public-facing endpoint that verifies an evidence entry's authenticity.
+        Requires a verification token (sent via link/QR code).
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Evidence verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationResult"
+        "401":
+          description: Invalid verification token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Evidence not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ──────────────────────────────────────────────
+  # Endorsements
+  # ──────────────────────────────────────────────
+  /api/v1/portfolio/endorsements:
+    get:
+      tags: [endorsements]
+      operationId: listEndorsements
+      summary: List endorsements received
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Endorsements retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  endorsements:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Endorsement"
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [endorsements]
+      operationId: submitEndorsement
+      summary: Submit endorsement (endorser-facing)
+      description: |
+        Used by endorsers to submit their endorsement. Requires a valid
+        invitation token. Does not require Firebase authentication —
+        the invitation token authenticates the endorser.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitEndorsementRequest"
+      responses:
+        "201":
+          description: Endorsement submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Endorsement"
+        "400":
+          description: Invalid request or expired invitation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/portfolio/endorsements/invite:
+    post:
+      tags: [endorsements]
+      operationId: inviteEndorser
+      summary: Send endorsement invitation (link/QR)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EndorsementInviteRequest"
+      responses:
+        "201":
+          description: Invitation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EndorsementInvite"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/endorsements/pending:
+    get:
+      tags: [endorsements]
+      operationId: getPendingEndorsements
+      summary: Pending endorsement requests
+      responses:
+        "200":
+          description: Pending endorsement invitations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invitations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EndorsementInvite"
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/endorsements/{id}/visibility:
+    put:
+      tags: [endorsements]
+      operationId: toggleEndorsementVisibility
+      summary: Toggle endorsement visibility on profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [visible]
+              properties:
+                visible:
+                  type: boolean
+      responses:
+        "200":
+          description: Visibility updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Endorsement"
+        "404":
+          description: Endorsement not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ──────────────────────────────────────────────
+  # Artifacts
+  # ──────────────────────────────────────────────
+  /api/v1/portfolio/artifacts:
+    get:
+      tags: [artifacts]
+      operationId: listArtifacts
+      summary: List user's artifacts
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: artifact_type
+          in: query
+          schema:
+            type: string
+            enum: [photo, document, video, link]
+      responses:
+        "200":
+          description: Artifacts retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artifacts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ExternalArtifact"
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [artifacts]
+      operationId: uploadArtifact
+      summary: Upload external artifact (multipart)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [artifact_type, description]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The artifact file (required for photo/document/video types)
+                url:
+                  type: string
+                  format: uri
+                  description: External URL (required for link type)
+                artifact_type:
+                  type: string
+                  enum: [photo, document, video, link]
+                description:
+                  type: string
+                  maxLength: 1000
+                skill_dimensions:
+                  type: string
+                  description: JSON-encoded skill dimension scores
+      responses:
+        "201":
+          description: Artifact uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalArtifact"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/artifacts/{id}:
+    get:
+      tags: [artifacts]
+      operationId: getArtifact
+      summary: Get artifact with endorsements
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Artifact retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalArtifactDetailed"
+        "404":
+          description: Artifact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags: [artifacts]
+      operationId: deleteArtifact
+      summary: Remove artifact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Artifact deleted
+        "404":
+          description: Artifact not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/artifacts/{id}/link-endorsement:
+    post:
+      tags: [artifacts]
+      operationId: linkEndorsementToArtifact
+      summary: Link endorsement to artifact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endorsement_id]
+              properties:
+                endorsement_id:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Endorsement linked to artifact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalArtifactDetailed"
+        "404":
+          description: Artifact or endorsement not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ──────────────────────────────────────────────
+  # Journal (Erinnerungsraum)
+  # ──────────────────────────────────────────────
+  /api/v1/portfolio/journal:
+    get:
+      tags: [journal]
+      operationId: getJournal
+      summary: Chronological journey narrative
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: from
+          in: query
+          description: Start date filter (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          description: End date filter (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Journal entries retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  interactions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Interaction"
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/journal/station/{stationId}:
+    get:
+      tags: [journal]
+      operationId: getJournalByStation
+      summary: Interactions for a specific station
+      parameters:
+        - name: stationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Station interactions retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  interactions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Interaction"
+                  station_id:
+                    type: string
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/journal/dimension/{dim}:
+    get:
+      tags: [journal]
+      operationId: getJournalByDimension
+      summary: Journey filtered by VUCA dimension
+      parameters:
+        - name: dim
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [volatility, uncertainty, complexity, ambiguity]
+      responses:
+        "200":
+          description: Dimension-filtered interactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  interactions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Interaction"
+                  dimension:
+                    type: string
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/journal/interactions:
+    post:
+      tags: [journal]
+      operationId: recordInteraction
+      summary: Record interaction (from frontend)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInteractionRequest"
+      responses:
+        "201":
+          description: Interaction recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Interaction"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ──────────────────────────────────────────────
+  # Engagement
+  # ──────────────────────────────────────────────
+  /api/v1/portfolio/engagement:
+    get:
+      tags: [engagement]
+      operationId: getEngagement
+      summary: Get engagement state (authoritative)
+      description: |
+        Returns the authoritative engagement state from the backend.
+        This may differ from the Firestore-cached state if sync is pending.
+      responses:
+        "200":
+          description: Engagement state retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EngagementState"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/engagement/award:
+    post:
+      tags: [engagement]
+      operationId: awardXP
+      summary: Award XP (server-validated)
+      description: |
+        Server-side XP award with validation. Prevents client-side XP manipulation.
+        Updates both PostgreSQL (authoritative) and Firestore (real-time cache).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AwardXPRequest"
+      responses:
+        "200":
+          description: XP awarded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EngagementState"
+        "400":
+          description: Invalid XP action
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/engagement/leaderboard:
+    get:
+      tags: [engagement]
+      operationId: getLeaderboard
+      summary: League/leaderboard rankings
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [weekly, monthly, all_time]
+            default: weekly
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Leaderboard retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rankings:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LeaderboardEntry"
+                  period:
+                    type: string
+                  user_rank:
+                    type: integer
+                    description: Current user's rank in the leaderboard
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ──────────────────────────────────────────────
+  # Reflections
+  # ──────────────────────────────────────────────
+  /api/v1/portfolio/reflections:
+    get:
+      tags: [reflections]
+      operationId: listReflections
+      summary: List user's reflection history
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: station_id
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reflection results retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reflections:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ReflectionResult"
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [reflections]
+      operationId: submitReflection
+      summary: Submit reflection result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReflectionRequest"
+      responses:
+        "201":
+          description: Reflection submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReflectionResult"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/portfolio/reflections/capabilities:
+    get:
+      tags: [reflections]
+      operationId: getCapabilities
+      summary: Aggregated capability scores
+      description: |
+        Returns aggregated capability scores across all reflection results.
+        Dimensions: analyticalDepth, creativity, confidence, resilience, selfAwareness.
+      responses:
+        "200":
+          description: Capability scores retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CapabilityScores"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ──────────────────────────────────────────────
+  # Sessions
+  # ──────────────────────────────────────────────
+  /api/v1/sessions:
+    get:
+      tags: [sessions]
+      operationId: listSessions
+      summary: List journey sessions
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: journey_type
+          in: query
+          schema:
+            type: string
+            enum: [vuca, entrepreneur, self-learning]
+        - name: station_id
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Sessions retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Session"
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [sessions]
+      operationId: createSession
+      summary: Create new journey session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionRequest"
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/sessions/{id}:
+    get:
+      tags: [sessions]
+      operationId: getSession
+      summary: Get session with interactions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Session retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionDetailed"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags: [sessions]
+      operationId: updateSession
+      summary: Update session (end, add metadata)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSessionRequest"
+      responses:
+        "200":
+          description: Session updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags: [sessions]
+      operationId: deleteSession
+      summary: Delete session and cascade to interactions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Session deleted
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ──────────────────────────────────────────────
+  # AI Execution (VertexAI)
+  # ──────────────────────────────────────────────
+  /api/v1/ai/chat:
+    post:
+      tags: [ai]
+      operationId: aiChat
+      summary: Send message to current agent via VertexAI
+      description: |
+        Sends a chat message to the currently active agent for this session.
+        The backend loads the agent's prompt from Firebase, builds the chat
+        context from PostgreSQL interaction history, and calls VertexAI.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiChatRequest"
+      responses:
+        "200":
+          description: AI response received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiChatResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/ai/extract:
+    post:
+      tags: [ai]
+      operationId: aiExtract
+      summary: Run extraction prompt (insights, station results)
+      description: |
+        Runs a structured extraction prompt via VertexAI. Returns JSON
+        matching the prompt's responseSchema. Used for insight extraction
+        after onboarding and station result scoring after station completion.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiExtractRequest"
+      responses:
+        "200":
+          description: Extraction result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiExtractResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/ai/generate:
+    post:
+      tags: [ai]
+      operationId: aiGenerate
+      summary: Run generation prompt (curriculum, course content)
+      description: |
+        Runs a content generation prompt via VertexAI. Used for generating
+        curricula and course content based on user interests and journey context.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiGenerateRequest"
+      responses:
+        "200":
+          description: Generated content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiGenerateResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/ai/tts:
+    post:
+      tags: [ai]
+      operationId: aiTextToSpeech
+      summary: Text-to-speech via VertexAI
+      description: |
+        Converts text to speech using VertexAI TTS model.
+        Supports 6 German dialects (hochdeutsch, bayerisch, schwaebisch,
+        berlinerisch, saechsisch, koelsch).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiTtsRequest"
+      responses:
+        "200":
+          description: Audio generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiTtsResponse"
+        "429":
+          description: Rate limit exceeded (media tier)
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/ai/stt:
+    post:
+      tags: [ai]
+      operationId: aiSpeechToText
+      summary: Speech-to-text via VertexAI
+      description: Transcribes audio to text using VertexAI.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiSttRequest"
+      responses:
+        "200":
+          description: Transcription result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiSttResponse"
+        "429":
+          description: Rate limit exceeded (media tier)
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ──────────────────────────────────────────────
+  # Prompts (Admin Only)
+  # ──────────────────────────────────────────────
+  /api/v1/prompts:
+    get:
+      tags: [prompts]
+      operationId: listPrompts
+      summary: List all prompt templates
+      description: Admin-only. Returns all prompt templates from Firebase.
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [dialogue, extraction, generation, scoring, matching]
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Prompt templates retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  prompts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PromptTemplate"
+                  total:
+                    type: integer
+        "403":
+          description: Requires admin role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/prompts/{promptId}:
+    get:
+      tags: [prompts]
+      operationId: getPrompt
+      summary: Get prompt template with version history
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Prompt template retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptTemplate"
+        "404":
+          description: Prompt not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Requires admin role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags: [prompts]
+      operationId: updatePrompt
+      summary: Update prompt template (auto-increments version)
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePromptRequest"
+      responses:
+        "200":
+          description: Prompt updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptTemplate"
+        "404":
+          description: Prompt not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Requires admin role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/prompts/{promptId}/test:
+    post:
+      tags: [prompts]
+      operationId: testPrompt
+      summary: Test prompt with sample input
+      description: |
+        Admin-only. Executes the prompt against VertexAI with a sample input
+        and returns the response. Used for validating prompt changes before activation.
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestPromptRequest"
+      responses:
+        "200":
+          description: Test result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestPromptResponse"
+        "404":
+          description: Prompt not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Requires admin role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/prompts/{promptId}/history:
+    get:
+      tags: [prompts]
+      operationId: getPromptHistory
+      summary: Prompt version history
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Version history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  versions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PromptTemplate"
+        "404":
+          description: Prompt not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Requires admin role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ──────────────────────────────────────────────
+  # Agents (Admin Only)
+  # ──────────────────────────────────────────────
+  /api/v1/agents:
+    get:
+      tags: [agents]
+      operationId: listAgents
+      summary: List all agent configurations
+      responses:
+        "200":
+          description: Agent configs retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AgentConfig"
+                  total:
+                    type: integer
+        "403":
+          description: Requires admin role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/agents/{agentId}:
+    get:
+      tags: [agents]
+      operationId: getAgent
+      summary: Get agent configuration
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agent config retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentConfig"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Requires admin role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags: [agents]
+      operationId: updateAgent
+      summary: Update agent configuration
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAgentRequest"
+      responses:
+        "200":
+          description: Agent config updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentConfig"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Requires admin role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/agents/{agentId}/executions:
+    get:
+      tags: [agents]
+      operationId: getAgentExecutions
+      summary: Execution history for agent
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Execution history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  executions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AgentExecution"
+                  total:
+                    type: integer
+        "403":
+          description: Requires admin role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/agents/{agentId}/invoke:
+    post:
+      tags: [agents]
+      operationId: invokeAgent
+      summary: Manually invoke agent (debug)
+      description: |
+        Admin-only. Manually triggers an agent execution for debugging purposes.
+        The agent loads its config and prompt from Firebase and executes via VertexAI.
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvokeAgentRequest"
+      responses:
+        "200":
+          description: Agent execution result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentExecution"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Requires admin role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ──────────────────────────────────────────────
+  # Pods (TC-019 SOLID Pod Management)
+  # ──────────────────────────────────────────────
+  /api/v1/pods/provision:
+    post:
+      tags: [pods]
+      operationId: provisionPod
+      summary: Provision managed Pod for current user
+      description: |
+        Creates a new managed SOLID Pod on the platform's Community Solid Server (CSS)
+        for the authenticated user. Initializes the Pod container structure
+        (profile/, journal/, portfolio/, legal/, settings/) and sets default WebACL.
+        Updates the user's webid and pod_url in PostgreSQL.
+      responses:
+        "201":
+          description: Pod provisioned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PodStatus"
+        "409":
+          description: User already has a Pod provisioned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/pods/link:
+    post:
+      tags: [pods]
+      operationId: linkExternalPod
+      summary: Link external Pod (BYOP)
+      description: |
+        Links an external SOLID Pod (Bring Your Own Pod) to the user's account.
+        The user must grant the Future SkillR application access to their Pod
+        via the standard SOLID authorization flow. The platform verifies
+        connectivity and access before storing the Pod URL.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkPodRequest"
+      responses:
+        "200":
+          description: External Pod linked successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PodStatus"
+        "400":
+          description: Invalid Pod URL or unable to connect
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/pods/status:
+    get:
+      tags: [pods]
+      operationId: getPodStatus
+      summary: Get Pod status
+      description: |
+        Returns the current user's Pod status including URL, provider type,
+        sync state, and storage usage.
+      responses:
+        "200":
+          description: Pod status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PodStatus"
+        "404":
+          description: No Pod provisioned for this user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/pods/unlink:
+    delete:
+      tags: [pods]
+      operationId: unlinkPod
+      summary: Unlink external Pod
+      description: |
+        Unlinks an external Pod (BYOP) from the user's account. Revokes the
+        platform's access tokens. The user retains their Pod and data.
+        Does not work for managed Pods — use account deletion for managed Pods.
+      responses:
+        "204":
+          description: Pod unlinked successfully
+        "400":
+          description: Cannot unlink managed Pod
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: No external Pod linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/pods/data/{path}:
+    get:
+      tags: [pods]
+      operationId: readPodData
+      summary: Read data from user's Pod (proxied)
+      description: |
+        Reads a resource from the user's Pod via the platform proxy.
+        The backend authenticates to the Pod using DPoP tokens and returns
+        the resource content. Supports Turtle and JSON-LD content negotiation.
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Resource path within the user's Pod (e.g., "profile/interests")
+        - name: accept
+          in: query
+          schema:
+            type: string
+            enum: [text/turtle, application/ld+json, application/json]
+            default: application/ld+json
+          description: Desired response format
+      responses:
+        "200":
+          description: Resource retrieved
+          content:
+            application/ld+json:
+              schema:
+                type: object
+                additionalProperties: true
+            text/turtle:
+              schema:
+                type: string
+        "404":
+          description: Resource not found in Pod
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags: [pods]
+      operationId: writePodData
+      summary: Write data to user's Pod (proxied)
+      description: |
+        Writes a resource to the user's Pod via the platform proxy.
+        The backend validates the data, writes to the Pod (canonical),
+        and asynchronously mirrors to Firestore and PostgreSQL as needed.
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Resource path within the user's Pod (e.g., "profile/interests")
+      requestBody:
+        required: true
+        content:
+          application/ld+json:
+            schema:
+              type: object
+              additionalProperties: true
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Resource written successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  path:
+                    type: string
+                  etag:
+                    type: string
+                  synced:
+                    type: boolean
+                    description: Whether Firestore/PostgreSQL mirrors were updated
+        "400":
+          description: Invalid data or path
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags: [pods]
+      operationId: deletePodData
+      summary: Delete data from user's Pod (proxied)
+      description: |
+        Deletes a resource from the user's Pod. Also removes corresponding
+        Firestore mirror and PostgreSQL index entries.
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Resource path within the user's Pod
+      responses:
+        "204":
+          description: Resource deleted
+        "404":
+          description: Resource not found in Pod
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/pods/export:
+    post:
+      tags: [pods]
+      operationId: exportPod
+      summary: Export Pod as JSON-LD archive
+      description: |
+        Exports the entire contents of the user's Pod as a JSON-LD archive.
+        Supports DSGVO Art. 20 data portability. The archive includes all
+        containers and resources in the Pod.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum: [jsonld, turtle, nquads]
+                  default: jsonld
+                include_binary:
+                  type: boolean
+                  default: false
+                  description: Include binary artifacts (photos, documents) in the archive
+      responses:
+        "200":
+          description: Pod exported
+          content:
+            application/ld+json:
+              schema:
+                type: object
+                additionalProperties: true
+            application/zip:
+              schema:
+                type: string
+                format: binary
+                description: ZIP archive when include_binary is true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/pods/import:
+    post:
+      tags: [pods]
+      operationId: importPodData
+      summary: Import data into Pod
+      description: |
+        Imports data into the user's Pod from a JSON-LD archive. Used for
+        restoring data or migrating from another platform. Validates the
+        data against the fs: vocabulary before writing.
+      requestBody:
+        required: true
+        content:
+          application/ld+json:
+            schema:
+              type: object
+              additionalProperties: true
+          multipart/form-data:
+            schema:
+              type: object
+              required: [archive]
+              properties:
+                archive:
+                  type: string
+                  format: binary
+                  description: JSON-LD or ZIP archive file
+                merge_strategy:
+                  type: string
+                  enum: [overwrite, merge, skip_existing]
+                  default: merge
+      responses:
+        "200":
+          description: Data imported successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imported_count:
+                    type: integer
+                  skipped_count:
+                    type: integer
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                        error:
+                          type: string
+        "400":
+          description: Invalid archive format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/pods/org/provision:
+    post:
+      tags: [pods]
+      operationId: provisionOrgPod
+      summary: Provision company Pod
+      description: |
+        Creates a new managed SOLID Pod for an organization. Requires admin role.
+        Initializes the Pod with company container structure (profile/, journeys/, jobs/)
+        and sets appropriate WebACL for public read access to journey content.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProvisionOrgPodRequest"
+      responses:
+        "201":
+          description: Company Pod provisioned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PodStatus"
+        "403":
+          description: Requires admin role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Organization already has a Pod
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ──────────────────────────────────────────────
+  # Consent (TC-020 Agent Consent Management)
+  # ──────────────────────────────────────────────
+  /api/v1/consent/agents:
+    get:
+      tags: [consent]
+      operationId: listAgentConsent
+      summary: List agents with consent status for current user
+      description: |
+        Returns all platform agents with their current consent status for
+        the authenticated user. Core agents are always shown as "granted".
+        Optional agents show whether the user has granted consent.
+      responses:
+        "200":
+          description: Agent consent list retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AgentConsentStatus"
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/consent/agents/{agentId}/grant:
+    post:
+      tags: [consent]
+      operationId: grantAgentConsent
+      summary: Grant consent to optional agent
+      description: |
+        Grants the authenticated user's consent for an optional agent to access
+        their Pod data. Only applicable to agents with consent_tier "optional".
+        Core agents do not require explicit consent. Requires user to be 16+
+        (per FR-033). Provisions the agent's WebACL on the user's Pod immediately.
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Agent identifier (e.g., "match-agent")
+      responses:
+        "200":
+          description: Consent granted, Pod ACL updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentConsentStatus"
+        "400":
+          description: Agent is core (no explicit consent needed) or user is under 16
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Consent already granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/consent/agents/{agentId}/revoke:
+    delete:
+      tags: [consent]
+      operationId: revokeAgentConsent
+      summary: Revoke consent for optional agent
+      description: |
+        Revokes the authenticated user's consent for an optional agent.
+        Removes the agent's WebACL from the user's Pod immediately.
+        The agent will receive 403 Forbidden on its next access attempt.
+        Cannot revoke consent for core agents.
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Agent identifier (e.g., "match-agent")
+      responses:
+        "204":
+          description: Consent revoked, Pod ACL removed
+        "400":
+          description: Agent is core (cannot revoke) or consent not currently granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/consent/agents/{agentId}/audit:
+    get:
+      tags: [consent]
+      operationId: getAgentAccessAudit
+      summary: Audit trail for agent's access to current user's data
+      description: |
+        Returns the audit trail of a specific agent's access to the
+        authenticated user's Pod data. Includes timestamps, containers
+        accessed, purpose, and consent reference.
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Agent identifier (e.g., "skill-agent")
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: from
+          in: query
+          description: Start date filter (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          description: End date filter (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Audit trail retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AgentAccessAuditEntry"
+                  total:
+                    type: integer
+                  agent_id:
+                    type: string
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/consent/training/opt-in:
+    post:
+      tags: [consent]
+      operationId: optInTraining
+      summary: Opt in to fine-tuning data pipeline
+      description: |
+        Opts the authenticated user into the fine-tuning data pipeline.
+        Pseudonymized interaction data will be used to improve AI quality.
+        Requires user to be 16+ (per FR-033). Data is retained for 90 days
+        after each training run, then purged. Revocable at any time.
+      responses:
+        "200":
+          description: Opted in to training pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingConsentStatus"
+        "400":
+          description: User is under 16 or already opted in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/consent/training/opt-out:
+    delete:
+      tags: [consent]
+      operationId: optOutTraining
+      summary: Opt out of fine-tuning data pipeline
+      description: |
+        Opts the authenticated user out of the fine-tuning data pipeline.
+        Pseudonymized data is purged within 72 hours. Data already used
+        in completed training runs cannot be "unlearned" from the model.
+      responses:
+        "204":
+          description: Opted out, data will be purged within 72 hours
+        "400":
+          description: Not currently opted in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/consent/training/status:
+    get:
+      tags: [consent]
+      operationId: getTrainingConsentStatus
+      summary: Current training consent status
+      description: |
+        Returns the current user's training pipeline consent status,
+        including opt-in date, data usage statistics, and next purge date.
+      responses:
+        "200":
+          description: Training consent status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingConsentStatus"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase JWT token from Firebase Authentication
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid Firebase JWT token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    # ──────────────────────────────────────────────
+    # Common
+    # ──────────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        details:
+          type: string
+
+    SkillDimensions:
+      type: object
+      description: Scores per skill dimension (0-100)
+      additionalProperties:
+        type: number
+        minimum: 0
+        maximum: 100
+      example:
+        change: 75
+        uncertainty: 60
+        complexity: 80
+        ambiguity: 55
+
+    # ──────────────────────────────────────────────
+    # Profile
+    # ──────────────────────────────────────────────
+    SkillCategory:
+      type: object
+      required: [key, label, score, contributing_dimensions]
+      properties:
+        key:
+          type: string
+          enum: [hard-skills, soft-skills, future-skills, resilience]
+        label:
+          type: string
+        score:
+          type: number
+          minimum: 0
+          maximum: 100
+        contributing_dimensions:
+          type: array
+          items:
+            type: string
+
+    SkillProfile:
+      type: object
+      required: [id, user_id, skill_categories, completeness, last_computed_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        skill_categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/SkillCategory"
+        top_interests:
+          type: array
+          items:
+            type: string
+        top_strengths:
+          type: array
+          items:
+            type: string
+        completeness:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Profile completeness score (0.0 to 1.0)
+        evidence_summary:
+          type: object
+          properties:
+            total_interactions:
+              type: integer
+            total_reflections:
+              type: integer
+            total_endorsements:
+              type: integer
+            total_artifacts:
+              type: integer
+        last_computed_at:
+          type: string
+          format: date-time
+
+    PublicProfile:
+      type: object
+      required: [user_id, display_name, skill_categories, completeness]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        skill_categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/SkillCategory"
+        top_interests:
+          type: array
+          items:
+            type: string
+        top_strengths:
+          type: array
+          items:
+            type: string
+        completeness:
+          type: number
+          minimum: 0
+          maximum: 1
+        endorsement_count:
+          type: integer
+        visible_endorsements:
+          type: array
+          items:
+            $ref: "#/components/schemas/Endorsement"
+
+    # ──────────────────────────────────────────────
+    # Evidence
+    # ──────────────────────────────────────────────
+    PortfolioEntry:
+      type: object
+      required: [id, user_id, evidence_type, summary, confidence, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        source_interaction_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        skill_dimensions:
+          $ref: "#/components/schemas/SkillDimensions"
+        evidence_type:
+          type: string
+          enum: [auto, manual, endorsed]
+        summary:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        context:
+          type: object
+          properties:
+            station_id:
+              type: string
+            journey_type:
+              type: string
+            vuca_dimension:
+              type: string
+        created_at:
+          type: string
+          format: date-time
+
+    PortfolioEntryDetailed:
+      allOf:
+        - $ref: "#/components/schemas/PortfolioEntry"
+        - type: object
+          properties:
+            source_interactions:
+              type: array
+              items:
+                $ref: "#/components/schemas/Interaction"
+            linked_endorsements:
+              type: array
+              items:
+                $ref: "#/components/schemas/Endorsement"
+
+    CreateEvidenceRequest:
+      type: object
+      required: [evidence_type, summary, skill_dimensions]
+      properties:
+        source_interaction_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        skill_dimensions:
+          $ref: "#/components/schemas/SkillDimensions"
+        evidence_type:
+          type: string
+          enum: [auto, manual]
+        summary:
+          type: string
+          maxLength: 2000
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.5
+        context:
+          type: object
+          properties:
+            station_id:
+              type: string
+            journey_type:
+              type: string
+            vuca_dimension:
+              type: string
+
+    VerificationResult:
+      type: object
+      required: [verified, evidence_id]
+      properties:
+        verified:
+          type: boolean
+        evidence_id:
+          type: string
+          format: uuid
+        summary:
+          type: string
+        skill_dimensions:
+          $ref: "#/components/schemas/SkillDimensions"
+        created_at:
+          type: string
+          format: date-time
+        endorsement_count:
+          type: integer
+
+    # ──────────────────────────────────────────────
+    # Endorsements
+    # ──────────────────────────────────────────────
+    Endorsement:
+      type: object
+      required: [id, learner_id, endorser_role, skill_dimensions, statement, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        learner_id:
+          type: string
+          format: uuid
+        endorser_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Null if endorser is external (not a platform user)"
+        endorser_name:
+          type: string
+        endorser_role:
+          type: string
+          enum: [teacher, mentor, employer, peer, parent, other]
+        endorser_verified:
+          type: boolean
+        skill_dimensions:
+          $ref: "#/components/schemas/SkillDimensions"
+        statement:
+          type: string
+        context:
+          type: string
+          description: Context in which the endorser observed the skill
+        artifact_refs:
+          type: array
+          items:
+            type: string
+            format: uuid
+        visible:
+          type: boolean
+          default: true
+        created_at:
+          type: string
+          format: date-time
+
+    SubmitEndorsementRequest:
+      type: object
+      required: [invitation_token, endorser_name, endorser_role, skill_dimensions, statement]
+      properties:
+        invitation_token:
+          type: string
+          description: Token from the endorsement invitation
+        endorser_name:
+          type: string
+        endorser_role:
+          type: string
+          enum: [teacher, mentor, employer, peer, parent, other]
+        skill_dimensions:
+          $ref: "#/components/schemas/SkillDimensions"
+        statement:
+          type: string
+          maxLength: 2000
+        context:
+          type: string
+          maxLength: 500
+
+    EndorsementInviteRequest:
+      type: object
+      required: [endorser_email, endorser_role]
+      properties:
+        endorser_email:
+          type: string
+          format: email
+        endorser_role:
+          type: string
+          enum: [teacher, mentor, employer, peer, parent, other]
+        message:
+          type: string
+          maxLength: 500
+          description: Optional personal message to the endorser
+        skill_dimensions:
+          type: array
+          items:
+            type: string
+          description: Specific dimensions to endorse (optional)
+
+    EndorsementInvite:
+      type: object
+      required: [id, learner_id, endorser_email, endorser_role, status, created_at, expires_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        learner_id:
+          type: string
+          format: uuid
+        endorser_email:
+          type: string
+          format: email
+        endorser_role:
+          type: string
+        status:
+          type: string
+          enum: [pending, completed, expired]
+        invite_url:
+          type: string
+          format: uri
+        qr_code_url:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+
+    # ──────────────────────────────────────────────
+    # Artifacts
+    # ──────────────────────────────────────────────
+    ExternalArtifact:
+      type: object
+      required: [id, learner_id, artifact_type, description, uploaded_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        learner_id:
+          type: string
+          format: uuid
+        artifact_type:
+          type: string
+          enum: [photo, document, video, link]
+        description:
+          type: string
+        skill_dimensions:
+          $ref: "#/components/schemas/SkillDimensions"
+        storage_ref:
+          type: string
+          description: Firebase Storage reference or external URL
+        endorsement_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        uploaded_at:
+          type: string
+          format: date-time
+
+    ExternalArtifactDetailed:
+      allOf:
+        - $ref: "#/components/schemas/ExternalArtifact"
+        - type: object
+          properties:
+            endorsements:
+              type: array
+              items:
+                $ref: "#/components/schemas/Endorsement"
+
+    # ──────────────────────────────────────────────
+    # Journal / Interactions
+    # ──────────────────────────────────────────────
+    Interaction:
+      type: object
+      required: [id, user_id, session_id, modality, timestamp]
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        modality:
+          type: string
+          enum: [text, voice, choice]
+        user_input:
+          type: string
+        assistant_response:
+          type: string
+        timing:
+          type: object
+          properties:
+            response_time_ms:
+              type: integer
+            pause_before_ms:
+              type: integer
+            typing_speed_cps:
+              type: number
+        context:
+          type: object
+          properties:
+            place:
+              type: string
+            vuca_dimensions:
+              type: array
+              items:
+                type: string
+            journey_step:
+              type: string
+            station_id:
+              type: string
+        profile_impact:
+          $ref: "#/components/schemas/SkillDimensions"
+        timestamp:
+          type: string
+          format: date-time
+
+    CreateInteractionRequest:
+      type: object
+      required: [session_id, modality]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        modality:
+          type: string
+          enum: [text, voice, choice]
+        user_input:
+          type: string
+        assistant_response:
+          type: string
+        timing:
+          type: object
+          properties:
+            response_time_ms:
+              type: integer
+            pause_before_ms:
+              type: integer
+            typing_speed_cps:
+              type: number
+        context:
+          type: object
+          properties:
+            place:
+              type: string
+            vuca_dimensions:
+              type: array
+              items:
+                type: string
+            journey_step:
+              type: string
+            station_id:
+              type: string
+
+    # ──────────────────────────────────────────────
+    # Engagement
+    # ──────────────────────────────────────────────
+    EngagementState:
+      type: object
+      required: [current_streak, longest_streak, total_xp, level, level_title, last_active_date]
+      properties:
+        current_streak:
+          type: integer
+          minimum: 0
+        longest_streak:
+          type: integer
+          minimum: 0
+        total_xp:
+          type: integer
+          minimum: 0
+        weekly_xp:
+          type: integer
+          minimum: 0
+        level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        level_title:
+          type: string
+          description: "German level name (e.g., Entdecker, Pfadfinder, Abenteurer, Globetrotter, Weltenbummler)"
+        last_active_date:
+          type: string
+          format: date
+        streak_freeze_available:
+          type: boolean
+
+    AwardXPRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum:
+            - onboarding_complete
+            - station_complete
+            - station_start
+            - vuca_module_complete
+            - quiz_correct
+            - daily_login
+        context:
+          type: object
+          properties:
+            station_id:
+              type: string
+            journey_type:
+              type: string
+
+    LeaderboardEntry:
+      type: object
+      required: [rank, user_id, display_name, total_xp, level]
+      properties:
+        rank:
+          type: integer
+        user_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        total_xp:
+          type: integer
+        level:
+          type: integer
+        level_title:
+          type: string
+
+    # ──────────────────────────────────────────────
+    # Reflections
+    # ──────────────────────────────────────────────
+    ReflectionResult:
+      type: object
+      required: [id, user_id, station_id, question_id, response, response_time_ms, capability_scores, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        station_id:
+          type: string
+        question_id:
+          type: string
+        response:
+          type: string
+        response_time_ms:
+          type: integer
+        capability_scores:
+          $ref: "#/components/schemas/CapabilityScores"
+        created_at:
+          type: string
+          format: date-time
+
+    CreateReflectionRequest:
+      type: object
+      required: [station_id, question_id, response, response_time_ms]
+      properties:
+        station_id:
+          type: string
+        question_id:
+          type: string
+        response:
+          type: string
+          maxLength: 5000
+        response_time_ms:
+          type: integer
+          minimum: 0
+
+    CapabilityScores:
+      type: object
+      description: Capability indicator scores (0-100)
+      properties:
+        analytical_depth:
+          type: number
+          minimum: 0
+          maximum: 100
+        creativity:
+          type: number
+          minimum: 0
+          maximum: 100
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 100
+        resilience:
+          type: number
+          minimum: 0
+          maximum: 100
+        self_awareness:
+          type: number
+          minimum: 0
+          maximum: 100
+
+    # ──────────────────────────────────────────────
+    # Sessions
+    # ──────────────────────────────────────────────
+    Session:
+      type: object
+      required: [id, user_id, session_type, started_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        session_type:
+          type: string
+          enum: [onboarding, vuca-journey, entrepreneur-journey, self-learning-journey, reflection, free-exploration]
+        journey_type:
+          type: string
+          enum: [vuca, entrepreneur, self-learning]
+          nullable: true
+        station_id:
+          type: string
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    SessionDetailed:
+      allOf:
+        - $ref: "#/components/schemas/Session"
+        - type: object
+          properties:
+            interactions:
+              type: array
+              items:
+                $ref: "#/components/schemas/Interaction"
+            interaction_count:
+              type: integer
+
+    CreateSessionRequest:
+      type: object
+      required: [session_type]
+      properties:
+        session_type:
+          type: string
+          enum: [onboarding, vuca-journey, entrepreneur-journey, self-learning-journey, reflection, free-exploration]
+        journey_type:
+          type: string
+          enum: [vuca, entrepreneur, self-learning]
+        station_id:
+          type: string
+
+    UpdateSessionRequest:
+      type: object
+      properties:
+        ended_at:
+          type: string
+          format: date-time
+        station_id:
+          type: string
+
+    # ──────────────────────────────────────────────
+    # AI Execution
+    # ──────────────────────────────────────────────
+    AiChatRequest:
+      type: object
+      required: [session_id, message]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          description: Override agent selection (optional, orchestrator decides by default)
+        message:
+          type: string
+          maxLength: 5000
+        context:
+          type: object
+          properties:
+            station_id:
+              type: string
+            journey_type:
+              type: string
+            vuca_dimension:
+              type: string
+
+    AiChatResponse:
+      type: object
+      required: [response, agent_id]
+      properties:
+        response:
+          type: string
+        agent_id:
+          type: string
+          description: Which agent handled this message
+        markers:
+          type: array
+          items:
+            type: string
+          description: Completion markers detected (e.g., REISE_VORSCHLAG, STATION_COMPLETE)
+        interaction_id:
+          type: string
+          format: uuid
+          description: ID of the stored interaction record
+
+    AiExtractRequest:
+      type: object
+      required: [prompt_id, messages]
+      properties:
+        prompt_id:
+          type: string
+          description: Prompt template to use (e.g., insight-extraction-v1, station-result-extraction-v1)
+        messages:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum: [user, model]
+              text:
+                type: string
+        context:
+          type: object
+          description: Additional context passed to the prompt (e.g., station info)
+          additionalProperties: true
+
+    AiExtractResponse:
+      type: object
+      required: [result, prompt_id]
+      properties:
+        result:
+          type: object
+          description: Structured JSON matching the prompt's responseSchema
+          additionalProperties: true
+        prompt_id:
+          type: string
+        prompt_version:
+          type: integer
+
+    AiGenerateRequest:
+      type: object
+      required: [prompt_id]
+      properties:
+        prompt_id:
+          type: string
+          description: Prompt template to use (e.g., curriculum-generation-v1, course-generation-v1)
+        parameters:
+          type: object
+          description: Parameters for the generation (e.g., topic, dimension, curriculum)
+          additionalProperties: true
+
+    AiGenerateResponse:
+      type: object
+      required: [result, prompt_id]
+      properties:
+        result:
+          type: object
+          description: Generated content matching the prompt's responseSchema
+          additionalProperties: true
+        prompt_id:
+          type: string
+        prompt_version:
+          type: integer
+
+    AiTtsRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          maxLength: 5000
+        voice_dialect:
+          type: string
+          enum: [hochdeutsch, bayerisch, schwaebisch, berlinerisch, saechsisch, koelsch]
+          default: hochdeutsch
+
+    AiTtsResponse:
+      type: object
+      required: [audio]
+      properties:
+        audio:
+          type: string
+          format: byte
+          description: Base64-encoded audio data
+
+    AiSttRequest:
+      type: object
+      required: [audio]
+      properties:
+        audio:
+          type: string
+          format: byte
+          description: Base64-encoded audio data
+
+    AiSttResponse:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+
+    # ──────────────────────────────────────────────
+    # Prompt Templates
+    # ──────────────────────────────────────────────
+    ModelConfig:
+      type: object
+      properties:
+        model:
+          type: string
+          description: VertexAI model name (e.g., gemini-2.0-flash-lite)
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+        top_p:
+          type: number
+          minimum: 0
+          maximum: 1
+        top_k:
+          type: integer
+          minimum: 1
+        max_output_tokens:
+          type: integer
+        response_mime_type:
+          type: string
+          enum: [text/plain, application/json]
+        response_schema:
+          type: object
+          description: JSON schema for structured output (when response_mime_type is application/json)
+          additionalProperties: true
+
+    PromptTemplate:
+      type: object
+      required: [prompt_id, name, category, system_instruction, model_config, version, is_active]
+      properties:
+        prompt_id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          enum: [dialogue, extraction, generation, scoring, matching]
+        system_instruction:
+          type: string
+          description: The system prompt text (German)
+        model_config:
+          $ref: "#/components/schemas/ModelConfig"
+        completion_markers:
+          type: array
+          items:
+            type: string
+          description: Markers that signal prompt completion (e.g., [REISE_VORSCHLAG])
+        version:
+          type: integer
+        is_active:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UpdatePromptRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        system_instruction:
+          type: string
+        model_config:
+          $ref: "#/components/schemas/ModelConfig"
+        completion_markers:
+          type: array
+          items:
+            type: string
+        is_active:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+
+    TestPromptRequest:
+      type: object
+      required: [sample_input]
+      properties:
+        sample_input:
+          type: string
+          description: Sample user message to test the prompt with
+        sample_history:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum: [user, model]
+              text:
+                type: string
+
+    TestPromptResponse:
+      type: object
+      required: [response, latency_ms, token_count]
+      properties:
+        response:
+          type: string
+        latency_ms:
+          type: integer
+        token_count:
+          type: integer
+        model_used:
+          type: string
+        markers_detected:
+          type: array
+          items:
+            type: string
+
+    # ──────────────────────────────────────────────
+    # Agent Configuration
+    # ──────────────────────────────────────────────
+    AgentConfig:
+      type: object
+      required: [agent_id, name, role, prompt_ids, is_active]
+      properties:
+        agent_id:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          description: Agent role description
+        prompt_ids:
+          type: array
+          items:
+            type: string
+          description: Ordered list of prompt template IDs this agent uses
+        webid:
+          type: string
+          format: uri
+          description: Agent's WebID URI (TC-020)
+          example: "https://future-skillr.de/agents/skill-agent/profile/card#me"
+        client_id:
+          type: string
+          description: CSS client credentials identifier for this agent (TC-020)
+          example: "skill-agent-client"
+        consent_tier:
+          type: string
+          enum: [core, optional]
+          description: Consent tier — core agents require blanket consent, optional agents require explicit per-agent consent (TC-020)
+        pod_access_scope:
+          type: object
+          description: Declared Pod container access scope (TC-020)
+          properties:
+            reads:
+              type: array
+              items:
+                type: string
+              description: Pod container paths the agent reads
+              example: ["journal/", "portfolio/"]
+            writes:
+              type: array
+              items:
+                type: string
+              description: Pod container paths the agent writes
+              example: ["profile/skill-profile"]
+        activation_rules:
+          type: object
+          properties:
+            journey_states:
+              type: array
+              items:
+                type: string
+            behavioral_triggers:
+              type: array
+              items:
+                type: string
+            min_profile_completeness:
+              type: number
+              minimum: 0
+              maximum: 1
+        transition_rules:
+          type: object
+          properties:
+            can_transition_to:
+              type: array
+              items:
+                type: string
+            transition_conditions:
+              type: object
+              additionalProperties: true
+        tone:
+          type: string
+          enum: [warm, calm, structured, transparent]
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+          description: Override temperature for this agent's conversations
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UpdateAgentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+        prompt_ids:
+          type: array
+          items:
+            type: string
+        activation_rules:
+          type: object
+          properties:
+            journey_states:
+              type: array
+              items:
+                type: string
+            behavioral_triggers:
+              type: array
+              items:
+                type: string
+            min_profile_completeness:
+              type: number
+        transition_rules:
+          type: object
+          properties:
+            can_transition_to:
+              type: array
+              items:
+                type: string
+            transition_conditions:
+              type: object
+              additionalProperties: true
+        tone:
+          type: string
+          enum: [warm, calm, structured, transparent]
+        temperature:
+          type: number
+        is_active:
+          type: boolean
+
+    AgentExecution:
+      type: object
+      required: [id, agent_id, prompt_id, prompt_version, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+        prompt_id:
+          type: string
+        prompt_version:
+          type: integer
+        user_id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        trigger_event:
+          type: string
+          description: What triggered this execution (e.g., station_complete, manual_invoke)
+        input_summary:
+          type: string
+          description: Truncated summary of the input
+        output_summary:
+          type: string
+          description: Truncated summary of the output
+        model_name:
+          type: string
+        latency_ms:
+          type: integer
+        token_count:
+          type: integer
+        status:
+          type: string
+          enum: [success, error, timeout]
+        error_message:
+          type: string
+          nullable: true
+        agent_webid:
+          type: string
+          format: uri
+          description: WebID of the agent that performed this execution (TC-020)
+          example: "https://future-skillr.de/agents/skill-agent/profile/card#me"
+        containers_accessed:
+          type: array
+          items:
+            type: string
+          description: Pod container paths accessed during this execution (TC-020)
+          example: ["journal/", "portfolio/", "profile/skill-profile"]
+        data_purpose:
+          type: string
+          description: Declared purpose for this data access (TC-020)
+          example: "inference"
+        consent_reference:
+          type: string
+          format: uri
+          description: URI of the consent record that authorized this access (TC-020)
+        created_at:
+          type: string
+          format: date-time
+
+    InvokeAgentRequest:
+      type: object
+      required: [user_id]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: Target user for the agent execution
+        session_id:
+          type: string
+          format: uuid
+        trigger_event:
+          type: string
+          default: manual_invoke
+        parameters:
+          type: object
+          description: Additional parameters for the agent
+          additionalProperties: true
+
+    # ──────────────────────────────────────────────
+    # Pod Management (TC-019)
+    # ──────────────────────────────────────────────
+    PodStatus:
+      type: object
+      required: [pod_url, provider, status]
+      properties:
+        pod_url:
+          type: string
+          format: uri
+          description: Base URL of the user's SOLID Pod
+          example: "https://pods.future-skillr.de/user123/"
+        webid:
+          type: string
+          format: uri
+          description: WebID URI for the user
+          example: "https://pods.future-skillr.de/user123/profile/card#me"
+        provider:
+          type: string
+          enum: [managed, external]
+          description: Whether the Pod is hosted by Future SkillR (managed) or external (BYOP)
+        status:
+          type: string
+          enum: [active, provisioning, syncing, error, unlinked]
+          description: Current Pod status
+        sync_state:
+          type: object
+          properties:
+            last_sync_at:
+              type: string
+              format: date-time
+              description: Last successful sync to Firestore/PostgreSQL
+            pending_writes:
+              type: integer
+              description: Number of writes pending sync
+              minimum: 0
+            last_error:
+              type: string
+              nullable: true
+              description: Last sync error message
+        storage_usage:
+          type: object
+          properties:
+            used_bytes:
+              type: integer
+              description: Storage used in bytes
+              minimum: 0
+            quota_bytes:
+              type: integer
+              description: Storage quota in bytes (managed Pods only)
+              minimum: 0
+            resource_count:
+              type: integer
+              description: Total number of resources in the Pod
+              minimum: 0
+        created_at:
+          type: string
+          format: date-time
+        containers:
+          type: array
+          items:
+            type: string
+          description: Top-level container paths in the Pod
+          example: ["profile/", "journal/", "portfolio/", "legal/", "settings/"]
+
+    LinkPodRequest:
+      type: object
+      required: [pod_url, webid]
+      properties:
+        pod_url:
+          type: string
+          format: uri
+          description: Base URL of the external SOLID Pod
+        webid:
+          type: string
+          format: uri
+          description: User's WebID on the external Pod
+        authorization_code:
+          type: string
+          description: OAuth authorization code from the external Pod's auth flow
+
+    ProvisionOrgPodRequest:
+      type: object
+      required: [org_slug, org_name]
+      properties:
+        org_slug:
+          type: string
+          pattern: "^[a-z0-9-]+$"
+          description: URL-safe organization identifier
+          example: "ihk-muenchen"
+        org_name:
+          type: string
+          description: Display name of the organization
+          example: "IHK Muenchen"
+
+    # ──────────────────────────────────────────────
+    # Consent (TC-020)
+    # ──────────────────────────────────────────────
+    AgentConsentStatus:
+      type: object
+      required: [agent_id, name, consent_tier, consent_status]
+      properties:
+        agent_id:
+          type: string
+          description: Agent identifier
+          example: "match-agent"
+        name:
+          type: string
+          description: Agent display name
+          example: "Match-Agent"
+        role:
+          type: string
+          description: Agent role description
+          example: "Job and opportunity matching based on skill profile"
+        webid:
+          type: string
+          format: uri
+          description: Agent's WebID URI
+          example: "https://future-skillr.de/agents/match-agent/profile/card#me"
+        consent_tier:
+          type: string
+          enum: [core, optional]
+          description: Whether this agent requires explicit consent
+        consent_status:
+          type: string
+          enum: [granted, not_granted, not_applicable]
+          description: |
+            Current consent status for the authenticated user.
+            "granted" — user has active consent for this agent.
+            "not_granted" — user has not granted consent (optional agents).
+            "not_applicable" — core agent, no explicit consent needed.
+        consent_granted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When consent was granted (null if not granted)
+        access_scope:
+          type: object
+          description: Declared data access scope
+          properties:
+            reads:
+              type: array
+              items:
+                type: string
+              description: Pod container paths the agent reads
+              example: ["profile/skill-profile"]
+            writes:
+              type: array
+              items:
+                type: string
+              description: Pod container paths the agent writes
+              example: []
+        data_usage:
+          type: array
+          items:
+            type: string
+            enum: [inference, aggregated-training, fine-tuning]
+          description: How the agent uses accessed data
+          example: ["inference", "aggregated-training"]
+
+    AgentAccessAuditEntry:
+      type: object
+      required: [id, agent_id, agent_webid, containers_accessed, data_purpose, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Audit entry ID (from agent_executions table)
+        agent_id:
+          type: string
+          description: Agent identifier
+          example: "skill-agent"
+        agent_webid:
+          type: string
+          format: uri
+          description: Agent WebID that performed the access
+          example: "https://future-skillr.de/agents/skill-agent/profile/card#me"
+        containers_accessed:
+          type: array
+          items:
+            type: string
+          description: Pod container paths accessed during execution
+          example: ["journal/", "portfolio/", "profile/skill-profile"]
+        data_purpose:
+          type: string
+          description: Declared purpose for this access
+          example: "inference"
+        consent_reference:
+          type: string
+          format: uri
+          nullable: true
+          description: URI of the consent record that authorized this access
+        output_summary:
+          type: string
+          description: Summary of what the agent computed (not raw data)
+          example: "Updated skill profile — completeness 0.72 → 0.78"
+        status:
+          type: string
+          enum: [success, error, timeout]
+        created_at:
+          type: string
+          format: date-time
+          description: When this access occurred
+
+    TrainingConsentStatus:
+      type: object
+      required: [opted_in]
+      properties:
+        opted_in:
+          type: boolean
+          description: Whether the user has opted into the fine-tuning pipeline
+        opted_in_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the user opted in (null if not opted in)
+        data_retention_days:
+          type: integer
+          description: Number of days pseudonymized data is retained after training
+          example: 90
+        interactions_contributed:
+          type: integer
+          description: Number of interactions contributed to training so far
+          minimum: 0
+        next_purge_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the next data purge is scheduled (null if not opted in)
+        consent_version:
+          type: string
+          description: Version of the training consent text accepted
+          example: "1.0"

@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/FutureSkillr/MVP72/backend/internal/domain/artifact"
+	"skillr-mvp-v1/backend/internal/domain/artifact"
 )
 
 type ArtifactRepository struct {

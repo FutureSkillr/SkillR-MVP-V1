@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
-	"github.com/FutureSkillr/MVP72/backend/internal/middleware"
+	"skillr-mvp-v1/backend/internal/middleware"
 )
 
 type Handler struct {

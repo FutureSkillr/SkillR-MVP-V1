@@ -39,8 +39,8 @@ type ViewState =
   | 'journey-complete'
   | 'admin';
 
-const STORAGE_KEY = 'future-skiller-state';
-const VOICE_STORAGE_KEY = 'future-skiller-voice-enabled';
+const STORAGE_KEY = 'skillr-state';
+const VOICE_STORAGE_KEY = 'skillr-voice-enabled';
 
 interface AppState {
   view: ViewState;

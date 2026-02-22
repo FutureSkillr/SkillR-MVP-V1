@@ -8,8 +8,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/FutureSkillr/MVP72/backend/internal/firebase"
-	"github.com/FutureSkillr/MVP72/backend/internal/middleware"
+	"skillr-mvp-v1/backend/internal/firebase"
+	"skillr-mvp-v1/backend/internal/middleware"
 )
 
 func newTestHandler() *Handler {

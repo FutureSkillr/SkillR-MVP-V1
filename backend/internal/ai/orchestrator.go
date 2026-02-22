@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/FutureSkillr/MVP72/backend/internal/model"
+	"skillr-mvp-v1/backend/internal/model"
 )
 
 type PromptLoader interface {

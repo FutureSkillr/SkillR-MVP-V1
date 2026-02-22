@@ -128,7 +128,7 @@ export const MetaKursEditor: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `future-skiller-config-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `skillr-config-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     flash('Export heruntergeladen.');

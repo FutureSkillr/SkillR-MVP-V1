@@ -1,6 +1,6 @@
 import type { AuthUser, AuthProvider, UserRole } from '../types/auth';
 
-const SESSION_KEY = 'future-skiller-session';
+const SESSION_KEY = 'skillr-session';
 
 export async function register(
   email: string,

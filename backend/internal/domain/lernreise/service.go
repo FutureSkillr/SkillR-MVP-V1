@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/FutureSkillr/MVP72/backend/internal/honeycomb"
-	"github.com/FutureSkillr/MVP72/backend/internal/memory"
+	"skillr-mvp-v1/backend/internal/honeycomb"
+	"skillr-mvp-v1/backend/internal/memory"
 )
 
 // Service orchestrates Lernreise operations across Honeycomb, Memory, and local storage.

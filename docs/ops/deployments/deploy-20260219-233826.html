@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deploy 20260219-233826 — Future SkillR</title>
+<style>
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8; --accent: #38bdf8;
+    --green: #4ade80; --red: #f87171;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: var(--bg); color: var(--text); padding: 2rem; line-height: 1.6; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  .subtitle { color: var(--muted); font-size: 0.875rem; margin-bottom: 2rem; }
+  .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px;
+                  font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+  .status-success { background: #064e3b; color: var(--green); }
+  .status-failed  { background: #450a0a; color: var(--red); }
+  .card { background: var(--surface); border: 1px solid var(--border);
+          border-radius: 0.5rem; padding: 1.25rem; margin-bottom: 1rem; }
+  .card h2 { font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;
+             color: var(--muted); margin-bottom: 0.75rem; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .kv { margin-bottom: 0.5rem; }
+  .kv .label { color: var(--muted); font-size: 0.8rem; }
+  .kv .value { font-size: 0.95rem; }
+  .mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td:first-child { width: 80px; color: var(--muted); }
+  .quicklinks { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+  .quicklinks a { display: inline-block; padding: 0.4rem 0.75rem; background: #0c4a6e;
+                  border-radius: 0.375rem; font-size: 0.8rem; font-weight: 500; }
+  .quicklinks a:hover { background: #075985; text-decoration: none; }
+  .nav { margin-bottom: 1rem; }
+  .nav a { font-size: 0.85rem; }
+  .footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);
+            color: var(--muted); font-size: 0.75rem; text-align: center; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="nav"><a href="index.html">&larr; All Deployments</a></div>
+
+<h1>Deployment Report <span class="status-badge status-success">SUCCESS</span></h1>
+<p class="subtitle">20260219-233826 &mdash; production &mdash; Future SkillR</p>
+
+<div class="grid">
+  <div class="card">
+    <h2>Deployment</h2>
+    <div class="kv"><div class="label">Service</div><div class="value">future-skillr</div></div>
+    <div class="kv"><div class="label">Revision</div><div class="value mono">future-skillr-00001-hhh</div></div>
+    <div class="kv"><div class="label">Project</div><div class="value mono">gen-lang-client-0456368718</div></div>
+    <div class="kv"><div class="label">Region</div><div class="value">europe-west3</div></div>
+    <div class="kv"><div class="label">URL</div><div class="value"><a href="https://future-skillr-3fjvhlhlra-ey.a.run.app" target="_blank">https://future-skillr-3fjvhlhlra-ey.a.run.app</a></div></div>
+  </div>
+  <div class="card">
+    <h2>Source</h2>
+    <div class="kv"><div class="label">Git SHA</div><div class="value mono">b5ac0f0</div></div>
+    <div class="kv"><div class="label">Branch</div><div class="value mono">claude/ecstatic-joliot</div></div>
+    <div class="kv"><div class="label">Message</div><div class="value">Add TC-024 feature toggle system with Gate metadata on all 54 FR docs</div></div>
+    <div class="kv"><div class="label">Deployer</div><div class="value">mirko.kaempf@gmail.com</div></div>
+    <div class="kv"><div class="label">Started</div><div class="value mono">2026-02-19T22:38:12Z</div></div>
+    <div class="kv"><div class="label">Finished</div><div class="value mono">2026-02-19T22:38:25Z</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Quick Links</h2>
+  <div class="quicklinks">
+    <a href="https://future-skillr-3fjvhlhlra-ey.a.run.app" target="_blank">Live App</a>
+    <a href="https://console.cloud.google.com/run/detail/europe-west3/future-skillr/revisions?project=gen-lang-client-0456368718" target="_blank">Revisions</a>
+    <a href="https://console.cloud.google.com/run/detail/europe-west3/future-skillr/logs?project=gen-lang-client-0456368718" target="_blank">Logs</a>
+    <a href="https://console.cloud.google.com/cloud-build/builds?project=gen-lang-client-0456368718" target="_blank">Build History</a>
+    <a href="https://console.cloud.google.com/artifacts/docker/gen-lang-client-0456368718/europe-west3/cloud-run-source-deploy?project=gen-lang-client-0456368718" target="_blank">Images</a>
+    <a href="https://console.cloud.google.com/sql?project=gen-lang-client-0456368718" target="_blank">Cloud SQL</a>
+    <a href="https://console.firebase.google.com/project/gen-lang-client-0456368718" target="_blank">Firebase</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Recent Commits</h2>
+  <table>
+<tr><td class="mono">b5ac0f0</td><td>Add TC-024 feature toggle system with Gate metadata on all 54 FR docs</td></tr>
+<tr><td class="mono">ffcd448</td><td>Add MVP3 backend, frontend intro sequence, and infrastructure</td></tr>
+<tr><td class="mono">268e9c5</td><td>Update FR docs and ROADMAP for MVP2 completion</td></tr>
+<tr><td class="mono">9cc62c8</td><td>Fix firestore test env and add MVP2 tests (111 total)</td></tr>
+<tr><td class="mono">c705849</td><td>Add Level 2 Reflection Engine with capability scoring (FR-020)</td></tr>
+<tr><td class="mono">25d0416</td><td>Add transit audio mode with TTS and 2-button UI (FR-032)</td></tr>
+<tr><td class="mono">73f7d08</td><td>Add micro-session UX with quick-start and session timer (FR-026)</td></tr>
+<tr><td class="mono">dc4ae79</td><td>Add interest profile tracking with skill category breakdown (FR-014)</td></tr>
+<tr><td class="mono">7cfd0f4</td><td>Enhance Meta Kurs Editor with dimension editing and station CRUD (FR-045)</td></tr>
+<tr><td class="mono">1c89893</td><td>Add 3D globe navigation with react-globe.gl (FR-031)</td></tr>
+  </table>
+</div>
+
+<div class="footer">
+  Generated by <code>scripts/deploy.sh</code> on 2026-02-19T22:38:26Z
+</div>
+
+</div>
+</body>
+</html>

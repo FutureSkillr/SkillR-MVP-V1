@@ -8,7 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	echomw "github.com/labstack/echo/v4/middleware"
 
-	"github.com/FutureSkillr/MVP72/backend/internal/config"
+	"skillr-mvp-v1/backend/internal/config"
 )
 
 type Server struct {

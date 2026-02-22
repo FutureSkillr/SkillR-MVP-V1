@@ -11,7 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 	goredis "github.com/redis/go-redis/v9"
 
-	"github.com/FutureSkillr/MVP72/backend/internal/config"
+	"skillr-mvp-v1/backend/internal/config"
 )
 
 type HealthHandler struct {

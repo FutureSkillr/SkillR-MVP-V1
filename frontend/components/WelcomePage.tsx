@@ -298,7 +298,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted }) => {
               S
             </div>
             <span className="text-xl font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>
-              Future Skiller
+              SkillR
             </span>
           </div>
           <button
@@ -525,7 +525,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted }) => {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 gradient-blue rounded-lg flex items-center justify-center font-bold text-xs shadow-lg">S</div>
-            <span>&copy; 2026 Future Skiller</span>
+            <span>&copy; 2026 SkillR</span>
           </div>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
             {stakeholders.map((s) => (

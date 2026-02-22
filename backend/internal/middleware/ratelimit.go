@@ -9,7 +9,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	internalredis "github.com/FutureSkillr/MVP72/backend/internal/redis"
+	internalredis "skillr-mvp-v1/backend/internal/redis"
 )
 
 // In-memory fallback counters when Redis is unavailable

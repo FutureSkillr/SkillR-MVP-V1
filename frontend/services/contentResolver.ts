@@ -9,9 +9,9 @@ import { FIRST_STATIONS } from '../constants/stations';
 import type { EditablePrompts, EditableJourney, EditableStation } from '../types/admin';
 import type { JourneyDefinition, Station } from '../types/journey';
 
-const PROMPTS_KEY = 'future-skiller-custom-prompts';
-const JOURNEYS_KEY = 'future-skiller-custom-journeys';
-const STATIONS_KEY = 'future-skiller-custom-stations';
+const PROMPTS_KEY = 'skillr-custom-prompts';
+const JOURNEYS_KEY = 'skillr-custom-journeys';
+const STATIONS_KEY = 'skillr-custom-stations';
 
 // --- Prompts ---
 

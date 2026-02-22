@@ -6,9 +6,9 @@ on:
       - 'v*'
 
 env:
-  PROJECT_ID: future-skillr
+  PROJECT_ID: skillr
   REGION: europe-west3
-  SERVICE: future-skillr
+  SERVICE: skillr
 
 jobs:
   deploy:

@@ -26,7 +26,7 @@ interface VucaStationProps {
   voiceDialect?: VoiceDialect;
 }
 
-const VUCA_STORAGE_KEY = 'future-skiller-vuca-state';
+const VUCA_STORAGE_KEY = 'skillr-vuca-state';
 
 function loadVucaState(): VucaStationState {
   try {

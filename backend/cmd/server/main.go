@@ -14,15 +14,15 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
-	"github.com/FutureSkillr/MVP72/backend/internal/ai"
-	"github.com/FutureSkillr/MVP72/backend/internal/config"
-	"github.com/FutureSkillr/MVP72/backend/internal/domain/lernreise"
-	"github.com/FutureSkillr/MVP72/backend/internal/honeycomb"
-	"github.com/FutureSkillr/MVP72/backend/internal/memory"
-	"github.com/FutureSkillr/MVP72/backend/internal/postgres"
-	"github.com/FutureSkillr/MVP72/backend/internal/redis"
-	"github.com/FutureSkillr/MVP72/backend/internal/server"
-	"github.com/FutureSkillr/MVP72/backend/internal/solid"
+	"skillr-mvp-v1/backend/internal/ai"
+	"skillr-mvp-v1/backend/internal/config"
+	"skillr-mvp-v1/backend/internal/domain/lernreise"
+	"skillr-mvp-v1/backend/internal/honeycomb"
+	"skillr-mvp-v1/backend/internal/memory"
+	"skillr-mvp-v1/backend/internal/postgres"
+	"skillr-mvp-v1/backend/internal/redis"
+	"skillr-mvp-v1/backend/internal/server"
+	"skillr-mvp-v1/backend/internal/solid"
 )
 
 // version is set at build time via ldflags: -X main.version=<git-sha>
