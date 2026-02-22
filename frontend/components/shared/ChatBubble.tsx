@@ -36,7 +36,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
           isUser ? 'text-white' : 'text-slate-200'
         }`}
       >
-        <p className="text-sm leading-relaxed whitespace-pre-wrap">
+        <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
           {displayContent}
         </p>
         {!isUser && onSpeak && (

@@ -3,6 +3,8 @@ node_modules/
 
 # Build output
 frontend/dist/
+bin/
+backend/server
 
 # Environment files (contain secrets)
 .env

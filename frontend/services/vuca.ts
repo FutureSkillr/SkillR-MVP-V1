@@ -43,3 +43,23 @@ export function getModuleById(
 ): VucaModule | undefined {
   return state.curriculum?.modules.find((m) => m.id === moduleId);
 }
+
+export function getOppositeDimension(dimension: string): string | null {
+  const opposites: Record<string, string> = { V: 'A', A: 'V', U: 'C', C: 'U' };
+  return opposites[dimension] || null;
+}
+
+export function getGegensatzSuggestion(
+  modules: VucaModule[],
+  lastCompletedModuleId: string | null,
+): VucaModule | null {
+  if (!lastCompletedModuleId) return null;
+
+  const lastModule = modules.find((m) => m.id === lastCompletedModuleId);
+  if (!lastModule) return null;
+
+  const oppositeDim = getOppositeDimension(lastModule.category);
+  if (!oppositeDim) return null;
+
+  return modules.find((m) => m.category === oppositeDim && !m.completed) || null;
+}

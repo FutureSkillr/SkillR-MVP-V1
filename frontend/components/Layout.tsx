@@ -89,12 +89,12 @@ export const Layout: React.FC<LayoutProps> = ({
                 {onToggleVoice && (
                   <button
                     onClick={onToggleVoice}
-                    className={`p-1.5 rounded-lg transition-colors ${
+                    className={`p-1.5 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${
                       voiceEnabled
                         ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
                         : 'bg-slate-800/50 border border-white/10 text-slate-500 hover:text-slate-300'
                     }`}
-                    title={voiceEnabled ? 'Sprachausgabe deaktivieren' : 'Sprachausgabe aktivieren'}
+                    title={voiceEnabled ? 'Audio-Modus deaktivieren' : 'Audio-Modus aktivieren'}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       {voiceEnabled ? (

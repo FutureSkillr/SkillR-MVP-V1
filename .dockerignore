@@ -17,6 +17,8 @@ integrations/
 
 # Admin scripts (not needed in image)
 scripts/
+!scripts/entrypoint.sh
+!scripts/seed-pod.sh
 
 # Frontend build artifacts and local env
 frontend/node_modules/

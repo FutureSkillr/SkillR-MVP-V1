@@ -36,7 +36,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
         </div>
         <button
           onClick={onBack}
-          className="text-xs px-4 py-2 rounded-lg glass text-slate-300 hover:text-white transition-colors"
+          className="text-xs px-4 py-2 rounded-lg glass min-h-[44px] text-slate-300 hover:text-white transition-colors"
         >
           Zurueck zur App
         </button>

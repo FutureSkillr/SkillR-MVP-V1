@@ -12,61 +12,34 @@ vi.mock('firebase/auth', () => ({
   FacebookAuthProvider: vi.fn(() => ({ addScope: vi.fn() })),
 }));
 
-// Mock global fetch
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
-
 beforeEach(() => {
-  mockFetch.mockReset();
   vi.resetModules();
 });
 
 describe('firebase service', () => {
-  it('isFirebaseConfigured returns false before init', async () => {
+  it('isFirebaseConfigured returns false when env vars are empty', async () => {
     const { isFirebaseConfigured } = await import('./firebase');
     expect(isFirebaseConfigured()).toBe(false);
   });
 
-  it('initFirebase fetches config from /api/config', async () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        firebase: {
-          apiKey: 'test-key',
-          authDomain: 'test.firebaseapp.com',
-          projectId: 'test-project',
-          storageBucket: 'test.appspot.com',
-          messagingSenderId: '123',
-          appId: '1:123:web:abc',
-        },
-      }),
-    });
-
-    const { initFirebase, isFirebaseConfigured } = await import('./firebase');
-    await initFirebase();
-
-    expect(mockFetch).toHaveBeenCalledWith('/api/config');
-    expect(isFirebaseConfigured()).toBe(true);
+  it('getFirebaseApp returns an app instance', async () => {
+    const { getFirebaseApp } = await import('./firebase');
+    const app = getFirebaseApp();
+    expect(app).toBeDefined();
+    expect(app).toHaveProperty('name', 'mock-app');
   });
 
-  it('initFirebase handles missing config gracefully', async () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        firebase: { apiKey: '', authDomain: '', projectId: '', storageBucket: '', messagingSenderId: '', appId: '' },
-      }),
-    });
-
-    const { initFirebase, isFirebaseConfigured } = await import('./firebase');
-    await initFirebase();
-
-    expect(isFirebaseConfigured()).toBe(false);
+  it('getFirebaseAuth returns an auth instance', async () => {
+    const { getFirebaseAuth } = await import('./firebase');
+    const auth = getFirebaseAuth();
+    expect(auth).toBeDefined();
   });
 
-  it('initFirebase throws on network error', async () => {
-    mockFetch.mockResolvedValue({ ok: false, status: 500 });
-
-    const { initFirebase } = await import('./firebase');
-    await expect(initFirebase()).rejects.toThrow('Failed to fetch config: 500');
+  it('getGoogleProvider returns a provider with scopes', async () => {
+    const { getGoogleProvider } = await import('./firebase');
+    const provider = getGoogleProvider();
+    expect(provider).toBeDefined();
+    expect(provider.addScope).toHaveBeenCalledWith('email');
+    expect(provider.addScope).toHaveBeenCalledWith('profile');
   });
 });

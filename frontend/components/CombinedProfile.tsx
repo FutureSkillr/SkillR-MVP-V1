@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   RadarChart,
   PolarGrid,
@@ -114,6 +114,20 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
   onSelectJourney,
   onDialectChange,
 }) => {
+  // FR-070 AC8: 3-tier responsive radar chart sizing
+  const [radarSize, setRadarSize] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.innerWidth < 400 ? 220 : window.innerWidth < 640 ? 280 : 350
+      : 350
+  );
+  useEffect(() => {
+    const handleResize = () => {
+      setRadarSize(window.innerWidth < 400 ? 220 : window.innerWidth < 640 ? 280 : 350);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const [playingDialect, setPlayingDialect] = useState<VoiceDialect | null>(null);
   const [loadingDialect, setLoadingDialect] = useState<VoiceDialect | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -241,7 +255,7 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
           Faehigkeiten-Radar
         </h2>
         {stationResults.length > 0 ? (
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={radarSize}>
             <RadarChart data={radarData}>
               <PolarGrid stroke="rgba(255,255,255,0.1)" />
               <PolarAngleAxis

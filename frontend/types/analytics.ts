@@ -7,7 +7,8 @@ export type UserEventType =
   | 'station_complete'
   | 'profile_view'
   | 'chat_message_sent'
-  | 'chat_session_end';
+  | 'chat_session_end'
+  | 'visitor_waiting';
 
 export interface UserEvent {
   event_type: UserEventType;

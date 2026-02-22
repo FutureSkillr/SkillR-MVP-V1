@@ -1,0 +1,11 @@
+/* FR-070: Mobile-First Responsive Design */
+
+/* AC2: Prevent horizontal scroll on small viewports */
+html, body {
+  overflow-x: hidden;
+}
+
+/* AC3: iOS zoom prevention — inputs must be >= 16px */
+input, textarea, select {
+  font-size: 16px;
+}

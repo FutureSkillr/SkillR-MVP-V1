@@ -1,77 +1,68 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { geminiService } from './gemini';
 
-// Mock global fetch
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
+// Hoist mock so it's available inside vi.mock factory
+const { mockGenerateContent } = vi.hoisted(() => ({
+  mockGenerateContent: vi.fn(),
+}));
+
+// Mock @google/genai before importing the module under test
+vi.mock('@google/genai', () => ({
+  GoogleGenAI: vi.fn(() => ({
+    models: {
+      generateContent: mockGenerateContent,
+    },
+  })),
+  Type: { OBJECT: 'OBJECT', ARRAY: 'ARRAY', STRING: 'STRING', NUMBER: 'NUMBER' },
+}));
+
+import { geminiService, MODEL_NAME } from './gemini';
 
 beforeEach(() => {
-  mockFetch.mockReset();
+  mockGenerateContent.mockReset();
 });
 
-function jsonResponse(data: unknown, status = 200) {
-  return {
-    ok: status >= 200 && status < 300,
-    status,
-    headers: new Headers(),
-    json: () => Promise.resolve(data),
-  };
-}
-
-describe('geminiService (Go backend client)', () => {
+describe('geminiService (Google GenAI SDK)', () => {
   describe('chat', () => {
-    it('sends correct request to /api/v1/ai/chat', async () => {
-      mockFetch.mockResolvedValue(jsonResponse({ text: 'Hallo!', response: 'Hallo!', agent_id: 'passthrough' }));
+    it('calls generateContent and returns text', async () => {
+      mockGenerateContent.mockResolvedValue({ text: 'Hallo!' });
 
       const result = await geminiService.chat(
         'Du bist ein Coach.',
         [{ role: 'user', content: 'Hi' }],
-        'Wie geht es?'
+        'Wie geht es?',
       );
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/v1/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: 'Du bist ein Coach.',
-          history: [{ role: 'user', content: 'Hi' }],
-          message: 'Wie geht es?',
+      expect(mockGenerateContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: MODEL_NAME,
+          config: expect.objectContaining({
+            systemInstruction: 'Du bist ein Coach.',
+          }),
         }),
-      });
+      );
       expect(result).toEqual({ text: 'Hallo!', retryCount: 0 });
     });
 
-    it('falls back to response field when text is empty', async () => {
-      mockFetch.mockResolvedValue(jsonResponse({ text: '', response: 'Antwort', agent_id: 'default' }));
+    it('returns empty string when response text is undefined', async () => {
+      mockGenerateContent.mockResolvedValue({ text: undefined });
 
       const result = await geminiService.chat('sys', [], 'msg');
-      expect(result.text).toBe('Antwort');
+      expect(result.text).toBe('');
     });
 
-    it('throws on 429 rate limit', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 429,
-        headers: new Headers({ 'Retry-After': '30' }),
-        json: () => Promise.resolve({ error: 'Too many requests', error_code: 'ai_rate_limited' }),
-      });
+    it('retries on 429 rate limit', async () => {
+      mockGenerateContent
+        .mockRejectedValueOnce(new Error('429 RESOURCE_EXHAUSTED'))
+        .mockResolvedValue({ text: 'OK' });
 
-      await expect(
-        geminiService.chat('sys', [], 'msg')
-      ).rejects.toThrow('Too many requests');
-    });
-
-    it('throws on gateway error', async () => {
-      mockFetch.mockResolvedValue(jsonResponse({ error: 'AI service unavailable' }, 500));
-
-      await expect(
-        geminiService.chat('sys', [], 'msg')
-      ).rejects.toThrow('AI service unavailable');
-    });
+      const result = await geminiService.chat('sys', [], 'msg');
+      expect(result.text).toBe('OK');
+      expect(result.retryCount).toBe(1);
+    }, 10000);
   });
 
   describe('extractInsights', () => {
-    it('sends messages to /api/v1/ai/extract with insights context', async () => {
+    it('parses JSON response into insights', async () => {
       const mockResult = {
         interests: ['Holz'],
         strengths: ['Kreativitaet'],
@@ -79,110 +70,81 @@ describe('geminiService (Go backend client)', () => {
         recommendedJourney: 'vuca',
         summary: 'Test',
       };
-      mockFetch.mockResolvedValue(jsonResponse({ result: mockResult, prompt_id: 'builtin:insights' }));
+      mockGenerateContent.mockResolvedValue({
+        text: JSON.stringify(mockResult),
+      });
 
       const result = await geminiService.extractInsights([
         { role: 'user', content: 'Ich mag Holz' },
       ]);
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/v1/ai/extract', expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: 'Ich mag Holz' }],
-          context: { extract_type: 'insights' },
-        }),
-      }));
       expect(result.data.interests).toContain('Holz');
       expect(result.retryCount).toBe(0);
     });
-  });
 
-  describe('extractStationResult', () => {
-    it('sends correct params to /api/v1/ai/extract with station-result context', async () => {
-      const mockResult = {
-        stationId: 'v1',
-        journeyType: 'vuca',
-        dimensionScores: { creativity: 80 },
-        summary: 'Gut gemacht',
-        completedAt: 12345,
-      };
-      mockFetch.mockResolvedValue(jsonResponse({ result: mockResult, prompt_id: 'builtin:station-result' }));
+    it('returns fallback on invalid JSON', async () => {
+      mockGenerateContent.mockResolvedValue({ text: 'not json' });
 
-      const result = await geminiService.extractStationResult('vuca', 'v1', []);
-
-      expect(mockFetch).toHaveBeenCalledWith('/api/v1/ai/extract', expect.objectContaining({
-        body: JSON.stringify({
-          messages: [],
-          context: { extract_type: 'station-result', journey_type: 'vuca', station_id: 'v1' },
-        }),
-      }));
-      expect(result.data.stationId).toBe('v1');
+      const result = await geminiService.extractInsights([]);
+      expect(result.data.interests).toEqual([]);
+      expect(result.data.summary).toContain('konnte nicht analysiert');
     });
   });
 
   describe('generateCurriculum', () => {
-    it('sends goal to /api/v1/ai/generate with curriculum context', async () => {
-      mockFetch.mockResolvedValue(jsonResponse({
-        result: { goal: 'Foerster', modules: [] },
-        prompt_id: 'builtin:curriculum',
-      }));
+    it('generates curriculum for a goal', async () => {
+      mockGenerateContent.mockResolvedValue({
+        text: JSON.stringify({
+          goal: 'Foerster',
+          modules: [{ id: 'v1', title: 'Wald', description: '', category: 'V', order: 1 }],
+        }),
+      });
 
       const result = await geminiService.generateCurriculum('Foerster');
-
-      expect(mockFetch).toHaveBeenCalledWith('/api/v1/ai/generate', expect.objectContaining({
-        body: JSON.stringify({
-          parameters: { goal: 'Foerster' },
-          context: { generate_type: 'curriculum' },
-        }),
-      }));
       expect(result.data.goal).toBe('Foerster');
+      expect(result.data.modules[0].completed).toBe(false);
     });
   });
 
   describe('generateCourse', () => {
-    it('sends module and goal to /api/v1/ai/generate with course context', async () => {
-      mockFetch.mockResolvedValue(jsonResponse({
-        result: { moduleId: 'test', title: 'Test', sections: [], quiz: [] },
-        prompt_id: 'builtin:course',
-      }));
+    it('generates course content for a module', async () => {
+      mockGenerateContent.mockResolvedValue({
+        text: JSON.stringify({
+          title: 'Test',
+          sections: [{ heading: 'Intro', content: 'Hello' }],
+          quiz: [],
+        }),
+      });
 
       const result = await geminiService.generateCourse(
         { title: 'Test', description: 'Desc', category: 'V' },
-        'Goal'
+        'Goal',
       );
-
-      expect(mockFetch).toHaveBeenCalledWith('/api/v1/ai/generate', expect.objectContaining({
-        body: JSON.stringify({
-          parameters: { module: { title: 'Test', description: 'Desc', category: 'V' }, goal: 'Goal' },
-          context: { generate_type: 'course' },
-        }),
-      }));
       expect(result.data.title).toBe('Test');
+      expect(result.data.sections).toHaveLength(1);
     });
   });
 
   describe('textToSpeech', () => {
-    it('returns audio base64 from /api/v1/ai/tts', async () => {
-      mockFetch.mockResolvedValue(jsonResponse({ audio: 'AAAA==' }));
+    it('returns audio base64 from TTS response', async () => {
+      mockGenerateContent.mockResolvedValue({
+        candidates: [{
+          content: {
+            parts: [{ inlineData: { data: 'AAAA==', mimeType: 'audio/wav' } }],
+          },
+        }],
+      });
 
       const result = await geminiService.textToSpeech('Hallo Welt');
-
-      expect(mockFetch).toHaveBeenCalledWith('/api/v1/ai/tts', expect.objectContaining({
-        body: JSON.stringify({ text: 'Hallo Welt', voice_dialect: 'hochdeutsch' }),
-      }));
       expect(result).toBe('AAAA==');
     });
   });
 
   describe('speechToText', () => {
-    it('returns text from /api/v1/ai/stt', async () => {
-      mockFetch.mockResolvedValue(jsonResponse({ text: 'Hallo' }));
+    it('returns transcription from STT response', async () => {
+      mockGenerateContent.mockResolvedValue({ text: 'Hallo' });
 
       const result = await geminiService.speechToText('audiodata', 'audio/wav');
-
-      expect(mockFetch).toHaveBeenCalledWith('/api/v1/ai/stt', expect.objectContaining({
-        body: JSON.stringify({ audio: 'audiodata', mime_type: 'audio/wav' }),
-      }));
       expect(result).toBe('Hallo');
     });
   });

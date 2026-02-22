@@ -6,6 +6,8 @@ interface ChatInputProps {
   disabled?: boolean;
   placeholder?: string;
   accentColor?: string;
+  voiceEnabled?: boolean;
+  onToggleVoice?: () => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({

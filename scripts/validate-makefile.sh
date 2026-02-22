@@ -15,6 +15,9 @@
 #
 set -euo pipefail
 
+# Always run from the project root (one level above scripts/)
+cd "$(dirname "$0")/.."
+
 # ─── Colors & Symbols ───────────────────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'

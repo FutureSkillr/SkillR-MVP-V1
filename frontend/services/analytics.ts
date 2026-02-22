@@ -100,6 +100,10 @@ export function trackPageView(fromView: string, toView: string): void {
   track('page_view', { from_view: fromView, to_view: toView });
 }
 
+export function trackVisitorWaiting(queuePosition: number): void {
+  track('visitor_waiting', { queue_position: queuePosition });
+}
+
 export function trackOnboardingStart(): void {
   track('onboarding_start', { started_at: Date.now() });
 }
