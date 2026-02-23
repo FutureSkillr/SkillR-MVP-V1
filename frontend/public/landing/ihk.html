@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/icons/favicon-32x32.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <title>SkillR — Fuer IHK & Kammern</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -34,7 +36,7 @@
   <nav class="fixed top-0 w-full z-50 glass">
     <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
       <a href="/" class="flex items-center gap-3">
-        <div class="w-10 h-10 gradient-blue rounded-xl flex items-center justify-center font-bold text-lg shadow-lg">S</div>
+        <img src="/icons/app-icon.png" alt="SkillR" class="w-10 h-10 rounded-xl shadow-lg" />
         <span class="text-xl font-bold" style="font-family: 'Outfit', sans-serif;">SkillR</span>
       </a>
       <div class="hidden md:flex items-center gap-8 text-sm text-slate-400">
@@ -285,7 +287,7 @@
   <footer class="glass py-8 px-6 mt-12">
     <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 gradient-blue rounded-lg flex items-center justify-center font-bold text-xs shadow-lg">S</div>
+        <img src="/icons/app-icon.png" alt="SkillR" class="w-8 h-8 rounded-lg shadow-lg" />
         <span>&copy; 2026 SkillR</span>
       </div>
       <div class="flex gap-6">
@@ -295,6 +297,11 @@
         <a href="coaches.html" class="hover:text-white transition-colors">Coaches</a>
         <a href="arbeitsagentur.html" class="hover:text-white transition-colors">Arbeitsagentur</a>
       </div>
+    </div>
+    <div class="flex flex-wrap justify-center gap-6 text-xs text-slate-500 border-t border-white/5 pt-4 mt-4">
+      <a href="/?view=impressum" class="hover:text-white transition-colors" style="min-height:44px;display:inline-flex;align-items:center;">Impressum</a>
+      <a href="/?view=datenschutz" class="hover:text-white transition-colors" style="min-height:44px;display:inline-flex;align-items:center;">Datenschutz</a>
+      <a href="/?view=cookies" class="hover:text-white transition-colors" style="min-height:44px;display:inline-flex;align-items:center;">Cookie-Einstellungen</a>
     </div>
   </footer>
 

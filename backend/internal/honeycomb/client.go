@@ -148,7 +148,7 @@ func (c *HTTPClient) SubmitTask(ctx context.Context, ctxID, dataID, moduleID, ta
 	if err != nil {
 		return nil, fmt.Errorf("submit task: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -192,7 +192,7 @@ func (c *HTTPClient) Ping(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("ping honeycomb: %w", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	// Any HTTP response means the service is reachable
 	return nil
 }
@@ -208,7 +208,7 @@ func (c *HTTPClient) doGet(ctx context.Context, url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

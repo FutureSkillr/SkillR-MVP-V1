@@ -4,7 +4,6 @@ go 1.24
 
 require (
 	cloud.google.com/go/firestore v1.18.0
-	cloud.google.com/go/vertexai v0.15.0
 	firebase.google.com/go/v4 v4.14.1
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/google/uuid v1.6.0
@@ -12,6 +11,7 @@ require (
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/redis/go-redis/v9 v9.7.0
 	golang.org/x/crypto v0.39.0
+	golang.org/x/oauth2 v0.30.0
 	google.golang.org/api v0.237.0
 	google.golang.org/genai v1.47.0
 )
@@ -19,7 +19,6 @@ require (
 require (
 	cel.dev/expr v0.23.0 // indirect
 	cloud.google.com/go v0.121.2 // indirect
-	cloud.google.com/go/aiplatform v1.90.0 // indirect
 	cloud.google.com/go/auth v0.16.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.7.0 // indirect
@@ -169,7 +168,6 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/mod v0.25.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
-	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect

@@ -17,8 +17,11 @@ import (
 	"skillr-mvp-v1/backend/internal/ai"
 	"skillr-mvp-v1/backend/internal/config"
 	"skillr-mvp-v1/backend/internal/domain/lernreise"
+	"skillr-mvp-v1/backend/internal/firebase"
+	"skillr-mvp-v1/backend/internal/gateway"
 	"skillr-mvp-v1/backend/internal/honeycomb"
 	"skillr-mvp-v1/backend/internal/memory"
+	"skillr-mvp-v1/backend/internal/middleware"
 	"skillr-mvp-v1/backend/internal/postgres"
 	"skillr-mvp-v1/backend/internal/redis"
 	"skillr-mvp-v1/backend/internal/server"
@@ -63,16 +66,16 @@ func run() error {
 
 	// Initialize AI handler if GCP project is configured
 	if cfg.GCPProject != "" {
-		aiClient, err := ai.NewVertexAIClient(ctx, cfg.GCPProject, cfg.GCPRegion)
+		aiClient, err := ai.NewVertexAIClient(ctx, cfg.GCPProject, cfg.GCPRegion, cfg.GCPTTSRegion)
 		if err != nil {
 			log.Printf("warning: AI service unavailable: %v (passthrough mode disabled)", err)
 		} else {
 			orch := ai.NewPassthroughOrchestrator()
 			deps.AI = ai.NewHandler(aiClient, orch)
 			healthH.SetAI(true)
-			log.Printf("AI service initialized (project=%s, region=%s)", cfg.GCPProject, cfg.GCPRegion)
+			log.Printf("AI service initialized (project=%s, region=%s, ttsRegion=%s)", cfg.GCPProject, cfg.GCPRegion, cfg.GCPTTSRegion)
 			// Close AI client on shutdown
-			defer aiClient.Close()
+			defer func() { _ = aiClient.Close() }()
 		}
 	} else {
 		log.Println("warning: GCP_PROJECT_ID not set — AI routes disabled")
@@ -102,6 +105,50 @@ func run() error {
 	} else {
 		log.Println("warning: SOLID_POD_ENABLED not set or SOLID_POD_URL empty — Pod routes disabled")
 	}
+
+	// Initialize Firebase auth middleware if configured (FR-056)
+	if cfg.FirebaseProject != "" {
+		fbClient, err := firebase.NewClient(ctx, cfg.FirebaseProject)
+		if err != nil {
+			log.Printf("warning: Firebase unavailable: %v (auth middleware disabled)", err)
+		} else {
+			defer fbClient.Close()
+			deps.FirebaseAuthMiddleware = middleware.FirebaseAuth(fbClient)
+			deps.OptionalFirebaseAuth = middleware.OptionalFirebaseAuth(fbClient)
+			log.Printf("Firebase auth initialized (project=%s)", cfg.FirebaseProject)
+		}
+	}
+
+	// Fallback: use local session auth when Firebase is not configured (local dev)
+	if deps.FirebaseAuthMiddleware == nil {
+		deps.FirebaseAuthMiddleware = middleware.LocalSessionAuth()
+		log.Println("Firebase not configured — using local session auth for admin routes")
+	}
+
+	// Initialize rate limiters with in-memory fallback (FR-060)
+	// Redis client is connected later; SetClient upgrades to Redis-backed.
+	rl := redis.NewRateLimiter(nil)
+	deps.AIRateLimit = middleware.RateLimit(rl, "ai", 30, time.Minute)
+	deps.EndorsementRateLimit = middleware.RateLimit(rl, "endorsement", 10, time.Minute)
+	log.Println("rate limiters initialized (in-memory fallback)")
+
+	// Initialize gateway handlers (created early with nil DB, SetDB called after pool connects)
+	gwAnalytics := gateway.NewAnalyticsHandler()
+	gwLegal := gateway.NewLegalHandler()
+	gwUserAdmin := gateway.NewUserAdminHandler()
+	gwPromptLogs := gateway.NewPromptLogHandler()
+	gwBrand := gateway.NewBrandHandler()
+	gwCampaigns := gateway.NewCampaignHandler()
+	gwContentPack := gateway.NewContentPackHandler()
+
+	deps.GatewayAnalytics = gwAnalytics
+	deps.GatewayLegal = gwLegal
+	deps.GatewayUserAdmin = gwUserAdmin
+	deps.GatewayPromptLogs = gwPromptLogs
+	deps.GatewayCapacity = gateway.NewCapacityHandler()
+	deps.GatewayBrand = gwBrand
+	deps.GatewayCampaigns = gwCampaigns
+	deps.GatewayContentPack = gwContentPack
 
 	server.RegisterRoutes(srv.Echo, deps)
 	server.RegisterStaticRoutes(srv.Echo, cfg.StaticDir)
@@ -156,8 +203,18 @@ func run() error {
 			solidSvc.SetDB(pool)
 		}
 
+		// Inject DB into gateway handlers (created earlier with nil DB)
+		gwAnalytics.SetDB(pool)
+		gwLegal.SetDB(pool)
+		gwUserAdmin.SetDB(pool)
+		gwPromptLogs.SetDB(pool)
+		gwBrand.SetDB(pool)
+		gwCampaigns.SetDB(pool)
+		gwContentPack.SetDB(pool)
+		log.Println("gateway handlers connected to PostgreSQL")
+
 		// Seed default admin user if the users table is empty
-		authH.SeedAdmin(ctx)
+		authH.SeedAdmin(ctx, cfg.AdminSeedEmail, cfg.AdminSeedPassword)
 	}
 
 	// Connect to Redis (optional)
@@ -165,9 +222,13 @@ func run() error {
 	if err != nil {
 		log.Printf("warning: redis unavailable: %v", err)
 	} else if redisClient != nil {
-		defer redisClient.Close()
+		defer func() { _ = redisClient.Close() }()
 		log.Println("connected to Redis")
 		healthH.SetRedis(redisClient)
+
+		// Upgrade rate limiters from in-memory to Redis-backed (FR-060)
+		rl.SetClient(redisClient)
+		log.Println("rate limiters upgraded to Redis-backed")
 	}
 
 	// Block until shutdown
@@ -189,7 +250,7 @@ func runMigrations(cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("create migrator: %w", err)
 	}
-	defer m.Close()
+	defer func() { _, _ = m.Close() }()
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("apply migrations: %w", err)

@@ -1,6 +1,16 @@
 import type { AuthUser, AuthProvider, UserRole } from '../types/auth';
 
 const SESSION_KEY = 'skillr-session';
+const TOKEN_KEY = 'skillr-token';
+
+/** Returns auth headers for admin API calls. */
+export function getAuthHeaders(): Record<string, string> {
+  const token = localStorage.getItem(TOKEN_KEY);
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
 export async function register(
   email: string,
@@ -35,7 +45,12 @@ export async function login(email: string, password: string): Promise<AuthUser> 
     throw new Error(body.error || 'E-Mail oder Passwort falsch.');
   }
 
-  const authUser: AuthUser = await res.json();
+  const body = await res.json();
+  // Backend wraps the response: { "user": {...}, "token": "..." }
+  const authUser: AuthUser = body.user ?? body;
+  if (body.token) {
+    localStorage.setItem(TOKEN_KEY, body.token);
+  }
   localStorage.setItem(SESSION_KEY, JSON.stringify(authUser));
   return authUser;
 }
@@ -59,6 +74,7 @@ export async function loginWithProvider(provider: AuthProvider): Promise<AuthUse
 
 export function logout(): void {
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 export function getCurrentUser(): AuthUser | null {
@@ -74,8 +90,15 @@ export function getCurrentUser(): AuthUser | null {
 }
 
 export async function getAllUsers(): Promise<AuthUser[]> {
-  const res = await fetch('/api/users');
-  return res.json();
+  const res = await fetch('/api/users', { headers: getAuthHeaders() });
+  if (!res.ok) {
+    console.warn('[auth] GET /api/users failed:', res.status);
+    // Fallback: return the currently logged-in user so the admin panel is not empty
+    const current = getCurrentUser();
+    return current ? [current] : [];
+  }
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
 }
 
 export function seedDefaultAdmin(): void {
@@ -85,7 +108,7 @@ export function seedDefaultAdmin(): void {
 export async function updateUserRole(userId: string, newRole: UserRole): Promise<void> {
   const res = await fetch(`/api/users/${userId}/role`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ role: newRole }),
   });
 
@@ -103,7 +126,7 @@ export async function updateUserRole(userId: string, newRole: UserRole): Promise
 }
 
 export async function deleteUser(userId: string): Promise<void> {
-  const res = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+  const res = await fetch(`/api/users/${userId}`, { method: 'DELETE', headers: getAuthHeaders() });
 
   if (!res.ok) {
     const body = await res.json();

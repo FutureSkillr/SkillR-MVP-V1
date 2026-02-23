@@ -1,0 +1,531 @@
+-- lernreise.allium
+--
+-- Lernreise (Learning Journey) — Honeycomb Integration
+--
+-- Enables structured learning journeys powered by the Honeycomb
+-- course engine. Students browse a catalog, select a course, work
+-- through modules and tasks, and earn XP for progress. The backend
+-- acts as a proxy between the Firebase-authenticated frontend and the
+-- Honeycomb/Memory external APIs, adding identity mapping, local
+-- event logging, and XP awards.
+--
+-- Architecture: Proxy pattern. Honeycomb is the source of truth for
+-- course content and progress percentages. SkillR stores instance
+-- bindings, progress events, and XP awards locally.
+
+use "./engagement.allium" as engagement
+
+------------------------------------------------------------
+-- External Entities
+------------------------------------------------------------
+
+external entity User {
+    id: String
+    display_name: String
+    email: Email
+    status: active | suspended
+}
+
+-- Honeycomb: external course engine (REST API).
+external entity HoneycombServer {
+    base_url: URL
+    api_key: String
+}
+
+-- Memory Service: user context registration.
+external entity MemoryServer {
+    base_url: URL
+    api_key: String
+}
+
+------------------------------------------------------------
+-- Value Types
+------------------------------------------------------------
+
+value TaskSource {
+    url: URL
+    title: String
+}
+
+------------------------------------------------------------
+-- Entities
+------------------------------------------------------------
+
+-- Identity mapping: Firebase UID → Honeycomb context ID.
+-- Created once per user on first Lernreise interaction.
+
+entity UserContext {
+    user: User
+    ctx_id: String              -- Honeycomb context ID (unique per user)
+    registered_at: Timestamp
+
+    -- Derived
+    is_registered: ctx_id != null
+}
+
+-- A course available in the Honeycomb catalog.
+
+entity CatalogEntry {
+    honeycomb_id: String        -- data_id in Honeycomb
+    name: String
+    description: String
+}
+
+-- Full course structure with modules and tasks.
+-- Retrieved from Honeycomb on demand; not stored locally.
+
+entity CourseData {
+    honeycomb_id: String
+    name: String
+    description: String
+    progress_label: String      -- e.g., "5/10"
+    progress_percent: Integer   -- 0-100
+
+    -- Relationships
+    modules: CourseModule for this course_data
+}
+
+entity CourseModule {
+    course_data: CourseData
+    module_id: String
+    name: String
+    duration: String            -- e.g., "90 min"
+    severity: String            -- e.g., "leicht", "mittel", "schwer"
+    progress_percent: Integer   -- 0-100
+    can_start: Boolean          -- prerequisites satisfied?
+    content: String             -- module description (may contain HTML)
+    requirements: String
+    goals: String
+
+    -- Relationships
+    tasks: ModuleTask for this course_module
+    prerequisite_modules: Set<String>   -- module IDs that must be done first
+    unlocks_modules: Set<String>        -- module IDs this enables
+}
+
+entity ModuleTask {
+    course_module: CourseModule
+    task_id: String
+    name: String
+    description: String
+    state: open | in_progress | done
+    sources: List<TaskSource>
+    memory_id: String?          -- link to Memory service item
+}
+
+-- A user's binding to a specific course.
+-- Only one active instance per user at any time.
+
+entity Instance {
+    id: String                  -- UUID
+    user: User
+    user_context: UserContext
+    honeycomb_data_id: String   -- course ID in Honeycomb
+    title: String               -- cached course name
+    status: active | paused | completed | abandoned
+    progress_percent: Integer   -- 0-100, from Honeycomb
+    progress_label: String      -- human-readable, from Honeycomb
+    started_at: Timestamp
+    completed_at: Timestamp?
+    last_synced_at: Timestamp?
+
+    -- Relationships
+    progress_events: ProgressEvent for this instance
+
+    -- Derived
+    is_active: status = active
+    is_complete: status = completed
+    duration: if completed_at != null: completed_at - started_at else: now - started_at
+}
+
+-- Audit trail: one event per task submission.
+-- Records the state transition as reported by Honeycomb.
+
+entity ProgressEvent {
+    instance: Instance
+    module_id: String
+    task_id: String
+    old_state: String           -- task state before submission
+    new_state: String           -- task state after submission
+    course_progress_percent: Integer  -- course-level progress after this event
+    xp_awarded: Integer         -- total XP earned from this submission
+    created_at: Timestamp
+}
+
+------------------------------------------------------------
+-- Config
+------------------------------------------------------------
+
+config {
+    xp_lernreise_started: Integer = 15
+    xp_task_complete: Integer = 20
+    xp_module_complete: Integer = 75        -- bonus when module reaches 100%
+    xp_course_complete: Integer = 200       -- bonus when course reaches 100%
+    max_display_name_length: Integer = 200
+}
+
+------------------------------------------------------------
+-- Rules: Identity Resolution
+------------------------------------------------------------
+
+-- Lazy registration: on first Lernreise interaction, register user
+-- with the Memory service to obtain a Honeycomb context ID.
+
+rule ResolveUserContext {
+    when: UserAccessesLernreise(user)
+
+    requires: not exists UserContext{user}
+
+    -- Black box: calls Memory service POST /user/access
+    let ctx_id = register_with_memory(user)    -- black box
+
+    ensures: UserContext.created(
+        user: user,
+        ctx_id: ctx_id,
+        registered_at: now
+    )
+}
+
+rule ResolveUserContextCached {
+    when: UserAccessesLernreise(user)
+
+    let context = UserContext{user}
+
+    requires: exists context
+
+    -- No action needed; ctx_id already cached.
+    ensures: UserContextResolved(user, context.ctx_id)
+}
+
+------------------------------------------------------------
+-- Rules: Catalog Browsing
+------------------------------------------------------------
+
+rule BrowseCatalog {
+    when: UserBrowsesCatalog(user)
+
+    let context = UserContext{user}
+
+    requires: context.is_registered
+
+    -- Black box: calls Honeycomb GET /{ctx_id}/list
+    let entries = fetch_catalog(context.ctx_id)    -- black box
+
+    ensures: CatalogLoaded(user, entries)
+}
+
+rule ViewCourseDetail {
+    when: UserViewsCourseDetail(user, honeycomb_data_id)
+
+    let context = UserContext{user}
+
+    requires: context.is_registered
+
+    -- Black box: calls Honeycomb GET /{ctx_id}/data/{data_id}
+    let course = fetch_course_data(context.ctx_id, honeycomb_data_id)    -- black box
+
+    ensures: CourseDetailLoaded(user, course)
+}
+
+------------------------------------------------------------
+-- Rules: Instance Lifecycle
+------------------------------------------------------------
+
+rule SelectCourse {
+    when: UserSelectsCourse(user, honeycomb_data_id)
+
+    let context = UserContext{user}
+
+    requires: context.is_registered
+    requires: not exists Instance{user, status: active}    -- one active at a time
+
+    -- Fetch course data to get title and initial progress
+    let course = fetch_course_data(context.ctx_id, honeycomb_data_id)    -- black box
+
+    ensures: Instance.created(
+        id: generate_uuid(),    -- black box
+        user: user,
+        user_context: context,
+        honeycomb_data_id: honeycomb_data_id,
+        title: course.name,
+        status: active,
+        progress_percent: course.progress_percent,
+        progress_label: course.progress_label,
+        started_at: now
+    )
+    ensures: engagement/UserPerformsAction(user, lernreise_started)
+}
+
+rule PauseInstance {
+    when: UserPausesInstance(user, instance)
+
+    requires: instance.user = user
+    requires: instance.status = active
+
+    ensures: instance.status = paused
+}
+
+rule ResumeInstance {
+    when: UserResumesInstance(user, instance)
+
+    requires: instance.user = user
+    requires: instance.status = paused
+    requires: not exists Instance{user, status: active}    -- no other active
+
+    ensures: instance.status = active
+}
+
+rule AbandonInstance {
+    when: UserAbandonsInstance(user, instance)
+
+    requires: instance.user = user
+    requires: instance.status in [active, paused]
+
+    ensures: instance.status = abandoned
+}
+
+------------------------------------------------------------
+-- Rules: Task Submission
+------------------------------------------------------------
+
+rule SubmitTask {
+    when: UserSubmitsTask(user, instance, module_id, task_id)
+
+    requires: instance.user = user
+    requires: instance.status = active
+
+    let context = instance.user_context
+
+    -- Step 1: Get current task state (before submission)
+    let before = fetch_course_data(context.ctx_id, instance.honeycomb_data_id)    -- black box
+    let old_state = extract_task_state(before, module_id, task_id)                -- black box
+
+    -- Step 2: Submit to Honeycomb
+    let after = submit_task_to_honeycomb(
+        context.ctx_id, instance.honeycomb_data_id, module_id, task_id
+    )    -- black box
+
+    let new_state = extract_task_state(after, module_id, task_id)    -- black box
+    let module_progress = extract_module_progress(after, module_id)  -- black box
+
+    -- Step 3: Calculate XP
+    let base_xp = config.xp_task_complete
+    let module_bonus = if module_progress >= 100: config.xp_module_complete else: 0
+    let course_bonus = if after.progress_percent >= 100: config.xp_course_complete else: 0
+    let total_xp = base_xp + module_bonus + course_bonus
+
+    -- Step 4: Log progress event
+    ensures: ProgressEvent.created(
+        instance: instance,
+        module_id: module_id,
+        task_id: task_id,
+        old_state: old_state,
+        new_state: new_state,
+        course_progress_percent: after.progress_percent,
+        xp_awarded: total_xp,
+        created_at: now
+    )
+
+    -- Step 5: Update instance from Honeycomb response
+    ensures: instance.progress_percent = after.progress_percent
+    ensures: instance.progress_label = after.progress_label
+    ensures: instance.last_synced_at = now
+
+    -- Step 6: Detect completion
+    ensures:
+        if after.progress_percent >= 100:
+            instance.status = completed
+            instance.completed_at = now
+
+    -- Step 7: Award XP via engagement system
+    ensures: engagement/UserPerformsAction(user, lernreise_task_complete)
+    ensures:
+        if module_bonus > 0:
+            engagement/UserPerformsAction(user, lernreise_module_complete)
+    ensures:
+        if course_bonus > 0:
+            engagement/UserPerformsAction(user, lernreise_complete)
+
+    ensures: TaskSubmitted(user, instance, total_xp)
+}
+
+------------------------------------------------------------
+-- Rules: Instance Ownership Enforcement
+------------------------------------------------------------
+
+rule EnforceInstanceOwnership {
+    when: UserViewsInstance(user, instance)
+
+    requires: instance.user = user
+
+    let context = instance.user_context
+    let course = fetch_course_data(context.ctx_id, instance.honeycomb_data_id)    -- black box
+
+    ensures: InstanceLoaded(user, instance, course)
+}
+
+rule RejectNonOwner {
+    when: UserViewsInstance(user, instance)
+
+    requires: instance.user != user
+
+    ensures: AccessDenied(user, instance)
+}
+
+------------------------------------------------------------
+-- Actor Declarations
+------------------------------------------------------------
+
+actor Learner {
+    identified_by: User with status = active
+}
+
+------------------------------------------------------------
+-- Surfaces
+------------------------------------------------------------
+
+surface CatalogView {
+    for learner: Learner
+
+    exposes:
+        -- Catalog entries loaded on demand from Honeycomb
+
+    provides:
+        UserBrowsesCatalog(learner)
+        UserViewsCourseDetail(learner, honeycomb_data_id)
+        UserSelectsCourse(learner, honeycomb_data_id)
+            when not exists Instance{learner, status: active}
+
+    guidance:
+        -- Grid of available courses with title, description, duration.
+        -- "Lernreise starten" button disabled if user has active instance.
+        -- Show active instance banner at top: "Du bist gerade auf: [title]".
+}
+
+surface ActiveInstanceView {
+    for learner: Learner
+
+    context instance: Instance with user = learner and status = active
+
+    exposes:
+        instance.title
+        instance.progress_percent
+        instance.progress_label
+        instance.started_at
+        instance.duration
+
+    provides:
+        UserSubmitsTask(learner, instance, module_id, task_id)
+        UserPausesInstance(learner, instance)
+        UserAbandonsInstance(learner, instance)
+
+    navigates_to:
+        ModuleView(instance, module)
+        ProgressHistoryView(instance)
+
+    guidance:
+        -- Course dashboard with module list.
+        -- Each module shows: title, duration, severity, progress bar.
+        -- Locked modules (can_start = false) greyed out with padlock icon.
+        -- Tasks within module: checkbox-style list.
+        -- Submit button per task sends to Honeycomb.
+        -- Progress bar at top: "[progress_label] erledigt".
+}
+
+surface ModuleView {
+    for learner: Learner
+
+    context instance: Instance with user = learner
+
+    exposes:
+        -- Module data loaded on demand from Honeycomb:
+        -- name, content, goals, requirements, tasks with state
+
+    provides:
+        UserSubmitsTask(learner, instance, module_id, task_id)
+            when instance.status = active
+
+    guidance:
+        -- Module detail page.
+        -- Content sections: Inhalt, Voraussetzungen, Ziele.
+        -- Task list with state indicators (open/in_progress/done).
+        -- Sources shown as "Quellen" links per task.
+        -- Submit task triggers Honeycomb + progress log + XP.
+}
+
+surface ProgressHistoryView {
+    for learner: Learner
+
+    context instance: Instance with user = learner
+
+    exposes:
+        instance.title
+        instance.progress_percent
+        for event in instance.progress_events:
+            event.module_id
+            event.task_id
+            event.old_state
+            event.new_state
+            event.course_progress_percent
+            event.xp_awarded
+            event.created_at
+
+    guidance:
+        -- Chronological event log: "Task [name] erledigt (+N XP)".
+        -- Timeline visualization with progress percentage at each step.
+        -- Module completion milestones highlighted.
+        -- Course completion celebration at 100%.
+}
+
+surface InstanceHistoryView {
+    for learner: Learner
+
+    let instances = Instance for learner
+
+    exposes:
+        for inst in instances:
+            inst.title
+            inst.status
+            inst.progress_percent
+            inst.started_at
+            inst.completed_at
+            inst.duration
+
+    provides:
+        for inst in instances:
+            UserResumesInstance(learner, inst)
+                when inst.status = paused
+                and not exists Instance{learner, status: active}
+
+    navigates_to:
+        for inst in instances:
+            ProgressHistoryView(inst)
+
+    guidance:
+        -- List of all journeys: active, paused, completed, abandoned.
+        -- Status badges: green (active), yellow (paused), blue (completed), grey (abandoned).
+        -- Completed instances show duration and total XP earned.
+        -- Resume button for paused instances (only if no active exists).
+}
+
+------------------------------------------------------------
+-- Deferred Specifications
+------------------------------------------------------------
+
+deferred HoneycombClient.list_courses          -- see: backend/internal/honeycomb/client.go
+deferred HoneycombClient.get_course_data       -- see: backend/internal/honeycomb/client.go
+deferred HoneycombClient.submit_task           -- see: backend/internal/honeycomb/client.go
+deferred MemoryClient.register_user            -- see: backend/internal/memory/client.go
+deferred MemoryItemSync.download_items         -- see: specs/memory-sync.allium (FR-092)
+deferred InsightsExtractor.parse_items         -- see: specs/insights.allium (FR-092)
+
+------------------------------------------------------------
+-- Open Questions
+------------------------------------------------------------
+
+open_question "Task submission is not idempotent — submitting the same task twice awards XP twice. Should we guard against duplicate submissions?"
+open_question "Should pause/resume/abandon transitions award or deduct XP?"
+open_question "Honeycomb progress_percent is the source of truth — what happens if it goes DOWN (e.g., Honeycomb re-evaluates)? Currently we overwrite blindly."
+open_question "Module prerequisite enforcement: should SkillR enforce can_start locally, or rely entirely on Honeycomb's gating?"
+open_question "Memory service ctx_id is cached forever — should it expire or re-validate periodically?"
+open_question "Should completed Lernreise instances feed into the InterestProfile / Solid Pod, and if so, which dimensions?"

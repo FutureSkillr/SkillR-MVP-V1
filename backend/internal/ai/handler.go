@@ -85,6 +85,7 @@ type AIClient interface {
 	Generate(ctx context.Context, req ChatRequest) (*ChatResponse, error)
 	TextToSpeech(ctx context.Context, req TTSRequest) (*TTSResponse, error)
 	SpeechToText(ctx context.Context, req STTRequest) (*STTResponse, error)
+	Ping(ctx context.Context) (int64, error)
 }
 
 type Handler struct {
@@ -143,6 +144,67 @@ Regeln:
 - 2-3 Abschnitte mit Lerninhalt
 - 3 Quiz-Fragen (Multiple-Choice mit je 4 Optionen)
 - Alle Texte auf Deutsch`,
+}
+
+// ── Status ───────────────────────────────────────────────────────────────────
+
+// AiStatusResponse is returned by the /api/v1/ai/status endpoint.
+type AiStatusResponse struct {
+	Status    string `json:"status"`     // "connected", "error", "network_error"
+	LatencyMs int64  `json:"latency_ms"` // round-trip time of the ping
+	ErrorCode string `json:"error_code,omitempty"`
+	Message   string `json:"message,omitempty"`
+}
+
+// Status performs an active Vertex AI connectivity check and returns the result.
+func (h *Handler) Status(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	latencyMs, err := h.ai.Ping(ctx)
+	if err != nil {
+		errMsg := err.Error()
+		lower := strings.ToLower(errMsg)
+
+		status := "error"
+		errorCode := "ai_error"
+
+		switch {
+		case strings.Contains(lower, "connection refused") ||
+			strings.Contains(lower, "no such host") ||
+			strings.Contains(lower, "dial tcp") ||
+			strings.Contains(lower, "network is unreachable") ||
+			strings.Contains(lower, "dns"):
+			status = "network_error"
+			errorCode = "ai_network_error"
+		case strings.Contains(lower, "context deadline exceeded") ||
+			strings.Contains(lower, "timeout"):
+			status = "network_error"
+			errorCode = "ai_timeout"
+		case strings.Contains(lower, "could not find default credentials") ||
+			strings.Contains(lower, "application default credentials"):
+			errorCode = "ai_credentials_missing"
+		case strings.Contains(errMsg, "PERMISSION_DENIED"):
+			errorCode = "ai_permission_denied"
+		case strings.Contains(errMsg, "RESOURCE_EXHAUSTED") || strings.Contains(errMsg, "429"):
+			errorCode = "ai_rate_limited"
+		}
+
+		log.Printf("[AI] Status check: %s (error_code=%s, latency=%dms): %v", status, errorCode, latencyMs, err)
+
+		return c.JSON(http.StatusOK, AiStatusResponse{
+			Status:    status,
+			LatencyMs: latencyMs,
+			ErrorCode: errorCode,
+			Message:   errMsg,
+		})
+	}
+
+	log.Printf("[AI] Status check: connected (latency=%dms)", latencyMs)
+
+	return c.JSON(http.StatusOK, AiStatusResponse{
+		Status:    "connected",
+		LatencyMs: latencyMs,
+	})
 }
 
 // ── Chat ─────────────────────────────────────────────────────────────────────
@@ -620,9 +682,10 @@ func formatTranscript(messages []map[string]string, extractType string) string {
 		role := msg["role"]
 		text := msgText(msg)
 		label := role
-		if role == "user" {
+		switch role {
+		case "user":
 			label = "Nutzer"
-		} else if role == "model" {
+		case "model":
 			label = coachLabel
 		}
 		parts = append(parts, label+": "+text)

@@ -18,11 +18,14 @@ func (c *Config) LogStatus() {
 	log.Printf("  Firebase:       %s", configured(c.FirebaseProject))
 	log.Printf("  GCP Project:    %s", configured(c.GCPProject))
 	log.Printf("  GCP Region:     %s", c.GCPRegion)
+	log.Printf("  GCP TTS Region: %s", c.GCPTTSRegion)
 	log.Printf("  Honeycomb:      %s", configured(c.HoneycombURL))
 	log.Printf("  Memory Service: %s", configured(c.MemoryServiceURL))
 	log.Printf("  Solid Pod:      %s (enabled=%v)", configured(c.SolidPodURL), c.SolidPodEnabled)
 	log.Printf("  Health Token:   %s", configured(c.HealthCheckToken))
 	log.Printf("  CORS Origins:   %v", c.AllowedOrigins)
+	log.Printf("  Admin Email:    %s", c.AdminSeedEmail)
+	log.Printf("  Admin Password: %s", c.AdminSeedPassword)
 	log.Println("============================")
 }
 
@@ -50,6 +53,7 @@ type Config struct {
 	FirebaseProject string
 	GCPProject      string
 	GCPRegion       string
+	GCPTTSRegion    string // Separate region for TTS/STT (Gemini TTS not available in all regions)
 	AllowedOrigins  []string
 	RunMigrations   bool
 	MigrationsPath  string
@@ -71,6 +75,9 @@ type Config struct {
 	// Solid Pod integration (MVP4 — FR-076)
 	SolidPodURL     string
 	SolidPodEnabled bool
+	// Admin seed credentials (FR-115)
+	AdminSeedEmail    string
+	AdminSeedPassword string
 }
 
 func Load() (*Config, error) {
@@ -87,7 +94,8 @@ func Load() (*Config, error) {
 		FirebaseProject: os.Getenv("FIREBASE_PROJECT_ID"),
 		GCPProject:      getEnv("GCP_PROJECT_ID", os.Getenv("FIREBASE_PROJECT_ID")),
 		GCPRegion:       getEnv("GCP_REGION", "europe-west3"),
-		AllowedOrigins:  parseOrigins(getEnv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:9090")),
+		GCPTTSRegion:    getEnv("GCP_TTS_REGION", "europe-west1"),
+		AllowedOrigins:  parseOrigins(getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173,http://localhost:9090")),
 		RunMigrations:   getEnvBool("RUN_MIGRATIONS", false),
 		MigrationsPath:  getEnv("MIGRATIONS_PATH", "migrations"),
 		StaticDir:       getEnv("STATIC_DIR", "static"),
@@ -107,6 +115,9 @@ func Load() (*Config, error) {
 		// Solid Pod (FR-076)
 		SolidPodURL:     os.Getenv("SOLID_POD_URL"),
 		SolidPodEnabled: getEnvBool("SOLID_POD_ENABLED", false),
+		// Admin seed (FR-115) — defaults for local dev
+		AdminSeedEmail:    getEnv("ADMIN_SEED_EMAIL", "admin@skillr.local"),
+		AdminSeedPassword: getEnv("ADMIN_SEED_PASSWORD", "Skillr1dev"),
 	}
 	// M12: Warn about ALLOWED_ORIGINS in production
 	if os.Getenv("ALLOWED_ORIGINS") == "" {

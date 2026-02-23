@@ -460,12 +460,25 @@ BRAND_FILES=(
   frontend/package.json
   frontend/vite.config.ts
   frontend/server/index.ts
+  terraform/modules/cloud-sql/main.tf
+  terraform/modules/cloud-run/main.tf
+  terraform/modules/firebase/main.tf
+  terraform/environments/production/main.tf
+  terraform/environments/production/variables.tf
+  terraform/environments/staging/main.tf
+  terraform/environments/staging/variables.tf
+  scripts/gcp-onboard.sh
+  scripts/deploy.sh
+  scripts/setup-secrets.sh
+  scripts/health-check.sh
+  scripts/health-monitor.sh
+  scripts/setup-firebase.sh
+  scripts/seed-pod.sh
 )
 
 BRAND_PATTERNS=(
   "future-skillr"
   "futureskiller"
-  "Future SkillR"
   "future_skillr"
   "FutureSkillr"
 )
@@ -489,6 +502,17 @@ if [ $BRAND_LEAKS -eq 0 ]; then
   echo -e "  ${CHECK} No brand leaks found in infrastructure files"
 else
   echo -e "\n  ${YELLOW}Found ${BRAND_LEAKS} brand leak(s) — consider renaming to SkillR${RESET}"
+fi
+
+# ─── Gitignore Safety Checks ──────────────────────────────────────────────────
+
+log_header "Gitignore Safety Checks"
+
+if grep -q '^credentials/' .gitignore 2>/dev/null; then
+  echo -e "  ${CHECK} credentials/ is in .gitignore"
+else
+  echo -e "  ${CROSS} credentials/ is NOT in .gitignore — risk of committing SA keys"
+  FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 
 # ─── Summary Table ───────────────────────────────────────────────────────────

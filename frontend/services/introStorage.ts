@@ -90,6 +90,7 @@ export function markSmalltalkComplete(interests: string[]): void {
   if (!state) return;
   state.smalltalkComplete = true;
   state.interests = interests;
+  state.smalltalkCompletedAt = Date.now();
   saveIntroState(state);
 }
 
@@ -98,6 +99,16 @@ export function markDemoComplete(): void {
   if (!state) return;
   state.demoComplete = true;
   state.earnedXP = 25;
+  state.demoCompletedAt = Date.now();
+  state.completedAt = Date.now();
+  saveIntroState(state);
+}
+
+export function markFastForward(): void {
+  const state = loadIntroState();
+  if (!state) return;
+  state.fastForward = true;
+  state.completedAt = Date.now();
   saveIntroState(state);
 }
 

@@ -14,7 +14,7 @@ variable "region" {
 
 variable "service_name" {
   type    = string
-  default = "future-skillr"
+  default = "skillr"
 }
 
 variable "image_tag" {

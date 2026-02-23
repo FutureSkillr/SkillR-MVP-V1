@@ -216,6 +216,9 @@ const FACE_COMPONENTS: Record<string, React.FC<{ color: string }>> = {
 export const CoachAvatar: React.FC<CoachAvatarProps> = ({ coach, size = 'md' }) => {
   const s = SIZES[size];
   const FaceComponent = FACE_COMPONENTS[coach.id] || FaceSusi;
+  const [photoError, setPhotoError] = React.useState(false);
+
+  const usePhoto = !!coach.photoUrl && !photoError;
 
   return (
     <div
@@ -228,7 +231,16 @@ export const CoachAvatar: React.FC<CoachAvatarProps> = ({ coach, size = 'md' }) 
       <div
         className={`${s.inner} rounded-full bg-slate-900 flex items-center justify-center relative overflow-hidden`}
       >
-        <FaceComponent color={coach.color} />
+        {usePhoto ? (
+          <img
+            src={coach.photoUrl}
+            alt={coach.name}
+            className="w-full h-full object-cover rounded-full"
+            onError={() => setPhotoError(true)}
+          />
+        ) : (
+          <FaceComponent color={coach.color} />
+        )}
       </div>
     </div>
   );

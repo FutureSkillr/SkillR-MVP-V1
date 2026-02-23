@@ -15,10 +15,11 @@ vi.mock('@google/genai', () => ({
   Type: { OBJECT: 'OBJECT', ARRAY: 'ARRAY', STRING: 'STRING', NUMBER: 'NUMBER' },
 }));
 
-import { geminiService, MODEL_NAME } from './gemini';
+import { geminiService, backendChatService, MODEL_NAME } from './gemini';
 
 beforeEach(() => {
   mockGenerateContent.mockReset();
+  vi.restoreAllMocks();
 });
 
 describe('geminiService (Google GenAI SDK)', () => {
@@ -147,5 +148,76 @@ describe('geminiService (Google GenAI SDK)', () => {
       const result = await geminiService.speechToText('audiodata', 'audio/wav');
       expect(result).toBe('Hallo');
     });
+  });
+});
+
+describe('backendChatService (Go backend)', () => {
+  it('sends correct JSON body with assistant→model role mapping', async () => {
+    const mockFetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ text: 'Antwort vom Backend' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const result = await backendChatService.chat(
+      'Du bist ein Coach.',
+      [
+        { role: 'user', content: 'Hallo' },
+        { role: 'assistant', content: 'Hi!' },
+        { role: 'user', content: 'Wie geht es?' },
+      ],
+      'Erzaehl mir mehr',
+    );
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/v1/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: 'Du bist ein Coach.',
+        message: 'Erzaehl mir mehr',
+        history: [
+          { role: 'user', content: 'Hallo' },
+          { role: 'model', content: 'Hi!' },
+          { role: 'user', content: 'Wie geht es?' },
+        ],
+      }),
+    });
+    expect(result).toEqual({ text: 'Antwort vom Backend', retryCount: 0 });
+  });
+
+  it('throws error with HTTP status and error_code on failure', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ error: 'AI rate limit exceeded', error_code: 'ai_rate_limited' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    await expect(backendChatService.chat('sys', [], 'msg')).rejects.toThrow(
+      '429 ai_rate_limited',
+    );
+  });
+
+  it('handles non-JSON error responses gracefully', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('Internal Server Error', { status: 500 }),
+    );
+
+    await expect(backendChatService.chat('sys', [], 'msg')).rejects.toThrow(
+      '500',
+    );
+  });
+
+  it('returns empty string when response text is missing', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ response: 'ok' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const result = await backendChatService.chat('sys', [], 'msg');
+    expect(result.text).toBe('');
   });
 });

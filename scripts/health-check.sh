@@ -68,7 +68,7 @@ if [[ -n "${SERVICE_URL:-}" ]]; then
 else
   PROJECT_ID="${GCP_PROJECT_ID:-gen-lang-client-0456368718}"
   REGION="${GCP_REGION:-europe-west3}"
-  SERVICE="${CLOUD_RUN_SERVICE:-future-skillr}"
+  SERVICE="${CLOUD_RUN_SERVICE:-skillr}"
 
   echo ""
   printf "${BOLD}Fetching Cloud Run service info...${NC}\n"

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   RadarChart,
   PolarGrid,
@@ -9,10 +9,10 @@ import {
   Legend,
 } from 'recharts';
 import { getJourneysAsDefinitions, getAllDimensions, getStations } from '../services/contentResolver';
-import { pcmToWavBlob } from '../services/audioUtils';
-import { geminiService } from '../services/gemini';
-import type { UserProfile, VoiceDialect } from '../types/user';
-import { VOICE_DIALECTS } from '../types/user';
+import { COACHES } from '../constants/coaches';
+import { CoachCard } from './intro/CoachCard';
+import type { UserProfile } from '../types/user';
+import type { CoachId } from '../types/intro';
 import type { StationResult, JourneyType } from '../types/journey';
 
 // --- Activity Timeline helpers ---
@@ -98,21 +98,15 @@ interface CombinedProfileProps {
   stationResults: StationResult[];
   onBack: () => void;
   onSelectJourney: () => void;
-  onDialectChange?: (dialect: VoiceDialect) => void;
+  onCoachChange?: (coachId: CoachId) => void;
 }
-
-const JOURNEY_COLORS: Record<JourneyType, string> = {
-  vuca: '#3b82f6',
-  entrepreneur: '#f97316',
-  'self-learning': '#a855f7',
-};
 
 export const CombinedProfile: React.FC<CombinedProfileProps> = ({
   profile,
   stationResults,
   onBack,
   onSelectJourney,
-  onDialectChange,
+  onCoachChange,
 }) => {
   // FR-070 AC8: 3-tier responsive radar chart sizing
   const [radarSize, setRadarSize] = useState(() =>
@@ -127,82 +121,6 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  const [playingDialect, setPlayingDialect] = useState<VoiceDialect | null>(null);
-  const [loadingDialect, setLoadingDialect] = useState<VoiceDialect | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const urlRef = useRef<string | null>(null);
-  const generationRef = useRef(0);
-
-  const stopPreview = useCallback(() => {
-    generationRef.current++;
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.onended = null;
-      audioRef.current.onerror = null;
-      audioRef.current = null;
-    }
-    if (urlRef.current) {
-      URL.revokeObjectURL(urlRef.current);
-      urlRef.current = null;
-    }
-    setPlayingDialect(null);
-    setLoadingDialect(null);
-  }, []);
-
-  const previewDialect = useCallback(async (dialectKey: VoiceDialect, greeting: string) => {
-    const gen = ++generationRef.current;
-    stopPreview();
-    setLoadingDialect(dialectKey);
-
-    try {
-      const pcmBase64 = await geminiService.textToSpeech(greeting, dialectKey);
-      if (gen !== generationRef.current) return;
-
-      const wavBlob = pcmToWavBlob(pcmBase64);
-      const url = URL.createObjectURL(wavBlob);
-      urlRef.current = url;
-      const audio = new Audio(url);
-      audioRef.current = audio;
-
-      audio.onplay = () => {
-        if (gen !== generationRef.current) return;
-        setPlayingDialect(dialectKey);
-        setLoadingDialect(null);
-      };
-      audio.onended = () => {
-        if (gen !== generationRef.current) return;
-        setPlayingDialect(null);
-        if (urlRef.current) { URL.revokeObjectURL(urlRef.current); urlRef.current = null; }
-      };
-      audio.onerror = () => {
-        if (gen !== generationRef.current) return;
-        setPlayingDialect(null);
-        setLoadingDialect(null);
-      };
-
-      if (gen !== generationRef.current) { URL.revokeObjectURL(url); return; }
-      await audio.play();
-    } catch (error) {
-      if (gen !== generationRef.current) return;
-      console.warn('[TTS] Gemini dialect preview failed, using browser fallback:', error);
-      setLoadingDialect(null);
-      // Fallback to browser speechSynthesis
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(greeting);
-        utterance.lang = 'de-DE';
-        utterance.rate = 0.95;
-        const voices = window.speechSynthesis.getVoices();
-        const germanVoice = voices.find((v) => v.lang.startsWith('de'));
-        if (germanVoice) utterance.voice = germanVoice;
-        utterance.onstart = () => setPlayingDialect(dialectKey);
-        utterance.onend = () => setPlayingDialect(null);
-        utterance.onerror = () => setPlayingDialect(null);
-        window.speechSynthesis.speak(utterance);
-      }
-    }
-  }, [stopPreview]);
 
   // Aggregate scores per dimension across all station results
   const dimensionAggregates: Record<string, { total: number; count: number }> = {};
@@ -239,7 +157,7 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 py-4">
+    <div className="max-w-4xl mx-auto space-y-8 py-4">
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold">Dein Profil</h1>
@@ -345,95 +263,27 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
         </div>
       )}
 
-      {/* Voice Dialect Selector */}
-      <div className="glass rounded-2xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Dein Coach-Dialekt</h2>
-          <span className="text-[10px] text-slate-500 font-mono">
-            {playingDialect ? 'Spricht...' : loadingDialect ? 'Laedt...' : 'Tippe zum Anhoeren'}
-          </span>
+      {/* Coach Selection */}
+      <div className="space-y-4">
+        <div className="px-1">
+          <h2 className="text-lg font-bold">Dein Coach</h2>
+          <p className="text-xs text-slate-400 mt-1">
+            Jeder Coach hat seinen eigenen Stil und Dialekt. Du kannst jederzeit wechseln.
+          </p>
         </div>
-        <p className="text-xs text-slate-400">
-          Waehle, wie dein KI-Coach mit dir spricht. Der Dialekt beeinflusst Texte und Sprachausgabe.
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {VOICE_DIALECTS.map((dialect) => {
-            const isActive = profile.voiceDialect === dialect.key;
-            const isPlaying = playingDialect === dialect.key;
-            const isDialectLoading = loadingDialect === dialect.key;
-            const borderColor = isActive
-              ? dialect.color === 'blue'
-                ? 'border-blue-500'
-                : dialect.color === 'orange'
-                  ? 'border-orange-500'
-                  : 'border-purple-500'
-              : 'border-white/10';
-            const bgColor = isActive
-              ? dialect.color === 'blue'
-                ? 'bg-blue-500/15'
-                : dialect.color === 'orange'
-                  ? 'bg-orange-500/15'
-                  : 'bg-purple-500/15'
-              : 'bg-slate-800/50';
-            const textColor = isActive
-              ? dialect.color === 'blue'
-                ? 'text-blue-400'
-                : dialect.color === 'orange'
-                  ? 'text-orange-400'
-                  : 'text-purple-400'
-              : 'text-slate-300';
-
-            return (
-              <div
-                key={dialect.key}
-                onClick={() => onDialectChange?.(dialect.key)}
-                className={`relative rounded-xl p-4 border ${borderColor} ${bgColor} text-left transition-all hover:scale-[1.02] group cursor-pointer`}
-              >
-                {isActive && (
-                  <div className="absolute top-2 right-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={textColor}>
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                )}
-                <div className="space-y-1.5">
-                  <div className={`text-sm font-bold ${textColor}`}>{dialect.label}</div>
-                  <div className="text-[10px] text-slate-500">{dialect.region}</div>
-                </div>
-                {/* Preview button — uses Gemini TTS with the specific dialect */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (isPlaying) {
-                      stopPreview();
-                    } else {
-                      previewDialect(dialect.key, dialect.greeting);
-                    }
-                  }}
-                  disabled={isDialectLoading}
-                  className={`mt-2 flex items-center gap-1.5 text-[10px] transition-colors ${
-                    isDialectLoading
-                      ? 'text-yellow-500 animate-pulse cursor-wait'
-                      : isPlaying
-                        ? 'text-emerald-400'
-                        : 'text-slate-500 hover:text-white'
-                  }`}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {isPlaying ? (
-                      <>
-                        <rect x="6" y="4" width="4" height="16" />
-                        <rect x="14" y="4" width="4" height="16" />
-                      </>
-                    ) : (
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    )}
-                  </svg>
-                  {isDialectLoading ? 'Laedt...' : isPlaying ? 'Stopp' : 'Anhoeren'}
-                </button>
+        <div className="border border-slate-700/50 rounded-2xl p-4 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {COACHES.map((coach) => (
+              <div key={coach.id} className="h-full">
+                <CoachCard
+                  coach={coach}
+                  selected={profile.coachId === coach.id}
+                  dimmed={!!profile.coachId && profile.coachId !== coach.id}
+                  onSelect={(id) => onCoachChange?.(id as CoachId)}
+                />
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
 
@@ -505,13 +355,13 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
           onClick={onBack}
           className="glass px-6 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition-colors"
         >
-          Zurueck
+          Zurück
         </button>
         <button
           onClick={onSelectJourney}
           className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all"
         >
-          Naechste Reise starten
+          Nächste Reise starten
         </button>
       </div>
     </div>

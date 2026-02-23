@@ -1,0 +1,1260 @@
+-- skill-wallet.allium
+--
+-- Skill-Wallet: Verifiable, Portable Skill Credentials
+--
+-- A Skill-Wallet is a user-sovereign container for verified, signed
+-- skill-representation artefacts. It combines three layers:
+--
+--   1. Solid Pod — data storage under user control (data sovereignty)
+--   2. W3C Verifiable Credentials / Open Badges 3.0 — credential format
+--   3. Blockchain hash anchoring — tamper-resistance via trust chains
+--
+-- Cooperation model:
+--   - maindset.ACADEMY is the credential ISSUER (institutional trust root)
+--   - SkillR is the EVIDENCE SOURCE (generates skill data via journeys)
+--   - The student is the HOLDER (owns the wallet, controls access)
+--   - Schools, employers, institutions are VERIFIERS
+--   - Teachers, mentors are ENDORSERS
+--   - Parents/guardians are CO-CUSTODIANS for minors under 16
+--
+-- Portfolio items are proof artefacts (photo, video, audio, code, PDF,
+-- any file) linked to credentials. Each item's content hash is anchored
+-- on-chain, enabling anyone to verify tamper-resistance without trusting
+-- the platform.
+--
+-- Standards alignment:
+--   - W3C Verifiable Credentials 2.0 (credential data model)
+--   - Open Badges 3.0 / 1EdTech (credential format for informal learning)
+--   - W3C Decentralized Identifiers (identity layer)
+--   - Solid Protocol (data sovereignty)
+--   - EUDI Wallet / eIDAS 2.0 (EU regulatory compatibility)
+--   - EDPB Guidelines 02/2025 (blockchain + GDPR compliance)
+
+use "./solid-pod.allium" as pod
+use "./vuca-journey.allium" as journey
+
+------------------------------------------------------------
+-- External Entities
+------------------------------------------------------------
+
+external entity BlockchainNetwork {
+    -- Ethereum L2 (Polygon PoS, Base, or Arbitrum).
+    chain_id: Integer
+    name: String
+    rpc_url: URL
+}
+
+external entity FirebaseUser {
+    uid: String
+    email: Email
+    display_name: String
+    auth_provider: google | email
+}
+
+------------------------------------------------------------
+-- Value Types
+------------------------------------------------------------
+
+value DID {
+    -- W3C Decentralized Identifier.
+    -- Phase 1: did:web (DNS-based, simple).
+    -- Phase 3: did:key or did:ethr (fully decentralised).
+    uri: String                         -- e.g., "did:web:skillr.de:users:max"
+    method: web | key | ethr
+}
+
+value ContentHash {
+    -- SHA-256 hash of an artefact's binary content.
+    algorithm: String                   -- always "sha-256"
+    value: String                       -- hex-encoded hash
+}
+
+value MerkleProof {
+    -- Proof of inclusion in a Merkle tree whose root is anchored on-chain.
+    root: String                        -- hex Merkle root
+    proof_path: List<String>            -- hex siblings from leaf to root
+    leaf_index: Integer
+}
+
+value SkillClaim {
+    -- A single skill assertion within a credential.
+    dimension: String                   -- e.g., "Kreativitaet", "Teamfaehigkeit"
+    category: String                    -- "Hard Skills", "Soft Skills", "Future Skills", "Resilience"
+    level: Decimal                      -- 0.0 to 1.0
+    evidence_summary: String            -- human-readable justification
+}
+
+value CredentialProof {
+    -- Cryptographic proof attached to a credential.
+    proof_type: issuer_signature | blockchain_anchor | endorser_signature
+    created_at: Timestamp
+    verification_method: String         -- DID URL of the signing key
+    signature: String                   -- base64-encoded signature or tx hash
+}
+
+value FileMetadata {
+    -- Metadata for a portfolio artefact file.
+    filename: String
+    mime_type: String                   -- e.g., "image/jpeg", "video/mp4", "application/pdf"
+    size_bytes: Integer
+    uploaded_at: Timestamp
+}
+
+------------------------------------------------------------
+-- Entities
+------------------------------------------------------------
+
+-- The Skill-Wallet itself: one per user, binds identity + Pod + credentials.
+
+entity SkillWallet {
+    owner: journey/User
+    did: DID
+    pod_connection: pod/PodConnection
+    status: active | suspended | archived
+    created_at: Timestamp
+    blockchain_consent: Boolean         -- explicit opt-in for on-chain anchoring
+    eudi_export_enabled: Boolean        -- opt-in for EUDI Wallet compatibility
+
+    -- Relationships
+    credentials: SkillCredential for this wallet
+    portfolio_items: PortfolioItem for this wallet
+    access_grants: AccessGrant for this wallet
+    guardian_link: GuardianLink for this wallet
+    anchors: CredentialAnchor for this wallet
+
+    -- Projections
+    active_credentials: credentials with status = active
+    revoked_credentials: credentials with status = revoked
+    pending_items: portfolio_items with anchor_status = pending
+    active_grants: access_grants with status = active and expires_at > now
+    unanchored_items: portfolio_items with anchor_status = unanchored
+
+    -- Derived
+    is_minor: owner.age < config.adult_age_threshold
+    has_guardian: guardian_link != null and guardian_link.status = confirmed
+    can_issue_credentials: status = active and (not is_minor or has_guardian)
+    credential_count: active_credentials.count
+    portfolio_item_count: portfolio_items.count
+}
+
+-- A Skill Credential: Open Badge 3.0 / W3C VC 2.0 format.
+
+entity SkillCredential {
+    wallet: SkillWallet
+    credential_id: String               -- globally unique URN
+    credential_type: journey_completion | skill_attestation | endorsement_badge | milestone
+    issuer_did: DID                     -- maindset.ACADEMY DID
+    holder_did: DID                     -- student's DID
+    issued_at: Timestamp
+    expires_at: Timestamp?              -- null = never expires
+    status: draft | active | suspended | revoked | expired
+
+    -- Credential content
+    title: String                       -- e.g., "VUCA Reise: Volatilitaet gemeistert"
+    description: String
+    skill_claims: List<SkillClaim>
+    achievement_type: String            -- Open Badge 3.0 achievement type
+
+    -- Evidence links
+    portfolio_items: PortfolioItem for this credential
+    source_interactions: Set<String>    -- refs to journey interaction IDs
+
+    -- Cryptographic proofs
+    proofs: List<CredentialProof>
+
+    -- Blockchain anchoring
+    anchor: CredentialAnchor?
+    anchor_status: unanchored | pending | anchored | anchor_failed
+
+    -- Revocation
+    revoked_at: Timestamp?
+    revocation_reason: String?
+
+    -- Pod storage
+    pod_resource_path: String?          -- path in Solid Pod
+    synced_to_pod: Boolean
+
+    -- Derived
+    is_active: status = active and (expires_at = null or expires_at > now)
+    is_anchored: anchor_status = anchored
+    is_verifiable: is_active and is_anchored
+    has_evidence: portfolio_items.count > 0
+}
+
+-- A Portfolio Item: any digital artefact that serves as proof.
+
+entity PortfolioItem {
+    wallet: SkillWallet
+    credential: SkillCredential?        -- linked credential (null if standalone)
+
+    -- File identity
+    item_id: String                     -- globally unique
+    file_metadata: FileMetadata
+    storage_url: URL                    -- Pod URL where the artefact is stored
+
+    -- Content integrity
+    content_hash: ContentHash           -- SHA-256 of the original file bytes
+    hash_computed_at: Timestamp         -- when the hash was computed
+
+    -- Blockchain anchoring (tamper-resistance)
+    anchor: CredentialAnchor?
+    anchor_status: unanchored | pending | anchored | anchor_failed
+
+    -- Item classification
+    item_type: photo | video | audio | document | code | certificate | other
+    description: String?
+    tags: Set<String>
+
+    -- Provenance
+    source: user_upload | system_generated | endorser_attached | external_import
+    uploaded_by_did: DID?               -- who uploaded (user, endorser, or system)
+    created_at: Timestamp
+
+    -- Pod sync
+    synced_to_pod: Boolean
+
+    -- Derived
+    is_anchored: anchor_status = anchored
+    is_tamper_evident: is_anchored and content_hash.value != null
+    file_extension: extract_extension(file_metadata.filename)    -- black box
+}
+
+-- Credential Anchor: the on-chain hash record proving tamper-resistance.
+
+entity CredentialAnchor {
+    wallet: SkillWallet
+    anchor_type: credential | portfolio_item | batch
+    status: pending | confirmed | failed
+
+    -- What is being anchored
+    credential: SkillCredential?
+    portfolio_item: PortfolioItem?
+
+    -- Hash data
+    content_hash: ContentHash           -- hash of the credential JSON or file bytes
+    merkle_proof: MerkleProof?          -- proof of inclusion in batch Merkle root
+
+    -- On-chain data
+    chain: BlockchainNetwork
+    transaction_hash: String?           -- blockchain tx hash
+    block_number: Integer?
+    anchored_at: Timestamp?
+
+    -- Batch reference (multiple anchors share one on-chain tx)
+    batch_id: String?
+    batch_merkle_root: String?
+
+    -- Derived
+    is_confirmed: status = confirmed and transaction_hash != null
+    verification_url: build_verification_url(chain, transaction_hash)    -- black box
+}
+
+-- Access Grant: time-bounded, purpose-limited permission for verifiers.
+
+entity AccessGrant {
+    wallet: SkillWallet
+    grantee_name: String                -- "Berliner Stadtbibliothek", "Firma XYZ"
+    grantee_did: DID?                   -- verifier's DID if they have one
+    grantee_email: Email?
+
+    -- Scope
+    scope: full_wallet | selected_credentials | selected_items
+    credential_ids: Set<String>         -- which credentials (if selected_credentials)
+    item_ids: Set<String>               -- which items (if selected_items)
+    purpose: String                     -- "Bewerbung", "Schulanmeldung", "Praktikum"
+
+    -- Lifecycle
+    status: active | expired | revoked
+    granted_at: Timestamp
+    expires_at: Timestamp
+    revoked_at: Timestamp?
+
+    -- Access token
+    access_token: String                -- one-time or time-limited token
+    access_count: Integer               -- how many times accessed
+    max_access_count: Integer?          -- null = unlimited within time window
+
+    -- Derived
+    is_valid: status = active and expires_at > now
+                and (max_access_count = null or access_count < max_access_count)
+    days_remaining: expires_at - now
+}
+
+-- Guardian Link: custodial relationship for minors (DSGVO Art. 8).
+
+entity GuardianLink {
+    wallet: SkillWallet                 -- minor's wallet
+    guardian_name: String
+    guardian_email: Email
+    guardian_did: DID?
+    relationship: parent | legal_guardian | school_authority
+
+    -- Consent lifecycle
+    status: pending | confirmed | revoked | expired
+    requested_at: Timestamp
+    confirmed_at: Timestamp?
+    revoked_at: Timestamp?
+    expires_at: Timestamp               -- must be re-confirmed periodically
+
+    -- Consent scope
+    consent_blockchain: Boolean         -- guardian consents to blockchain anchoring
+    consent_credential_issuance: Boolean
+    consent_data_sharing: Boolean       -- guardian consents to access grants
+
+    -- Verification
+    verification_token: String          -- one-time confirmation link
+    verification_method: email | video_ident | in_person
+
+    -- Derived
+    is_active: status = confirmed and expires_at > now
+    needs_renewal: is_active and expires_at - now <= config.guardian_renewal_warning
+}
+
+-- Credential Revocation Registry: tracks revoked credentials publicly.
+
+entity RevocationEntry {
+    credential: SkillCredential
+    revoked_by_did: DID                 -- issuer DID
+    reason: issuer_error | holder_request | expiry | fraud | key_compromise
+    revoked_at: Timestamp
+    on_chain: Boolean                   -- whether revocation is anchored
+    chain_tx_hash: String?
+}
+
+------------------------------------------------------------
+-- Config
+------------------------------------------------------------
+
+config {
+    -- Age and guardianship
+    adult_age_threshold: Integer = 16               -- Germany: DSGVO Art. 8
+    guardian_consent_expiry: Duration = 365.days     -- annual renewal
+    guardian_renewal_warning: Duration = 30.days
+
+    -- Credential issuance
+    default_credential_expiry: Duration = 1825.days -- 5 years
+    min_skill_claims_per_credential: Integer = 1
+    max_skill_claims_per_credential: Integer = 20
+
+    -- Portfolio items
+    max_file_size_bytes: Integer = 52_428_800        -- 50 MB
+    allowed_mime_types: Set<String> = {
+        "image/jpeg", "image/png", "image/webp", "image/gif",
+        "video/mp4", "video/webm",
+        "audio/mpeg", "audio/ogg", "audio/wav",
+        "application/pdf",
+        "text/plain", "text/markdown", "text/html",
+        "application/zip"
+    }
+
+    -- Blockchain anchoring
+    anchor_batch_size: Integer = 100
+    anchor_batch_interval: Duration = 1.hour
+    anchor_retry_max: Integer = 3
+    anchor_retry_delay: Duration = 5.minutes
+
+    -- Access grants
+    default_grant_duration: Duration = 30.days
+    max_grant_duration: Duration = 365.days
+    max_active_grants: Integer = 50
+
+    -- Verification
+    verification_cache_duration: Duration = 1.hour
+}
+
+------------------------------------------------------------
+-- Rules: Wallet Lifecycle
+------------------------------------------------------------
+
+rule CreateSkillWallet {
+    when: UserCreatesWallet(user)
+
+    let connection = pod/PodConnection{user}
+
+    requires: connection.is_connected
+    requires: not exists SkillWallet{owner: user}
+
+    -- Black box: generate DID based on method
+    let did = generate_did(user, web)    -- black box
+
+    ensures: SkillWallet.created(
+        owner: user,
+        did: did,
+        pod_connection: connection,
+        status: active,
+        created_at: now,
+        blockchain_consent: false,
+        eudi_export_enabled: false
+    )
+    ensures: WalletCreated(user, did)
+}
+
+rule CreateWalletForMinor {
+    when: UserCreatesWallet(user)
+
+    let connection = pod/PodConnection{user}
+
+    requires: connection.is_connected
+    requires: not exists SkillWallet{owner: user}
+    requires: user.age < config.adult_age_threshold
+
+    let did = generate_did(user, web)    -- black box
+
+    ensures:
+        let wallet = SkillWallet.created(
+            owner: user,
+            did: did,
+            pod_connection: connection,
+            status: suspended,          -- suspended until guardian confirms
+            created_at: now,
+            blockchain_consent: false,
+            eudi_export_enabled: false
+        )
+        WalletCreatedPendingGuardian(user, wallet)
+}
+
+rule ActivateWalletAfterGuardianConsent {
+    when: link: GuardianLink.status becomes confirmed
+
+    let wallet = link.wallet
+
+    requires: wallet.status = suspended
+
+    ensures: wallet.status = active
+    ensures: wallet.blockchain_consent = link.consent_blockchain
+    ensures: WalletActivated(wallet)
+}
+
+------------------------------------------------------------
+-- Rules: Guardian Consent (DSGVO Art. 8)
+------------------------------------------------------------
+
+rule RequestGuardianConsent {
+    when: RequestGuardianConsent(wallet, guardian_name, guardian_email, relationship)
+
+    requires: wallet.is_minor
+    requires: not exists GuardianLink{wallet: wallet, status: confirmed}
+    requires: not exists GuardianLink{wallet: wallet, status: pending}
+
+    let token = generate_verification_token()    -- black box
+
+    ensures: GuardianLink.created(
+        wallet: wallet,
+        guardian_name: guardian_name,
+        guardian_email: guardian_email,
+        relationship: relationship,
+        status: pending,
+        requested_at: now,
+        expires_at: now + config.guardian_consent_expiry,
+        consent_blockchain: false,
+        consent_credential_issuance: false,
+        consent_data_sharing: false,
+        verification_token: token,
+        verification_method: email
+    )
+    ensures: Email.created(
+        to: guardian_email,
+        template: guardian_consent_request,
+        data: { student: wallet.owner, token: token }
+    )
+}
+
+rule GuardianConfirmsConsent {
+    when: GuardianConfirms(token, consent_blockchain, consent_credentials, consent_sharing)
+
+    let link = GuardianLink{verification_token: token}
+
+    requires: exists link
+    requires: link.status = pending
+
+    ensures: link.status = confirmed
+    ensures: link.confirmed_at = now
+    ensures: link.consent_blockchain = consent_blockchain
+    ensures: link.consent_credential_issuance = consent_credentials
+    ensures: link.consent_data_sharing = consent_sharing
+}
+
+rule GuardianConsentExpires {
+    when: link: GuardianLink.expires_at <= now
+
+    requires: link.status = confirmed
+
+    ensures: link.status = expired
+    ensures: GuardianConsentExpired(link.wallet)
+}
+
+rule RenewGuardianConsent {
+    when: link: GuardianLink.needs_renewal
+
+    requires: link.status = confirmed
+
+    let token = generate_verification_token()    -- black box
+
+    ensures: link.verification_token = token
+    ensures: Email.created(
+        to: link.guardian_email,
+        template: guardian_consent_renewal,
+        data: {
+            student: link.wallet.owner,
+            token: token,
+            expires_at: link.expires_at
+        }
+    )
+}
+
+rule SuspendWalletOnGuardianExpiry {
+    when: GuardianConsentExpired(wallet)
+
+    requires: wallet.is_minor
+    requires: wallet.status = active
+
+    ensures: wallet.status = suspended
+    -- Existing credentials remain valid but no new ones can be issued.
+    -- Access grants remain active until their own expiry.
+}
+
+------------------------------------------------------------
+-- Rules: Credential Issuance
+------------------------------------------------------------
+
+rule IssueSkillCredential {
+    when: IssueCredential(wallet, credential_type, title, description,
+                          skill_claims, achievement_type, source_interaction_ids)
+
+    requires: wallet.can_issue_credentials
+    requires: skill_claims.count >= config.min_skill_claims_per_credential
+    requires: skill_claims.count <= config.max_skill_claims_per_credential
+
+    -- Black box: maindset.ACADEMY signs the credential
+    let issuer_did = resolve_issuer_did()                     -- black box
+    let credential_id = generate_credential_urn()             -- black box
+    let issuer_proof = sign_credential(issuer_did, skill_claims)    -- black box
+
+    ensures:
+        let credential = SkillCredential.created(
+            wallet: wallet,
+            credential_id: credential_id,
+            credential_type: credential_type,
+            issuer_did: issuer_did,
+            holder_did: wallet.did,
+            issued_at: now,
+            expires_at: now + config.default_credential_expiry,
+            status: active,
+            title: title,
+            description: description,
+            skill_claims: skill_claims,
+            achievement_type: achievement_type,
+            source_interactions: source_interaction_ids,
+            proofs: [issuer_proof],
+            anchor_status: unanchored,
+            synced_to_pod: false
+        )
+        CredentialIssued(wallet, credential)
+}
+
+rule SyncCredentialToPod {
+    when: CredentialIssued(wallet, credential)
+
+    let connection = wallet.pod_connection
+
+    requires: connection.is_connected
+
+    -- Black box: serialise credential to JSON-LD, write to Pod
+    let pod_path = write_credential_to_pod(connection, credential)    -- black box
+
+    ensures: credential.pod_resource_path = pod_path
+    ensures: credential.synced_to_pod = true
+    ensures: pod/PodResource.created(
+        pod_connection: connection,
+        resource_type: endorsement,
+        container_path: pod/PodContainerPath{
+            path: "/portfolio/credentials/" + credential.credential_id
+        },
+        last_written_at: now,
+        status: written
+    )
+}
+
+rule QueueCredentialForAnchoring {
+    when: CredentialIssued(wallet, credential)
+
+    requires: wallet.blockchain_consent
+
+    let content_hash = compute_credential_hash(credential)    -- black box
+
+    ensures: CredentialAnchor.created(
+        wallet: wallet,
+        anchor_type: credential,
+        status: pending,
+        credential: credential,
+        content_hash: content_hash,
+        chain: resolve_default_chain()    -- black box
+    )
+    ensures: credential.anchor_status = pending
+}
+
+------------------------------------------------------------
+-- Rules: Portfolio Items
+------------------------------------------------------------
+
+rule UploadPortfolioItem {
+    when: UploadPortfolioItem(wallet, file_metadata, file_bytes,
+                              credential?, item_type, description?, tags, source)
+
+    requires: wallet.status = active
+    requires: file_metadata.size_bytes <= config.max_file_size_bytes
+    requires: file_metadata.mime_type in config.allowed_mime_types
+
+    -- Black box: compute SHA-256 hash of the raw file bytes
+    let content_hash = compute_file_hash(file_bytes)    -- black box
+    let item_id = generate_item_id()                    -- black box
+
+    -- Black box: store file in user's Solid Pod
+    let storage_url = store_file_in_pod(wallet.pod_connection, file_bytes, file_metadata)    -- black box
+
+    ensures:
+        let item = PortfolioItem.created(
+            wallet: wallet,
+            credential: credential,
+            item_id: item_id,
+            file_metadata: file_metadata,
+            storage_url: storage_url,
+            content_hash: content_hash,
+            hash_computed_at: now,
+            anchor_status: unanchored,
+            item_type: item_type,
+            description: description,
+            tags: tags,
+            source: source,
+            uploaded_by_did: wallet.did,
+            created_at: now,
+            synced_to_pod: true         -- stored directly in Pod
+        )
+        PortfolioItemCreated(wallet, item)
+}
+
+rule QueuePortfolioItemForAnchoring {
+    when: PortfolioItemCreated(wallet, item)
+
+    requires: wallet.blockchain_consent
+
+    ensures: CredentialAnchor.created(
+        wallet: wallet,
+        anchor_type: portfolio_item,
+        status: pending,
+        portfolio_item: item,
+        content_hash: item.content_hash,
+        chain: resolve_default_chain()    -- black box
+    )
+    ensures: item.anchor_status = pending
+}
+
+rule LinkPortfolioItemToCredential {
+    when: LinkItemToCredential(wallet, item, credential)
+
+    requires: wallet.status = active
+    requires: item.wallet = wallet
+    requires: credential.wallet = wallet
+    requires: credential.is_active
+    requires: item.credential = null    -- not already linked
+
+    ensures: item.credential = credential
+}
+
+------------------------------------------------------------
+-- Rules: Blockchain Anchoring
+------------------------------------------------------------
+
+rule ProcessAnchorBatch {
+    when: anchor_batch_ready: AnchorBatchReady(pending_anchors)
+
+    requires: pending_anchors.count > 0
+    requires: pending_anchors.count >= config.anchor_batch_size
+              or anchor_batch_ready.triggered_by_interval
+
+    -- Black box: compute Merkle tree, submit root to blockchain
+    let batch_result = submit_merkle_batch(pending_anchors)    -- black box
+
+    ensures:
+        for anchor in pending_anchors:
+            anchor.status = confirmed
+            anchor.transaction_hash = batch_result.tx_hash
+            anchor.block_number = batch_result.block_number
+            anchor.anchored_at = now
+            anchor.batch_id = batch_result.batch_id
+            anchor.batch_merkle_root = batch_result.merkle_root
+            anchor.merkle_proof = batch_result.proof_for(anchor)
+
+    ensures:
+        for anchor in pending_anchors:
+            if anchor.anchor_type = credential and anchor.credential != null:
+                anchor.credential.anchor = anchor
+                anchor.credential.anchor_status = anchored
+            if anchor.anchor_type = portfolio_item and anchor.portfolio_item != null:
+                anchor.portfolio_item.anchor = anchor
+                anchor.portfolio_item.anchor_status = anchored
+
+    ensures: AnchorBatchCompleted(batch_result)
+}
+
+rule TriggerAnchorBatchByInterval {
+    when: _: AnchorBatchTimer.elapsed
+
+    let pending = CredentialAnchor with status = pending
+
+    requires: pending.count > 0
+
+    ensures: AnchorBatchReady(
+        pending_anchors: pending,
+        triggered_by_interval: true
+    )
+}
+
+rule TriggerAnchorBatchBySize {
+    when: _: CredentialAnchor.created
+
+    let pending = CredentialAnchor with status = pending
+
+    requires: pending.count >= config.anchor_batch_size
+
+    ensures: AnchorBatchReady(
+        pending_anchors: pending,
+        triggered_by_interval: false
+    )
+}
+
+rule RetryFailedAnchor {
+    when: anchor: CredentialAnchor.status becomes failed
+
+    let retry_count = count_retries(anchor)    -- black box
+
+    requires: retry_count < config.anchor_retry_max
+
+    ensures: anchor.status = pending
+    -- Will be picked up by next batch.
+}
+
+------------------------------------------------------------
+-- Rules: Verification
+------------------------------------------------------------
+
+rule VerifyCredential {
+    when: VerifierRequestsVerification(access_token, credential_id)
+
+    let grant = AccessGrant{access_token: access_token}
+
+    requires: exists grant
+    requires: grant.is_valid
+    requires: credential_id in grant.credential_ids
+              or grant.scope = full_wallet
+
+    let credential = SkillCredential{credential_id: credential_id}
+
+    requires: exists credential
+    requires: credential.is_active
+
+    -- Black box: recompute hash from current data, compare with on-chain anchor
+    let verification_result = verify_against_chain(credential)    -- black box
+
+    ensures: grant.access_count = grant.access_count + 1
+    ensures: VerificationCompleted(
+        credential: credential,
+        result: verification_result,
+        verified_at: now
+    )
+}
+
+rule VerifyPortfolioItem {
+    when: VerifierRequestsItemVerification(access_token, item_id)
+
+    let grant = AccessGrant{access_token: access_token}
+
+    requires: exists grant
+    requires: grant.is_valid
+    requires: item_id in grant.item_ids
+              or grant.scope in [full_wallet, selected_credentials]
+
+    let item = PortfolioItem{item_id: item_id}
+
+    requires: exists item
+    requires: item.is_tamper_evident
+
+    -- Black box: fetch file from Pod, recompute hash, compare with anchor
+    let file_bytes = fetch_from_pod(item.storage_url)               -- black box
+    let current_hash = compute_file_hash(file_bytes)                -- black box
+    let hash_matches = current_hash.value = item.content_hash.value
+    let chain_result = verify_anchor_against_chain(item.anchor)     -- black box
+
+    ensures: grant.access_count = grant.access_count + 1
+    ensures: ItemVerificationCompleted(
+        item: item,
+        hash_matches: hash_matches,
+        chain_verified: chain_result,
+        verified_at: now
+    )
+}
+
+------------------------------------------------------------
+-- Rules: Access Grants
+------------------------------------------------------------
+
+rule GrantAccess {
+    when: HolderGrantsAccess(wallet, grantee_name, grantee_email?,
+                             scope, credential_ids, item_ids,
+                             purpose, duration)
+
+    requires: wallet.status = active
+    requires: wallet.active_grants.count < config.max_active_grants
+    requires: duration <= config.max_grant_duration
+
+    -- For minors: guardian must have consented to data sharing
+    requires: not wallet.is_minor or wallet.guardian_link.consent_data_sharing
+
+    let token = generate_access_token()    -- black box
+
+    ensures: AccessGrant.created(
+        wallet: wallet,
+        grantee_name: grantee_name,
+        grantee_email: grantee_email,
+        scope: scope,
+        credential_ids: credential_ids,
+        item_ids: item_ids,
+        purpose: purpose,
+        status: active,
+        granted_at: now,
+        expires_at: now + duration,
+        access_token: token,
+        access_count: 0
+    )
+    ensures: AccessGrantCreated(wallet, grantee_name, token)
+}
+
+rule RevokeAccess {
+    when: HolderRevokesAccess(wallet, grant)
+
+    requires: wallet.status = active
+    requires: grant.wallet = wallet
+    requires: grant.status = active
+
+    ensures: grant.status = revoked
+    ensures: grant.revoked_at = now
+}
+
+rule AccessGrantExpires {
+    when: grant: AccessGrant.expires_at <= now
+
+    requires: grant.status = active
+
+    ensures: grant.status = expired
+}
+
+------------------------------------------------------------
+-- Rules: Credential Revocation
+------------------------------------------------------------
+
+rule RevokeCredential {
+    when: IssuerRevokesCredential(credential, reason)
+
+    requires: credential.status = active
+
+    let issuer_did = resolve_issuer_did()    -- black box
+
+    ensures: credential.status = revoked
+    ensures: credential.revoked_at = now
+    ensures: credential.revocation_reason = reason
+    ensures: RevocationEntry.created(
+        credential: credential,
+        revoked_by_did: issuer_did,
+        reason: reason,
+        revoked_at: now,
+        on_chain: false
+    )
+    ensures: CredentialRevoked(credential)
+}
+
+rule AnchorRevocation {
+    when: CredentialRevoked(credential)
+
+    let wallet = credential.wallet
+
+    requires: wallet.blockchain_consent
+
+    let revocation_entry = RevocationEntry{credential: credential}
+
+    -- Black box: write revocation to chain
+    let tx = anchor_revocation(revocation_entry)    -- black box
+
+    ensures: revocation_entry.on_chain = true
+    ensures: revocation_entry.chain_tx_hash = tx.hash
+}
+
+rule HolderRequestsRevocation {
+    when: HolderRequestsCredentialRevocation(wallet, credential)
+
+    requires: wallet.status = active
+    requires: credential.wallet = wallet
+    requires: credential.status = active
+
+    ensures: IssuerRevokesCredential(credential, holder_request)
+}
+
+rule CredentialExpires {
+    when: credential: SkillCredential.expires_at <= now
+
+    requires: credential.status = active
+    requires: credential.expires_at != null
+
+    ensures: credential.status = expired
+}
+
+------------------------------------------------------------
+-- Rules: Blockchain Consent Management
+------------------------------------------------------------
+
+rule EnableBlockchainConsent {
+    when: HolderEnablesBlockchainConsent(wallet)
+
+    requires: wallet.status = active
+    requires: not wallet.blockchain_consent
+    requires: not wallet.is_minor or wallet.guardian_link.consent_blockchain
+
+    ensures: wallet.blockchain_consent = true
+
+    -- Queue all existing unanchored items and credentials for anchoring
+    ensures: wallet.unanchored_items.each(item =>
+        CredentialAnchor.created(
+            wallet: wallet,
+            anchor_type: portfolio_item,
+            status: pending,
+            portfolio_item: item,
+            content_hash: item.content_hash,
+            chain: resolve_default_chain()
+        ),
+        item.anchor_status = pending
+    )
+}
+
+rule DisableBlockchainConsent {
+    when: HolderDisablesBlockchainConsent(wallet)
+
+    requires: wallet.status = active
+    requires: wallet.blockchain_consent
+
+    ensures: wallet.blockchain_consent = false
+    -- Existing anchors remain on-chain (immutable).
+    -- No new anchoring will occur.
+}
+
+------------------------------------------------------------
+-- Actor Declarations
+------------------------------------------------------------
+
+actor Holder {
+    -- The student who owns the Skill-Wallet.
+    identified_by: journey/User with SkillWallet{owner: user}.status = active
+}
+
+actor MinorHolder {
+    -- A student under 16 with guardian oversight.
+    identified_by: journey/User with SkillWallet{owner: user}.is_minor
+}
+
+actor Guardian {
+    -- Parent or legal guardian of a minor.
+    identified_by: GuardianLink.verification_token
+}
+
+actor Verifier {
+    -- School, employer, or institution verifying credentials.
+    identified_by: AccessGrant.access_token with AccessGrant.is_valid
+}
+
+actor Issuer {
+    -- maindset.ACADEMY credential issuance authority.
+    identified_by: DID with method = web and uri = config.issuer_did_uri
+}
+
+------------------------------------------------------------
+-- Surfaces
+------------------------------------------------------------
+
+surface WalletOverview {
+    for holder: Holder
+
+    context wallet: SkillWallet with owner = holder
+
+    exposes:
+        wallet.did
+        wallet.status
+        wallet.created_at
+        wallet.blockchain_consent
+        wallet.credential_count
+        wallet.portfolio_item_count
+        wallet.active_grants.count
+        wallet.is_minor
+        wallet.has_guardian
+
+    provides:
+        HolderEnablesBlockchainConsent(wallet)
+            when not wallet.blockchain_consent
+        HolderDisablesBlockchainConsent(wallet)
+            when wallet.blockchain_consent
+
+    navigates_to:
+        CredentialList(wallet)
+        PortfolioView(wallet)
+        AccessGrantManager(wallet)
+        GuardianConsentView(wallet) when wallet.is_minor
+
+    guidance:
+        -- "Dein Skill-Wallet" — central dashboard for the student.
+        -- Show credential count, portfolio size, active shares.
+        -- Blockchain status: shield icon green (anchored) / grey (off).
+        -- "Deine Daten gehoeren dir. Du entscheidest, wer sie sieht."
+}
+
+surface CredentialList {
+    for holder: Holder
+
+    context wallet: SkillWallet with owner = holder
+
+    exposes:
+        for credential in wallet.active_credentials:
+            credential.title
+            credential.credential_type
+            credential.issued_at
+            credential.skill_claims
+            credential.is_anchored
+            credential.portfolio_items.count
+            credential.anchor_status
+
+    provides:
+        for credential in wallet.active_credentials:
+            HolderRequestsCredentialRevocation(wallet, credential)
+
+    navigates_to:
+        for credential in wallet.active_credentials:
+            CredentialDetail(credential)
+
+    guidance:
+        -- List of all active credentials as cards.
+        -- Each card shows: title, skill claims, anchor status, evidence count.
+        -- Anchored credentials show a chain-link icon.
+        -- Tap to open credential detail with full evidence chain.
+}
+
+surface CredentialDetail {
+    for holder: Holder
+
+    context credential: SkillCredential with wallet.owner = holder
+
+    exposes:
+        credential.title
+        credential.description
+        credential.credential_type
+        credential.skill_claims
+        credential.issued_at
+        credential.expires_at
+        credential.issuer_did
+        credential.proofs
+        credential.is_anchored
+        credential.anchor.verification_url when credential.is_anchored
+        for item in credential.portfolio_items:
+            item.file_metadata
+            item.item_type
+            item.description
+            item.is_tamper_evident
+
+    provides:
+        UploadPortfolioItem(credential.wallet, file_metadata, file_bytes,
+                            credential, item_type, description?, tags, user_upload)
+        HolderRequestsCredentialRevocation(credential.wallet, credential)
+
+    guidance:
+        -- Full credential view with skill claims visualised as radar chart.
+        -- Portfolio items shown as gallery/list below.
+        -- "Beweis hinzufuegen" button for uploading new evidence.
+        -- Verification link shareable as QR code.
+        -- "Dieses Zertif— diese Kompetenzbestaetigung ist blockchain-gesichert."
+}
+
+surface PortfolioView {
+    for holder: Holder
+
+    context wallet: SkillWallet with owner = holder
+
+    exposes:
+        for item in wallet.portfolio_items:
+            item.file_metadata
+            item.item_type
+            item.description
+            item.tags
+            item.is_tamper_evident
+            item.anchor_status
+            item.created_at
+            item.credential.title when item.credential != null
+
+    provides:
+        UploadPortfolioItem(wallet, file_metadata, file_bytes,
+                            null, item_type, description?, tags, user_upload)
+        for item in wallet.portfolio_items:
+            LinkItemToCredential(wallet, item, credential)
+                when item.credential = null
+
+    guidance:
+        -- Grid or list view of all portfolio items.
+        -- Filter by: type (photo, video, document...), linked/unlinked, anchored/pending.
+        -- Drag-and-drop upload area.
+        -- Each item shows anchor status: chain icon (anchored), clock (pending), dash (off).
+        -- "Lade Beweise hoch — Fotos, Videos, Dokumente, Code — alles was deine Skills zeigt."
+}
+
+surface AccessGrantManager {
+    for holder: Holder
+
+    context wallet: SkillWallet with owner = holder
+
+    exposes:
+        for grant in wallet.active_grants:
+            grant.grantee_name
+            grant.purpose
+            grant.scope
+            grant.granted_at
+            grant.expires_at
+            grant.access_count
+            grant.days_remaining
+
+    provides:
+        HolderGrantsAccess(wallet, grantee_name, grantee_email?,
+                           scope, credential_ids, item_ids, purpose, duration)
+        for grant in wallet.active_grants:
+            HolderRevokesAccess(wallet, grant)
+
+    guidance:
+        -- "Wer darf deine Daten sehen?" — access management dashboard.
+        -- Active grants listed with purpose, expiry countdown, access count.
+        -- "Zugriff teilen" wizard: choose scope → select credentials → set duration.
+        -- "Zugriff widerrufen" button on each grant.
+        -- Expired grants shown in a collapsed history section.
+}
+
+surface GuardianConsentView {
+    for guardian: Guardian
+
+    context link: GuardianLink with verification_token = guardian
+
+    exposes:
+        link.wallet.owner.display_name
+        link.relationship
+        link.requested_at
+        link.expires_at
+        link.status
+
+    requires:
+        consent_blockchain when link.status = pending
+        consent_credentials when link.status = pending
+        consent_sharing when link.status = pending
+
+    provides:
+        GuardianConfirms(guardian, consent_blockchain, consent_credentials, consent_sharing)
+            when link.status = pending
+
+    invariant: NoAccountRequired
+        -- Guardians do not need a SkillR account. Token-based access only.
+
+    timeout:
+        GuardianConsentExpires when link.expires_at <= now
+
+    guidance:
+        -- Simple one-page consent form. No login required.
+        -- "Max moechte ein Skill-Wallet erstellen. Deine Zustimmung ist erforderlich."
+        -- Three consent checkboxes with plain-language explanations:
+        --   1. "Blockchain-Sicherung" — explain what goes on-chain (only hashes, no personal data)
+        --   2. "Kompetenzbestaetigung" — allow credential issuance
+        --   3. "Daten teilen" — allow student to share credentials with third parties
+        -- DSGVO information notice with link to full privacy policy.
+}
+
+surface VerificationView {
+    for verifier: Verifier
+
+    context grant: AccessGrant with access_token = verifier and is_valid
+
+    let wallet = grant.wallet
+
+    exposes:
+        wallet.owner.display_name
+        grant.purpose
+        grant.expires_at
+        if grant.scope = full_wallet:
+            for credential in wallet.active_credentials:
+                credential.title
+                credential.skill_claims
+                credential.is_anchored
+                credential.anchor.verification_url when credential.is_anchored
+                credential.portfolio_items.count
+        if grant.scope = selected_credentials:
+            for credential in wallet.active_credentials
+                with credential_id in grant.credential_ids:
+                credential.title
+                credential.skill_claims
+                credential.is_anchored
+                credential.anchor.verification_url when credential.is_anchored
+                credential.portfolio_items.count
+
+    provides:
+        VerifierRequestsVerification(verifier, credential_id)
+        VerifierRequestsItemVerification(verifier, item_id)
+
+    invariant: ReadOnlyAccess
+        -- Verifiers can only read and verify. No modification of wallet data.
+
+    invariant: ScopeLimited
+        -- Verifiers see only what the access grant scope permits.
+
+    guidance:
+        -- Clean verification page with student name and purpose.
+        -- Credentials listed with verification status badges.
+        -- "Verifizieren" button triggers on-chain hash comparison.
+        -- Result: green checkmark "Verifiziert — Daten unveraendert seit [date]"
+        --   or red warning "Warnung — Datenintegritaet nicht bestaetigbar."
+        -- Portfolio items viewable inline with their own verification badges.
+        -- No SkillR account required for verifiers. Token-based access only.
+}
+
+------------------------------------------------------------
+-- Deferred Specifications
+------------------------------------------------------------
+
+deferred DIDResolver.resolve                    -- see: specs/did-resolver.allium
+deferred CredentialSerializer.to_jsonld         -- see: specs/credential-format.allium
+deferred CredentialSerializer.to_open_badge     -- see: specs/credential-format.allium
+deferred MerkleTree.compute_root               -- see: specs/merkle-tree.allium
+deferred MerkleTree.compute_proof              -- see: specs/merkle-tree.allium
+deferred SmartContract.anchor                  -- see: specs/smart-contract.allium
+deferred SmartContract.verify                  -- see: specs/smart-contract.allium
+deferred SmartContract.revoke                  -- see: specs/smart-contract.allium
+deferred EUDIExporter.export_as_eaa            -- see: specs/eudi-export.allium (V2.0)
+deferred DIDCommMessenger.exchange_credential  -- see: specs/didcomm.allium (V2.0)
+
+------------------------------------------------------------
+-- Open Questions
+------------------------------------------------------------
+
+open_question "DID method migration: when moving from did:web to did:key or did:ethr, how to preserve credential validity across DID changes?"
+
+open_question "Portfolio item size limits: should video evidence be capped at 50 MB, or should we support chunked upload with larger limits?"
+
+open_question "Blockchain choice: Polygon PoS vs Base vs Arbitrum — which L2 provides the best longevity guarantee for a 10+ year credential lifecycle?"
+
+open_question "EUDI Wallet integration: the EUDI spec is still evolving (ARF 2.5.0). Should we target EAA format now or wait for the final spec?"
+
+open_question "Guardian co-custody of cryptographic keys: should the minor's DID private key be split (Shamir's Secret Sharing) between minor and guardian, or use a simpler custodial model?"
+
+open_question "Endorser portfolio items: when an endorser attaches evidence (e.g., a reference letter PDF), should it be stored in the endorser's Pod or the student's Pod?"
+
+open_question "Offline verification: should credentials include an embedded proof sufficient for offline verification, or always require an on-chain check?"
+
+open_question "Cross-wallet federation: when a student moves from SkillR to another platform, how are credentials and portfolio items migrated? BYOP via Solid handles data, but what about blockchain anchor references?"
+
+open_question "Revocation propagation: when a credential is revoked, should active access grants that include it be automatically narrowed, or should they remain valid until the verifier re-checks?"

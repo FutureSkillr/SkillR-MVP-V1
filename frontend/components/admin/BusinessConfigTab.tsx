@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getAuthHeaders } from '../../services/auth';
 
 interface ConfigField {
   key: string;
@@ -21,15 +22,34 @@ const FIELDS: ConfigField[] = [
   { key: 'dpo_email', label: 'Datenschutzbeauftragter (E-Mail)' },
 ];
 
+/** Default business config — used to pre-fill the form on first use. */
+const DEFAULT_VALUES: Record<string, string> = {
+  company_name: 'SkillR GmbH',
+  company_address: 'Musterstrasse 1, 80331 Muenchen',
+  company_country: 'Deutschland',
+  contact_email: 'info@skillr.app',
+  contact_phone: '+49 89 123456',
+  legal_representative: 'Geschaeftsfuehrer',
+  register_entry: 'HRB 000000, Amtsgericht Muenchen',
+  vat_id: 'DE000000000',
+  content_responsible: 'SkillR GmbH',
+  content_responsible_address: 'Musterstrasse 1, 80331 Muenchen',
+  dpo_name: 'Datenschutzbeauftragter',
+  dpo_email: 'datenschutz@skillr.app',
+};
+
 export const BusinessConfigTab: React.FC = () => {
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, string>>(DEFAULT_VALUES);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     fetch('/api/config/legal')
       .then((r) => r.json())
-      .then((data) => setValues(data))
+      .then((data) => {
+        // Merge: server values override defaults, but defaults fill any gaps
+        setValues((prev) => ({ ...prev, ...data }));
+      })
       .catch(() => {});
   }, []);
 
@@ -42,13 +62,9 @@ export const BusinessConfigTab: React.FC = () => {
     setStatus('saving');
     setErrorMsg('');
     try {
-      const token = localStorage.getItem('auth_token');
       const res = await fetch('/api/config/legal', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(values),
       });
       if (!res.ok) {

@@ -146,3 +146,4 @@ Bei geschaetzt 10.000 Requests/Monat (Entwicklung + Testing): **< $5/Monat**.
 - TC-018: Agentic Backend & VertexAI (`docs/arch/TC-018-agentic-backend-vertexai.md`)
 - FR-069: GCP Credentials Management
 - Operator Quickstart (`docs/ops/operator-quickstart.md`)
+- OBS-003: Prompt-Logs 401 waehrend Intro-Flow (verwandt: Frontend TTS Fallback-Fehlermeldung "Gemini API key not configured" tritt als Folge dieses Quota-Problems auf)

@@ -2,7 +2,6 @@ package agents
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -128,13 +127,4 @@ func truncate(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen] + "..."
-}
-
-func intQuery(c echo.Context, key string, def int) int {
-	if v := c.QueryParam(key); v != "" {
-		if i, err := strconv.Atoi(v); err == nil && i >= 0 {
-			return i
-		}
-	}
-	return def
 }

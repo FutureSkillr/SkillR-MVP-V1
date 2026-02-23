@@ -4,19 +4,27 @@ import { WelcomePage } from './components/WelcomePage';
 import { LoginPage } from './components/LoginPage';
 import { LandingPage } from './components/LandingPage';
 import { OnboardingChat } from './components/OnboardingChat';
-import { JourneySelector } from './components/JourneySelector';
+import { GlobeNavigation } from './components/GlobeNavigation';
 import { VucaStation } from './components/stations/VucaStation';
 import { EntrepreneurStation } from './components/stations/EntrepreneurStation';
 import { SelfLearningStation } from './components/stations/SelfLearningStation';
 import { CombinedProfile } from './components/CombinedProfile';
-import { AdminConsole } from './components/admin/AdminConsole';
+import { CoachSelectPage } from './components/intro/CoachSelectPage';
+import { IntroChat } from './components/intro/IntroChat';
+import { IntroRegisterPage } from './components/intro/IntroRegisterPage';
+import { DatenschutzPage } from './components/legal/DatenschutzPage';
+import { ImpressumPage } from './components/legal/ImpressumPage';
+import { CookieSettingsModal } from './components/legal/CookieSettingsModal';
 import { getStationsAsRecord } from './services/contentResolver';
 import { getCurrentUser, logout as authLogout, seedDefaultAdmin } from './services/auth';
 import { refreshAuthUser } from './services/firebaseAuth';
 import { isFirebaseConfigured } from './services/firebase';
-import type { UserProfile, OnboardingInsights, VoiceDialect } from './types/user';
+import { updateIntroCoach, loadIntroState, transferIntroToProfile } from './services/introStorage';
+import type { UserProfile, OnboardingInsights } from './types/user';
+import { getDialectForCoach } from './types/user';
 import type { JourneyType, Station, StationResult } from './types/journey';
 import type { AuthUser } from './types/auth';
+import type { CoachId } from './types/intro';
 import { createInitialProfile } from './types/user';
 import {
   trackPageView,
@@ -26,10 +34,23 @@ import {
   trackStationStart,
   trackStationComplete,
   trackProfileView,
+  trackCoachChange,
 } from './services/analytics';
+import { captureUTM } from './services/campaignAttribution';
+import { hasMarketingConsent } from './services/consent';
+import {
+  initMetaPixel,
+  trackPixelPageView,
+  trackPixelViewContent,
+  trackPixelInitiateCheckout,
+  trackPixelCompleteRegistration,
+} from './services/metaPixel';
 
 type ViewState =
   | 'welcome'
+  | 'intro-coach-select'
+  | 'intro-chat'
+  | 'intro-register'
   | 'login'
   | 'landing'
   | 'onboarding'
@@ -37,7 +58,8 @@ type ViewState =
   | 'station'
   | 'profile'
   | 'journey-complete'
-  | 'admin';
+  | 'datenschutz'
+  | 'impressum';
 
 const STORAGE_KEY = 'skillr-state';
 const VOICE_STORAGE_KEY = 'skillr-voice-enabled';
@@ -58,8 +80,9 @@ function loadState(isLoggedIn: boolean): AppState {
       const storedView = parsed.view as ViewState;
       let view: ViewState;
       if (isLoggedIn) {
-        // Logged in: skip welcome and login, restore saved view or go to landing
-        view = storedView === 'welcome' || storedView === 'login' ? 'landing' : storedView;
+        // Logged in: skip welcome, login, and intro views — restore saved view or go to landing
+        const preAuthViews: ViewState[] = ['welcome', 'login', 'intro-coach-select', 'intro-chat', 'intro-register', 'datenschutz', 'impressum'];
+        view = preAuthViews.includes(storedView) ? 'landing' : storedView;
       } else {
         // Not logged in: always start at the public welcome page
         view = 'welcome';
@@ -99,6 +122,9 @@ const App: React.FC = () => {
   const [voiceEnabled, setVoiceEnabled] = useState<boolean>(() => {
     try { return localStorage.getItem(VOICE_STORAGE_KEY) === 'true'; } catch { return false; }
   });
+  const [introCoachId, setIntroCoachId] = useState<CoachId | null>(() => loadIntroState()?.coachId ?? null);
+  const [cookieModalOpen, setCookieModalOpen] = useState(false);
+  const [legalReturnView, setLegalReturnView] = useState<ViewState>('welcome');
   const onboardingStartTime = useRef<number>(0);
   const stationStartTime = useRef<number>(0);
 
@@ -115,6 +141,42 @@ const App: React.FC = () => {
     });
   }, []);
 
+  // FR-113: Capture UTM parameters from URL on first visit
+  useEffect(() => {
+    captureUTM();
+  }, []);
+
+  // Handle ?view= query param from external pages (landing page footer links)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const view = params.get('view');
+      if (view === 'impressum') {
+        setView('impressum');
+      } else if (view === 'datenschutz') {
+        setView('datenschutz');
+      } else if (view === 'cookies') {
+        setCookieModalOpen(true);
+      }
+      // Clean up URL without reload
+      if (view) {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // FR-113: Initialize Meta Pixel after marketing consent
+  useEffect(() => {
+    if (!hasMarketingConsent()) return;
+    fetch('/api/config').then((res) => res.json()).then((cfg) => {
+      const pixelId = cfg?.tracking?.metaPixelId;
+      if (pixelId) {
+        initMetaPixel(pixelId);
+        trackPixelPageView();
+      }
+    }).catch(() => { /* ignore — pixel is best-effort */ });
+  }, []);
+
   const setView = useCallback((view: ViewState) => {
     setState((prev) => {
       trackPageView(prev.view, view);
@@ -125,8 +187,27 @@ const App: React.FC = () => {
   // Auth handlers
   const handleLogin = useCallback((user: AuthUser) => {
     setAuthUser(user);
+    // Transfer any intro XP/interests into the profile
+    const introResult = transferIntroToProfile();
     trackPageView('login', 'landing');
-    setState((prev) => ({ ...prev, view: 'landing' }));
+    trackPixelCompleteRegistration(introResult?.interests?.join(', '));
+    setState((prev) => {
+      const profile = { ...prev.profile };
+      if (introResult) {
+        if (introResult.coachId) {
+          profile.coachId = introResult.coachId;
+          profile.voiceDialect = getDialectForCoach(introResult.coachId);
+        }
+        profile.onboardingInsights = profile.onboardingInsights || {
+          interests: introResult.interests,
+          strengths: [],
+          preferredStyle: 'hands-on' as const,
+          recommendedJourney: 'vuca' as const,
+          summary: '',
+        };
+      }
+      return { ...prev, view: 'landing' as ViewState, profile };
+    });
   }, []);
 
   const handleLogout = useCallback(async () => {
@@ -134,10 +215,6 @@ const App: React.FC = () => {
     setAuthUser(null);
     setState((prev) => ({ ...prev, view: 'welcome' }));
   }, []);
-
-  const handleAdminClick = useCallback(() => {
-    setView('admin');
-  }, [setView]);
 
   // Landing -> Onboarding
   const handleStartJourney = useCallback(() => {
@@ -237,11 +314,19 @@ const App: React.FC = () => {
     setView('profile');
   }, [setView, state.profile]);
 
-  const handleDialectChange = useCallback((dialect: VoiceDialect) => {
-    setState((prev) => ({
-      ...prev,
-      profile: { ...prev.profile, voiceDialect: dialect },
-    }));
+  const handleCoachChange = useCallback((newCoachId: CoachId) => {
+    setState((prev) => {
+      if (prev.profile.coachId === newCoachId) return prev;
+      trackCoachChange(prev.profile.coachId, newCoachId);
+      return {
+        ...prev,
+        profile: {
+          ...prev.profile,
+          coachId: newCoachId,
+          voiceDialect: getDialectForCoach(newCoachId),
+        },
+      };
+    });
   }, []);
 
   const handleToggleVoice = useCallback(() => {
@@ -259,13 +344,107 @@ const App: React.FC = () => {
     .filter(([, p]) => p.stationsCompleted > 0)
     .map(([type]) => type);
 
-  // Show welcome and login pages without layout chrome
+  // Legal navigation handler — remembers which view to return to
+  const handleLegalNavigate = useCallback((page: 'datenschutz' | 'impressum') => {
+    setLegalReturnView(state.view);
+    setView(page);
+  }, [state.view, setView]);
+
+  const handleLegalBack = useCallback(() => {
+    setView(legalReturnView);
+  }, [legalReturnView, setView]);
+
+  // Show welcome, intro, and login pages without layout chrome
   if (state.view === 'welcome') {
-    return <WelcomePage onGetStarted={() => setView('login')} />;
+    return (
+      <>
+        <WelcomePage
+          onGetStarted={() => setView('intro-coach-select')}
+          onLogin={() => setView('login')}
+          onNavigate={handleLegalNavigate}
+          onOpenCookieSettings={() => setCookieModalOpen(true)}
+        />
+        <CookieSettingsModal
+          open={cookieModalOpen}
+          onClose={() => setCookieModalOpen(false)}
+          onConsentChange={() => setCookieModalOpen(false)}
+        />
+      </>
+    );
+  }
+
+  if (state.view === 'intro-coach-select') {
+    return (
+      <CoachSelectPage
+        onSelect={(coachId) => {
+          setIntroCoachId(coachId);
+          updateIntroCoach(coachId);
+          trackPixelViewContent(coachId);
+          trackPixelInitiateCheckout(coachId, 0);
+          setView('intro-chat');
+        }}
+        onBack={() => setView('welcome')}
+      />
+    );
+  }
+
+  if (state.view === 'intro-chat' && introCoachId) {
+    return (
+      <IntroChat
+        coachId={introCoachId}
+        onComplete={() => setView('intro-register')}
+        onBack={() => setView('intro-coach-select')}
+      />
+    );
+  }
+
+  if (state.view === 'intro-register') {
+    const introState = loadIntroState();
+    return (
+      <IntroRegisterPage
+        onRegister={handleLogin}
+        onLoginInstead={() => setView('login')}
+        earnedXP={introState?.earnedXP ?? 0}
+      />
+    );
   }
 
   if (state.view === 'login') {
     return <LoginPage onLogin={handleLogin} />;
+  }
+
+  if (state.view === 'datenschutz') {
+    return (
+      <>
+        <DatenschutzPage
+          onBack={handleLegalBack}
+          onNavigate={handleLegalNavigate}
+          onOpenCookieSettings={() => setCookieModalOpen(true)}
+        />
+        <CookieSettingsModal
+          open={cookieModalOpen}
+          onClose={() => setCookieModalOpen(false)}
+          onConsentChange={() => setCookieModalOpen(false)}
+        />
+      </>
+    );
+  }
+
+  if (state.view === 'impressum') {
+    return (
+      <>
+        <ImpressumPage
+          onBack={handleLegalBack}
+          onNavigate={handleLegalNavigate}
+          onOpenCookieSettings={() => setCookieModalOpen(true)}
+        />
+        <CookieSettingsModal
+          open={cookieModalOpen}
+          onClose={() => setCookieModalOpen(false)}
+          onConsentChange={() => setCookieModalOpen(false)}
+        />
+      </>
+    );
   }
 
   const hasActivity =
@@ -274,14 +453,17 @@ const App: React.FC = () => {
 
   const showBack =
     state.view !== 'landing' &&
-    state.view !== 'onboarding' &&
-    state.view !== 'admin';
+    state.view !== 'onboarding';
 
   return (
+    <>
     <Layout
       showBackButton={showBack}
       showProfileButton={hasActivity}
       onProfileClick={handleViewProfile}
+      showJourneyButton={!!authUser}
+      journeySelectActive={state.view === 'journey-select'}
+      onSelectJourney={handleBackToSelect}
       onBack={
         showBack
           ? () => {
@@ -299,9 +481,10 @@ const App: React.FC = () => {
       }
       authUser={authUser}
       onLogout={handleLogout}
-      onAdminClick={handleAdminClick}
       voiceEnabled={voiceEnabled}
       onToggleVoice={handleToggleVoice}
+      onNavigate={handleLegalNavigate}
+      onOpenCookieSettings={() => setCookieModalOpen(true)}
     >
       {state.view === 'landing' && (
         <LandingPage onStart={handleStartJourney} onSelectJourney={handleSelectJourney} onViewProfile={handleViewProfile} journeyProgress={state.profile.journeyProgress} />
@@ -317,9 +500,10 @@ const App: React.FC = () => {
       )}
 
       {state.view === 'journey-select' && (
-        <JourneySelector
+        <GlobeNavigation
           insights={state.profile.onboardingInsights}
           completedJourneys={completedJourneys}
+          completedStations={state.profile.completedStations}
           onSelect={handleSelectJourney}
           onViewProfile={handleViewProfile}
         />
@@ -334,6 +518,7 @@ const App: React.FC = () => {
             onBack={handleBackToSelect}
             voiceEnabled={voiceEnabled}
             voiceDialect={state.profile.voiceDialect}
+            coachId={state.profile.coachId ?? undefined}
           />
         )}
 
@@ -346,6 +531,7 @@ const App: React.FC = () => {
             onBack={handleBackToSelect}
             voiceEnabled={voiceEnabled}
             voiceDialect={state.profile.voiceDialect}
+            coachId={state.profile.coachId ?? undefined}
           />
         )}
 
@@ -358,6 +544,7 @@ const App: React.FC = () => {
             onBack={handleBackToSelect}
             voiceEnabled={voiceEnabled}
             voiceDialect={state.profile.voiceDialect}
+            coachId={state.profile.coachId ?? undefined}
           />
         )}
 
@@ -394,17 +581,17 @@ const App: React.FC = () => {
           stationResults={state.stationResults}
           onBack={() => setView('landing')}
           onSelectJourney={handleBackToSelect}
-          onDialectChange={handleDialectChange}
+          onCoachChange={handleCoachChange}
         />
       )}
 
-      {state.view === 'admin' && authUser && authUser.role === 'admin' && (
-        <AdminConsole
-          currentUser={authUser}
-          onBack={() => setView('landing')}
-        />
-      )}
     </Layout>
+    <CookieSettingsModal
+      open={cookieModalOpen}
+      onClose={() => setCookieModalOpen(false)}
+      onConsentChange={() => setCookieModalOpen(false)}
+    />
+    </>
   );
 };
 

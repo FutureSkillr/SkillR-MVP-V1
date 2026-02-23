@@ -7,15 +7,19 @@ import { trackChatSessionEnd } from '../../services/analytics';
 import { ChatBubble } from '../shared/ChatBubble';
 import { ChatInput } from '../shared/ChatInput';
 import { TypingIndicator } from '../shared/TypingIndicator';
+import { AiStatusDiamond } from '../shared/AiStatusDiamond';
 import { VucaDashboard } from './VucaDashboard';
 import { VucaCourseView } from './VucaCourseView';
 import { VucaBingo } from './VucaBingo';
 import { completeModule, getModuleById } from '../../services/vuca';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
+import { useAiStatus } from '../../hooks/useAiStatus';
+import { COACHES_BY_ID } from '../../constants/coaches';
 import type { Station, StationResult } from '../../types/journey';
 import type { ChatMessage } from '../../types/chat';
-import type { VucaStationState, CourseContent } from '../../types/vuca';
+import type { VucaStationState, CourseContent, VucaCurriculum } from '../../types/vuca';
 import type { VoiceDialect } from '../../types/user';
+import type { CoachId } from '../../types/intro';
 import { createInitialVucaState, isVucaComplete } from '../../types/vuca';
 
 interface VucaStationProps {
@@ -24,6 +28,7 @@ interface VucaStationProps {
   onBack: () => void;
   voiceEnabled?: boolean;
   voiceDialect?: VoiceDialect;
+  coachId?: CoachId;
 }
 
 const VUCA_STORAGE_KEY = 'skillr-vuca-state';
@@ -48,13 +53,17 @@ export const VucaStation: React.FC<VucaStationProps> = ({
   onBack,
   voiceEnabled = false,
   voiceDialect = 'hochdeutsch',
+  coachId,
 }) => {
   const [vucaState, setVucaState] = useState<VucaStationState>(loadVucaState);
   const [courseLoading, setCourseLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const goalExtractedRef = useRef(false);
   const chatStartTime = useRef(Date.now());
-  const { isSpeaking, speak } = useSpeechSynthesis(voiceDialect);
+  const speech = useSpeechSynthesis(voiceDialect);
+  const { speak } = speech;
+  const aiStatus = useAiStatus();
+  const coach = coachId ? COACHES_BY_ID[coachId] : null;
 
   const { sessionId, sessionType } = usePromptLogSession({
     sessionType: 'vuca-station',
@@ -109,8 +118,27 @@ export const VucaStation: React.FC<VucaStationProps> = ({
         }));
       } catch (error) {
         console.error('Failed to generate curriculum:', error);
-        setVucaState((prev) => ({ ...prev, view: 'onboarding' }));
-        goalExtractedRef.current = false;
+        // Fallback: use a default curriculum so the user can proceed.
+        // Do NOT reset goalExtractedRef — that would re-trigger the marker
+        // and cause an infinite loop (onboarding → marker → fail → onboarding…).
+        const fallbackCurriculum: VucaCurriculum = {
+          goal: goalText,
+          modules: (['V', 'U', 'C', 'A'] as const).flatMap((cat, ci) =>
+            [1, 2, 3].map((n) => ({
+              id: `${cat.toLowerCase()}${n}`,
+              title: `${cat === 'V' ? 'Veraenderung' : cat === 'U' ? 'Ungewissheit' : cat === 'C' ? 'Vernetzung' : 'Vieldeutigkeit'} ${n}`,
+              description: `Modul ${n} der Dimension ${cat} fuer ${goalText}`,
+              category: cat,
+              order: ci * 3 + n,
+              completed: false,
+            })),
+          ),
+        };
+        setVucaState((prev) => ({
+          ...prev,
+          view: 'dashboard',
+          curriculum: fallbackCurriculum,
+        }));
       }
     },
     [loggingService]
@@ -287,6 +315,11 @@ export const VucaStation: React.FC<VucaStationProps> = ({
     onBack();
   }, [messages, onBack, sessionId]);
 
+  // Onboarding progress (LED dots)
+  const userMsgCount = messages.filter((m) => m.role === 'user').length;
+  const onboardingProgress = Math.min(userMsgCount, 5);
+  const onboardingProgressMax = 5;
+
   // Default: Onboarding chat
   return (
     <div className="max-w-2xl mx-auto flex flex-col h-[75vh] glass rounded-2xl overflow-hidden shadow-2xl glow-blue">
@@ -303,20 +336,46 @@ export const VucaStation: React.FC<VucaStationProps> = ({
               </svg>
             </button>
             <div>
-              <h2 className="font-bold text-blue-400 flex items-center gap-2">
-                <span className="text-lg">🌍</span> {station.title}
+              <h2 className={`font-bold ${coach?.colorClass || 'text-blue-400'} flex items-center gap-2`}>
+                {coach && <span className="text-lg">{coach.emoji}</span>}
+                {coach ? coach.name : station.title}
+                <AiStatusDiamond status={aiStatus.status} latencyMs={aiStatus.latencyMs} size={14} />
               </h2>
-              <p className="text-[10px] text-slate-500">Erzaehl uns von deinem Berufsziel</p>
+              <p className="text-[10px] text-slate-500">{station.title} — Erzaehl uns von deinem Berufsziel</p>
             </div>
           </div>
-          <span className="text-xs text-slate-500 font-mono">VUCA</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Desktop: LED dots */}
+            <div className="hidden sm:flex gap-1">
+              {Array.from({ length: onboardingProgressMax }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    i < onboardingProgress ? '' : 'bg-slate-700'
+                  }`}
+                  style={i < onboardingProgress ? { background: coach?.color || '#3b82f6' } : undefined}
+                />
+              ))}
+            </div>
+            {/* Mobile: progress bar */}
+            <div className="sm:hidden w-16 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${(onboardingProgress / onboardingProgressMax) * 100}%`,
+                  background: coach?.color || '#3b82f6',
+                }}
+              />
+            </div>
+            <span className="text-[10px] text-slate-500 font-mono hidden sm:inline">Berufsziel-Check</span>
+          </div>
         </div>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin">
         {messages.map((msg, idx) => (
-          <ChatBubble key={idx} message={msg} accentColor="blue" onSpeak={speak} isSpeaking={isSpeaking} />
+          <ChatBubble key={idx} message={msg} accentColor="blue" speech={speech} />
         ))}
         {isLoading && <TypingIndicator color="blue" />}
         <div ref={scrollRef} />

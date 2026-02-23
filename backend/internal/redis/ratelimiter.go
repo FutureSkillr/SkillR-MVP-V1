@@ -17,6 +17,11 @@ func NewRateLimiter(client *goredis.Client) *RateLimiter {
 	return &RateLimiter{client: client}
 }
 
+// SetClient upgrades the rate limiter to use Redis instead of in-memory fallback.
+func (rl *RateLimiter) SetClient(client *goredis.Client) {
+	rl.client = client
+}
+
 type RateLimitResult struct {
 	Allowed    bool
 	Remaining  int

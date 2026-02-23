@@ -1,6 +1,6 @@
 # DFR-001: App Icon Integration
 
-**Status:** in-progress
+**Status:** done
 **Priority:** must
 **Created:** 2026-02-22
 

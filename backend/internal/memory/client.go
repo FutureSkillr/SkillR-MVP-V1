@@ -72,7 +72,7 @@ func (c *HTTPClient) RegisterUser(ctx context.Context, uid, givenName, familyNam
 	if err != nil {
 		return "", fmt.Errorf("register user: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -110,7 +110,7 @@ func (c *HTTPClient) Ping(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("ping memory service: %w", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	// Any HTTP response means the service is reachable
 	return nil
 }

@@ -45,10 +45,10 @@ export const CoachSelectPage: React.FC<CoachSelectPageProps> = ({ onSelect, onBa
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <polyline points="15 18 9 12 15 6" />
             </svg>
-            Zurueck
+            Zurück
           </button>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold">
-            Waehle deinen{' '}
+            Wähle Deinen{' '}
             <span className="gradient-text animate-gradient bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
               Coach
             </span>
@@ -69,27 +69,29 @@ export const CoachSelectPage: React.FC<CoachSelectPageProps> = ({ onSelect, onBa
 
           {/* Coach Grid */}
           <div className={isQueueActive ? 'lg:col-span-3' : ''}>
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {COACHES.map((coach) => (
-                <div
-                  key={coach.id}
-                  className={isQueueActive ? 'opacity-50 pointer-events-none' : ''}
-                >
-                  <CoachCard coach={coach} onSelect={handleSelect} />
-                </div>
-              ))}
+            <div className="border border-slate-700/50 rounded-2xl p-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {COACHES.map((coach) => (
+                  <div
+                    key={coach.id}
+                    className={`h-full ${isQueueActive ? 'opacity-50 pointer-events-none' : ''}`}
+                  >
+                    <CoachCard coach={coach} onSelect={handleSelect} />
+                  </div>
+                ))}
+              </div>
             </div>
 
             {isQueueActive && (
               <p className="text-center text-xs text-amber-400/80 mt-4">
-                Geduld! Sobald ein Platz frei wird, kannst du deinen Coach waehlen.
+                Geduld! Sobald ein Platz frei wird, kannst du deinen Coach wählen.
               </p>
             )}
           </div>
         </div>
 
         <p className="text-center text-xs text-slate-500">
-          Du kannst spaeter jederzeit einen anderen Coach waehlen.
+          Du kannst später jederzeit einen anderen Coach wählen.
         </p>
       </div>
     </div>

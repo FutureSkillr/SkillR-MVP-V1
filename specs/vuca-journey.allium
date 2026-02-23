@@ -1,0 +1,953 @@
+-- vuca-journey.allium
+--
+-- The VUCA Bingo Journey ("Reise nach VUCA")
+--
+-- A gamified, AI-powered dialogue journey where young people (14+)
+-- discover their interests by travelling to real-world locations,
+-- solving contextual challenges, and completing a hidden VUCA
+-- competency matrix. The journey produces a personal interest/skill
+-- profile — not a career recommendation.
+--
+-- Pedagogical foundation: "Erleben vor Benennen" (experience before
+-- naming). Students experience VUCA dimensions through lived
+-- scenarios. The theoretical labels are revealed only after mastery.
+
+------------------------------------------------------------
+-- External Entities
+------------------------------------------------------------
+
+external entity User {
+    email: Email
+    display_name: String
+    locale: String
+    status: active | suspended
+}
+
+external entity AIEngine {
+    -- The maindfull.LEARNING dialogue engine (Gemini-backed).
+    -- Generates station content, conducts dialogue, scores responses.
+}
+
+------------------------------------------------------------
+-- Value Types
+------------------------------------------------------------
+
+value GeoLocation {
+    name: String               -- e.g., "Tokyo", "Wien", "Roma"
+    country: String
+    latitude: Decimal
+    longitude: Decimal
+}
+
+value DimensionScore {
+    volatility: Decimal        -- 0.0 to 100.0
+    uncertainty: Decimal
+    complexity: Decimal
+    ambiguity: Decimal
+}
+
+value CapabilitySignal {
+    dimension: String          -- e.g., "analytical_thinking", "creativity"
+    strength: Decimal          -- 0.0 to 1.0
+    evidence_count: Integer
+}
+
+------------------------------------------------------------
+-- Entities
+------------------------------------------------------------
+
+enum VucaDimension { volatility | uncertainty | complexity | ambiguity }
+
+entity Journey {
+    traveller: User
+    status: onboarding | interest_discovery | active | completed | abandoned
+    started_at: Timestamp
+    completed_at: Timestamp?
+    initial_interest: String?           -- free-text from onboarding, e.g. "Holz"
+
+    -- Relationships
+    bingo: BingoMatrix for this journey
+    stations: StationVisit for this journey
+    profile: InterestProfile for this journey
+    journal: TravelJournal for this journey
+
+    -- Projections
+    completed_stations: stations with status = completed
+    active_station: stations with status = in_progress
+
+    -- Derived
+    current_location: completed_stations.last?.station.location
+    total_xp: completed_stations.count * config.xp_per_station
+              + bingo.newly_completed_dimensions.count * config.xp_per_new_dimension
+    is_bingo: bingo.is_complete
+}
+
+entity BingoMatrix {
+    journey: Journey
+    created_at: Timestamp
+
+    -- Relationships
+    dimension_progress: DimensionProgress for this bingo_matrix
+
+    -- Projections
+    completed_dimensions: dimension_progress with is_threshold_met
+    incomplete_dimensions: dimension_progress with not is_threshold_met
+    newly_completed_dimensions: dimension_progress
+        with is_threshold_met and not is_revealed
+
+    -- Derived
+    is_complete: completed_dimensions.count = 4
+    progress_fraction: completed_dimensions.count / 4
+}
+
+entity DimensionProgress {
+    bingo_matrix: BingoMatrix
+    dimension: VucaDimension
+    completed_items: Integer            -- how many station scores contributed
+    cumulative_score: Decimal           -- sum of dimension scores from stations
+    is_revealed: Boolean                -- has the concept name been shown?
+    revealed_at: Timestamp?
+
+    -- Derived
+    is_threshold_met: completed_items >= config.items_per_dimension
+    average_score: if completed_items > 0: cumulative_score / completed_items else: 0
+}
+
+entity Station {
+    location: GeoLocation
+    setting: String                     -- e.g., "a timber mill in the Austrian Alps"
+    challenge: String                   -- the problem/question presented
+    vuca_dimensions: Set<VucaDimension> -- which dimensions this station covers (0-n)
+    character_name: String              -- NPC name
+    character_voice: String             -- persona description for AI
+    interest_domain: String             -- e.g., "Holzhandwerk", "Kochen", "Robotik"
+    is_hidden: Boolean                  -- unlocked by prerequisites
+    prerequisite_level: Integer?        -- Entdecker-Level needed to unlock
+
+    -- Derived
+    is_gegensatz_candidate(current_domain): interest_domain != current_domain
+}
+
+entity StationVisit {
+    journey: Journey
+    station: Station
+    status: in_progress | completed | abandoned
+    started_at: Timestamp
+    completed_at: Timestamp?
+    is_audio_mode: Boolean              -- Transit Audio Mode
+
+    -- Relationships
+    dialogue: Dialogue for this station_visit
+    result: StationResult for this station_visit
+
+    -- Derived
+    duration: if completed_at != null: completed_at - started_at else: now - started_at
+}
+
+entity Dialogue {
+    station_visit: StationVisit
+    started_at: Timestamp
+    reflection_level: Integer           -- 1 = information exchange, 2 = coaching
+
+    -- Relationships
+    messages: DialogueMessage for this dialogue
+
+    -- Projections
+    level2_messages: messages with is_level2_reflection
+    traveller_messages: messages with sender = traveller
+
+    -- Derived
+    message_count: messages.count
+    level2_exchange_count: level2_messages.count
+    has_deep_reflection: level2_exchange_count >= config.deep_reflection_threshold
+}
+
+entity DialogueMessage {
+    dialogue: Dialogue
+    sender: traveller | ai_coach
+    content: String
+    sent_at: Timestamp
+    response_time_ms: Integer?          -- time traveller took to respond (TC-005)
+    is_level2_reflection: Boolean       -- was this part of a coaching probe?
+
+    -- Derived
+    is_slow_response: response_time_ms != null
+        and response_time_ms > config.slow_response_threshold_ms
+}
+
+entity StationResult {
+    station_visit: StationVisit
+    dimension_scores: DimensionScore    -- 0-100 per VUCA dimension
+    capability_signals: List<CapabilitySignal>
+    summary: String                     -- AI-generated summary of performance
+    extracted_at: Timestamp
+}
+
+entity NavigationChoice {
+    journey: Journey
+    after_station: StationVisit
+    local_option: Station               -- deepening: same domain, new location
+    far_option: Station                 -- Gegensatzsuche: contrasting domain
+    chosen: local | far | none
+    chosen_station: Station?
+    presented_at: Timestamp
+    chosen_at: Timestamp?
+
+    -- Derived
+    is_pending: chosen = none
+}
+
+entity InterestProfile {
+    journey: Journey
+    stage: interest | orientation | skills
+    interests: Set<String>              -- accumulated interest tags
+    orientation_indicators: Set<String> -- multi-dimensional exploration markers
+    capability_dimensions: List<CapabilitySignal>
+    radar_data: DimensionScore          -- for spider diagram visualisation
+    updated_at: Timestamp
+
+    -- Derived
+    is_mature: stage = skills
+    interest_breadth: interests.count
+    has_gegensatz_engagement: orientation_indicators.count >= config.gegensatz_engagement_threshold
+}
+
+entity TravelJournal {
+    journey: Journey
+    created_at: Timestamp
+
+    -- Relationships
+    entries: JournalEntry for this travel_journal
+
+    -- Derived
+    entry_count: entries.count
+}
+
+entity JournalEntry {
+    travel_journal: TravelJournal
+    station_visit: StationVisit
+    passport_stamp: PassportStamp
+    recorded_at: Timestamp
+    summary: String                     -- AI-generated entry
+}
+
+entity PassportStamp {
+    journey: Journey
+    station: Station
+    location: GeoLocation
+    earned_at: Timestamp
+}
+
+entity Streak {
+    journey: Journey
+    current_days: Integer
+    longest_days: Integer
+    last_active_date: Timestamp
+    tier: none | bronze | silver | gold | weltreisender
+
+    -- Derived
+    is_active: last_active_date >= today - 1.day
+}
+
+------------------------------------------------------------
+-- Config
+------------------------------------------------------------
+
+config {
+    items_per_dimension: Integer = 3                -- modules needed per VUCA dimension
+    modules_total: Integer = 12                     -- 3 per dimension x 4 dimensions
+    vuca_threshold_percent: Integer = 25            -- min completion % per dimension
+    xp_per_station: Integer = 10
+    xp_per_new_dimension: Integer = 15
+    xp_per_deep_reflection: Integer = 5
+    xp_per_streak_day: Integer = 5
+    deep_reflection_threshold: Integer = 3          -- Level 2 exchanges to qualify
+    slow_response_threshold_ms: Integer = 10000     -- 10s = "deep thinking" signal
+    gegensatz_engagement_threshold: Integer = 3     -- Gegensatz choices for orientation stage
+    streak_bronze: Integer = 3
+    streak_silver: Integer = 7
+    streak_gold: Integer = 14
+    streak_weltreisender: Integer = 30
+    max_daily_free_stations: Integer = 5            -- Reiseenergie
+    energy_regen_hours: Duration = 4.hours
+    onboarding_max_messages: Integer = 8
+}
+
+------------------------------------------------------------
+-- Rules: Onboarding & Journey Start
+------------------------------------------------------------
+
+rule StartOnboarding {
+    when: TravellerStartsJourney(user)
+
+    requires: user.status = active
+    requires: not exists Journey{traveller: user, status: active}
+
+    ensures:
+        let journey = Journey.created(
+            traveller: user,
+            status: onboarding,
+            started_at: now
+        )
+        BingoMatrix.created(
+            journey: journey,
+            created_at: now
+        )
+        for dim in { volatility, uncertainty, complexity, ambiguity }:
+            DimensionProgress.created(
+                bingo_matrix: journey.bingo,
+                dimension: dim,
+                completed_items: 0,
+                cumulative_score: 0,
+                is_revealed: false
+            )
+        InterestProfile.created(
+            journey: journey,
+            stage: interest,
+            interests: {},
+            orientation_indicators: {},
+            capability_dimensions: [],
+            radar_data: DimensionScore{
+                volatility: 0, uncertainty: 0,
+                complexity: 0, ambiguity: 0
+            },
+            updated_at: now
+        )
+        TravelJournal.created(
+            journey: journey,
+            created_at: now
+        )
+        Streak.created(
+            journey: journey,
+            current_days: 1,
+            longest_days: 1,
+            last_active_date: today,
+            tier: none
+        )
+}
+
+rule CompleteOnboarding {
+    when: OnboardingCompleted(journey, initial_interest)
+
+    requires: journey.status = onboarding
+
+    ensures: journey.status = interest_discovery
+    ensures: journey.initial_interest = initial_interest
+    ensures: journey.profile.interests.add(initial_interest)
+}
+
+rule GenerateCurriculum {
+    when: journey: Journey.status becomes interest_discovery
+
+    let curriculum = generate_curriculum(journey.initial_interest)    -- black box: AI generates 12 modules
+
+    ensures: journey.status = active
+    ensures: CurriculumGenerated(journey, curriculum)
+}
+
+------------------------------------------------------------
+-- Rules: Station Interaction
+------------------------------------------------------------
+
+rule ArriveAtStation {
+    when: TravellerSelectsStation(journey, station)
+
+    requires: journey.status = active
+    requires: journey.active_station.count = 0    -- no station in progress
+    requires: not station.is_hidden
+              or journey.total_xp >= station.prerequisite_level * config.xp_per_station
+
+    ensures:
+        let visit = StationVisit.created(
+            journey: journey,
+            station: station,
+            status: in_progress,
+            started_at: now,
+            is_audio_mode: false
+        )
+        Dialogue.created(
+            station_visit: visit,
+            started_at: now,
+            reflection_level: 1
+        )
+}
+
+rule SwitchToAudioMode {
+    when: TravellerTogglesAudioMode(visit)
+
+    requires: visit.status = in_progress
+
+    ensures: visit.is_audio_mode = not visit.is_audio_mode
+}
+
+rule SendDialogueMessage {
+    when: TravellerSendsMessage(visit, content, response_time_ms)
+
+    requires: visit.status = in_progress
+
+    let dialogue = visit.dialogue
+
+    ensures: DialogueMessage.created(
+        dialogue: dialogue,
+        sender: traveller,
+        content: content,
+        sent_at: now,
+        response_time_ms: response_time_ms,
+        is_level2_reflection: dialogue.reflection_level = 2
+    )
+    ensures: AIResponseRequested(dialogue, content)
+}
+
+rule AIResponds {
+    when: AIResponseReady(dialogue, response_content, is_level2)
+
+    ensures: DialogueMessage.created(
+        dialogue: dialogue,
+        sender: ai_coach,
+        content: response_content,
+        sent_at: now,
+        is_level2_reflection: is_level2
+    )
+}
+
+------------------------------------------------------------
+-- Rules: Level 2 Reflection
+------------------------------------------------------------
+
+rule TriggerLevel2Reflection {
+    when: dialogue: Dialogue.message_count >= 4
+
+    requires: dialogue.reflection_level = 1
+    requires: dialogue.station_visit.status = in_progress
+
+    -- Black box: AI decides if conditions are right for coaching probe
+    let should_probe = assess_reflection_readiness(dialogue)    -- black box
+
+    requires: should_probe
+
+    ensures: dialogue.reflection_level = 2
+    ensures: Level2ReflectionStarted(dialogue)
+}
+
+------------------------------------------------------------
+-- Rules: Station Completion & Scoring
+------------------------------------------------------------
+
+rule CompleteStation {
+    when: TravellerCompletesStation(visit)
+
+    requires: visit.status = in_progress
+    requires: visit.dialogue.message_count >= 2    -- minimum interaction
+
+    -- Black box: AI extracts scores from dialogue transcript
+    let scores = extract_dimension_scores(visit.dialogue)    -- black box
+    let signals = extract_capability_signals(visit.dialogue) -- black box
+    let summary = generate_station_summary(visit.dialogue)   -- black box
+
+    ensures: visit.status = completed
+    ensures: visit.completed_at = now
+    ensures: StationResult.created(
+        station_visit: visit,
+        dimension_scores: scores,
+        capability_signals: signals,
+        summary: summary,
+        extracted_at: now
+    )
+    ensures: PassportStamp.created(
+        journey: visit.journey,
+        station: visit.station,
+        location: visit.station.location,
+        earned_at: now
+    )
+    ensures: JournalEntry.created(
+        travel_journal: visit.journey.journal,
+        station_visit: visit,
+        passport_stamp: PassportStamp{visit.journey, visit.station},
+        recorded_at: now,
+        summary: summary
+    )
+    ensures: StationScored(visit, scores)
+}
+
+rule UpdateDimensionProgress {
+    when: StationScored(visit, scores)
+
+    let journey = visit.journey
+    let bingo = journey.bingo
+
+    for dim_tag in visit.station.vuca_dimensions:
+        let progress = DimensionProgress{bingo, dim_tag}
+        let score_value =
+            if dim_tag = volatility: scores.volatility
+            else if dim_tag = uncertainty: scores.uncertainty
+            else if dim_tag = complexity: scores.complexity
+            else: scores.ambiguity
+
+        ensures: progress.completed_items = progress.completed_items + 1
+        ensures: progress.cumulative_score = progress.cumulative_score + score_value
+}
+
+rule UpdateProfileAfterStation {
+    when: StationScored(visit, scores)
+
+    let profile = visit.journey.profile
+
+    ensures: profile.interests.add(visit.station.interest_domain)
+    ensures: profile.radar_data = merge_scores(profile.radar_data, scores)    -- black box
+    ensures: profile.capability_dimensions = merge_signals(
+        profile.capability_dimensions,
+        visit.result.capability_signals
+    )    -- black box
+    ensures: profile.updated_at = now
+}
+
+------------------------------------------------------------
+-- Rules: Navigation (Gegensatzsuche)
+------------------------------------------------------------
+
+rule PresentNavigationChoices {
+    when: visit: StationVisit.status becomes completed
+
+    let journey = visit.journey
+
+    requires: not journey.is_bingo    -- journey not yet complete
+
+    -- Black box: selects appropriate next stations
+    let local = suggest_local_station(journey, visit.station)     -- black box: same domain
+    let far = suggest_gegensatz_station(journey, visit.station)   -- black box: contrasting domain
+
+    ensures: NavigationChoice.created(
+        journey: journey,
+        after_station: visit,
+        local_option: local,
+        far_option: far,
+        chosen: none,
+        presented_at: now
+    )
+}
+
+rule TravellerChoosesLocal {
+    when: TravellerChoosesNavigation(choice, local)
+
+    requires: choice.is_pending
+
+    ensures: choice.chosen = local
+    ensures: choice.chosen_station = choice.local_option
+    ensures: choice.chosen_at = now
+}
+
+rule TravellerChoosesFar {
+    when: TravellerChoosesNavigation(choice, far)
+
+    requires: choice.is_pending
+
+    ensures: choice.chosen = far
+    ensures: choice.chosen_station = choice.far_option
+    ensures: choice.chosen_at = now
+    ensures: choice.journey.profile.orientation_indicators.add(
+        "gegensatz:" + choice.far_option.interest_domain
+    )
+}
+
+------------------------------------------------------------
+-- Rules: Erleben vor Benennen (Dimension Reveal)
+------------------------------------------------------------
+
+-- The core pedagogical mechanic: reveal the VUCA concept name
+-- ONLY after the student has experienced enough of that dimension.
+-- This is the reward moment — theory anchored in lived experience.
+
+rule RevealDimensionConcept {
+    when: progress: DimensionProgress.is_threshold_met
+
+    requires: not progress.is_revealed
+
+    ensures: progress.is_revealed = true
+    ensures: progress.revealed_at = now
+    ensures: DimensionRevealed(
+        journey: progress.bingo_matrix.journey,
+        dimension: progress.dimension,
+        evidence_stations: progress.bingo_matrix.journey.completed_stations
+            with result.dimension_scores != null
+    )
+}
+
+------------------------------------------------------------
+-- Rules: Bingo Completion
+------------------------------------------------------------
+
+rule JourneyBingoComplete {
+    when: bingo: BingoMatrix.is_complete
+
+    let journey = bingo.journey
+
+    requires: journey.status = active
+
+    ensures: journey.status = completed
+    ensures: journey.completed_at = now
+    ensures: JourneyCompleted(journey)
+}
+
+------------------------------------------------------------
+-- Rules: Profile Stage Transitions
+------------------------------------------------------------
+
+-- Stage 1 → Stage 2: Interest → Orientation
+-- Triggered when the student has enough breadth and Gegensatz engagement
+
+rule AdvanceToOrientation {
+    when: profile: InterestProfile.has_gegensatz_engagement
+
+    requires: profile.stage = interest
+    requires: profile.interest_breadth >= 3
+
+    ensures: profile.stage = orientation
+    ensures: ProfileAdvanced(profile.journey, orientation)
+}
+
+-- Stage 2 → Stage 3: Orientation → Skills
+-- Triggered when Level 2 reflections show depth across dimensions
+
+rule AdvanceToSkills {
+    when: ProfileAdvanced(journey, orientation)
+
+    let profile = journey.profile
+    let deep_dialogues = journey.completed_stations
+        with dialogue.has_deep_reflection
+
+    -- Wait: this fires on orientation advance; actual advancement to
+    -- skills happens later when enough depth has accumulated.
+    -- Model as a derived condition check instead.
+}
+
+rule AdvanceToSkillsOnDepth {
+    when: visit: StationVisit.status becomes completed
+
+    let journey = visit.journey
+    let profile = journey.profile
+    let deep_count = journey.completed_stations
+        with dialogue.has_deep_reflection
+
+    requires: profile.stage = orientation
+    requires: deep_count.count >= config.items_per_dimension
+
+    ensures: profile.stage = skills
+    ensures: ProfileAdvanced(journey, skills)
+}
+
+------------------------------------------------------------
+-- Rules: Gamification
+------------------------------------------------------------
+
+rule UpdateStreak {
+    when: visit: StationVisit.status becomes completed
+
+    let streak = visit.journey.streak
+
+    ensures:
+        if streak.last_active_date = today:
+            -- Already counted today, no change
+            streak.current_days = streak.current_days
+        else if streak.last_active_date = today - 1.day:
+            -- Consecutive day
+            streak.current_days = streak.current_days + 1
+            streak.last_active_date = today
+            streak.longest_days =
+                if streak.current_days > streak.longest_days:
+                    streak.current_days
+                else:
+                    streak.longest_days
+        else:
+            -- Streak broken (halved, not zeroed — gentler for younger audience)
+            streak.current_days = streak.current_days / 2
+            streak.last_active_date = today
+}
+
+rule AdvanceStreakTier {
+    when: streak: Streak.current_days >= config.streak_bronze
+
+    requires: streak.tier = none
+
+    ensures: streak.tier = bronze
+}
+
+rule AdvanceStreakSilver {
+    when: streak: Streak.current_days >= config.streak_silver
+
+    requires: streak.tier = bronze
+
+    ensures: streak.tier = silver
+}
+
+rule AdvanceStreakGold {
+    when: streak: Streak.current_days >= config.streak_gold
+
+    requires: streak.tier = silver
+
+    ensures: streak.tier = gold
+}
+
+rule AdvanceStreakWeltreisender {
+    when: streak: Streak.current_days >= config.streak_weltreisender
+
+    requires: streak.tier = gold
+
+    ensures: streak.tier = weltreisender
+}
+
+rule AwardDeepReflectionXP {
+    when: dialogue: Dialogue.has_deep_reflection
+
+    requires: dialogue.station_visit.status = in_progress
+
+    ensures: DeepReflectionAchieved(dialogue.station_visit.journey)
+}
+
+------------------------------------------------------------
+-- Rules: Journey Abandonment
+------------------------------------------------------------
+
+rule AbandonStation {
+    when: TravellerAbandonsStation(visit)
+
+    requires: visit.status = in_progress
+
+    ensures: visit.status = abandoned
+}
+
+rule AbandonJourney {
+    when: TravellerAbandonsJourney(journey)
+
+    requires: journey.status = active
+
+    ensures: journey.status = abandoned
+}
+
+------------------------------------------------------------
+-- Actor Declarations
+------------------------------------------------------------
+
+actor Traveller {
+    identified_by: User with status = active
+}
+
+------------------------------------------------------------
+-- Surfaces
+------------------------------------------------------------
+
+surface GlobeView {
+    for traveller: Traveller
+
+    context journey: Journey with traveller = traveller and status = active
+
+    exposes:
+        journey.current_location
+        journey.completed_stations.count
+        journey.total_xp
+        journey.bingo.progress_fraction
+        journey.streak.current_days
+        journey.streak.tier
+        for visit in journey.completed_stations:
+            visit.station.location
+            visit.station.interest_domain
+
+    provides:
+        TravellerSelectsStation(journey, station)
+            when journey.active_station.count = 0
+
+    navigates_to:
+        StationView(journey.active_station.first)
+            when journey.active_station.count > 0
+        ProfileView(journey)
+        BingoProgressView(journey)
+        JournalView(journey)
+
+    guidance:
+        -- Warm, illustrated 3D globe (Pixar-style, not photorealistic).
+        -- Explored stations shimmer gold; unexplored regions dimmed.
+        -- Travel arcs animate between visited cities.
+        -- Passport stamp count visible in corner.
+}
+
+surface StationView {
+    for traveller: Traveller
+
+    context visit: StationVisit with journey.traveller = traveller and status = in_progress
+
+    exposes:
+        visit.station.location.name
+        visit.station.setting
+        visit.station.challenge
+        visit.station.character_name
+        visit.is_audio_mode
+        visit.dialogue.messages
+        visit.dialogue.reflection_level
+
+    provides:
+        TravellerSendsMessage(visit, content, response_time_ms)
+        TravellerTogglesAudioMode(visit)
+        TravellerCompletesStation(visit)
+            when visit.dialogue.message_count >= 2
+        TravellerAbandonsStation(visit)
+
+    guidance:
+        -- Character greets traveller with the challenge.
+        -- In Audio Mode: AI speaks via TTS, two large tap buttons
+        -- ("Ja"/"Nein" or "Mehr"/"Weiter"), no reading required.
+        -- Level 2 reflection indicated subtly (coach shifts to questions).
+}
+
+surface NavigationChoiceView {
+    for traveller: Traveller
+
+    context choice: NavigationChoice
+        with journey.traveller = traveller and is_pending
+
+    exposes:
+        choice.local_option.location
+        choice.local_option.interest_domain
+        choice.local_option.setting
+        choice.far_option.location
+        choice.far_option.interest_domain
+        choice.far_option.setting
+
+    provides:
+        TravellerChoosesNavigation(choice, local)
+        TravellerChoosesNavigation(choice, far)
+
+    guidance:
+        -- Two destinations highlighted on globe.
+        -- Local option: same interest domain, labelled "Vertiefend".
+        -- Far option: contrasting domain, labelled "Wechselnd".
+        -- Globe animates a preview arc to each destination on hover.
+}
+
+surface DimensionRevealView {
+    for traveller: Traveller
+
+    context progress: DimensionProgress
+        with bingo_matrix.journey.traveller = traveller and is_revealed
+
+    exposes:
+        progress.dimension
+        progress.average_score
+        progress.revealed_at
+        progress.completed_items
+
+    guidance:
+        -- Celebratory reveal moment.
+        -- Show the VUCA dimension name in German:
+        --   volatility → "Veraenderung"
+        --   uncertainty → "Ungewissheit"
+        --   complexity → "Vernetzung"
+        --   ambiguity → "Vieldeutigkeit"
+        -- Reference specific stations the student visited as evidence.
+        -- "Du hast jetzt [dimension] gemeistert!"
+}
+
+surface BingoProgressView {
+    for traveller: Traveller
+
+    context journey: Journey with traveller = traveller
+
+    let bingo = journey.bingo
+
+    exposes:
+        bingo.progress_fraction
+        bingo.is_complete
+        for progress in bingo.dimension_progress:
+            progress.dimension
+            progress.completed_items
+            progress.is_threshold_met
+            progress.is_revealed
+
+    guidance:
+        -- Visual: passport stamps filling a grid, NOT "V: 3/4" labels.
+        -- Progress shown as explored places and growing stamp collection.
+        -- Completed dimensions glow. Unrevealed ones show stamps only.
+}
+
+surface OnboardingProgressView {
+    for traveller: Traveller
+    context journey: Journey with traveller = traveller and status = onboarding
+
+    exposes:
+        journey.onboarding_message_count
+        journey.onboarding_progress_fraction    -- message_count / onboarding_max_messages
+
+    guidance:
+        -- LED dots in chat header (same pattern as IntroChat).
+        -- Desktop: colored dots filling left to right.
+        -- Mobile: thin progress bar.
+        -- Gives the user a sense of how far they are before the
+        -- curriculum is generated and the Bingo board appears.
+}
+
+surface ProfileView {
+    for traveller: Traveller
+
+    context journey: Journey with traveller = traveller
+
+    let profile = journey.profile
+
+    exposes:
+        profile.stage
+        profile.interests
+        profile.orientation_indicators
+        profile.capability_dimensions
+        profile.radar_data
+        profile.interest_breadth
+
+    guidance:
+        -- Spider/radar diagram shows capability dimensions.
+        -- Interest tags displayed as topic badges.
+        -- Stage indicator: Interesse → Orientierung → Kompetenzen.
+        -- Portfolio evidence chain: each capability links back to station dialogues.
+}
+
+surface JournalView {
+    for traveller: Traveller
+
+    context journal: TravelJournal with journey.traveller = traveller
+
+    exposes:
+        journal.entry_count
+        for entry in journal.entries:
+            entry.station_visit.station.location
+            entry.station_visit.station.interest_domain
+            entry.passport_stamp
+            entry.summary
+            entry.recorded_at
+
+    navigates_to:
+        for entry in journal.entries:
+            StationReplayView(entry.station_visit)
+
+    guidance:
+        -- Passport-style journal with stamps per visited location.
+        -- Chronological travel record. Each entry shows location,
+        -- interest domain, and AI-generated summary.
+}
+
+------------------------------------------------------------
+-- Deferred Specifications
+------------------------------------------------------------
+
+deferred AIEngine.generate_curriculum           -- see: specs/ai-curriculum.allium
+deferred AIEngine.extract_dimension_scores      -- see: specs/ai-scoring.allium
+deferred AIEngine.extract_capability_signals    -- see: specs/ai-signals.allium
+deferred AIEngine.assess_reflection_readiness   -- see: specs/ai-reflection.allium
+deferred NavigationEngine.suggest_local_station -- see: specs/navigation.allium
+deferred NavigationEngine.suggest_gegensatz_station -- see: specs/navigation.allium
+deferred GamificationEngine.league_system       -- see: specs/gamification.allium
+deferred TransitAudioMode.tts_pipeline          -- see: specs/audio-mode.allium
+
+------------------------------------------------------------
+-- Open Questions
+------------------------------------------------------------
+
+open_question "Should the Bingo Matrix UI show abstract progress (stamps) or numeric progress (3/4) — current decision is stamps-only, revisit after user testing?"
+open_question "Reiseenergie (daily energy limit): should MVP V1 enforce the 5-station daily cap, or defer to post-launch?"
+open_question "Should Gegensatzsuche contrast be purely semantic-opposite, or can it be orthogonal-domain (e.g., Holz → Musik, not just Holz → Kunststoff)?"
+open_question "Multi-agent Reisebegleiter (FR-024): should each VUCA dimension have a distinct AI persona, or one unified coach voice?"
+open_question "Streak halving on break: is dividing by 2 the right forgiveness level for 14-year-olds, or should it be even gentler (e.g., -1 per missed day)?"

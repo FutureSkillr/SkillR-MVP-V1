@@ -1,4 +1,4 @@
-import { geminiService, MODEL_NAME } from './gemini';
+import { backendChatService, geminiService, MODEL_NAME } from './gemini';
 import type { RetryInfo } from './gemini';
 import { insertPromptLog } from './db';
 import type { ChatMessage } from '../types/chat';
@@ -41,13 +41,9 @@ export function createLoggingGeminiService(sessionId: string, sessionType: strin
       const requestTimestamp = Date.now();
       let retryCount = 0;
 
-      const onRetry = (info: RetryInfo) => {
-        retryCount = info.attempt;
-      };
-
       try {
-        const { text, retryCount: finalRetries } = await geminiService.chat(
-          systemInstruction, history, userMessage, onRetry
+        const { text, retryCount: finalRetries } = await backendChatService.chat(
+          systemInstruction, history, userMessage
         );
         retryCount = finalRetries;
         const responseTimestamp = Date.now();
@@ -245,7 +241,7 @@ export function createLoggingGeminiService(sessionId: string, sessionType: strin
 
       try {
         const { data, retryCount: finalRetries, rawText } =
-          await geminiService.generateCurriculum(goal, onRetry);
+          await backendChatService.generateCurriculum(goal, onRetry);
         retryCount = finalRetries;
         const responseTimestamp = Date.now();
 
@@ -312,7 +308,7 @@ export function createLoggingGeminiService(sessionId: string, sessionType: strin
 
       try {
         const { data, retryCount: finalRetries, rawText } =
-          await geminiService.generateCourse(module, goal, onRetry);
+          await backendChatService.generateCourse(module, goal, onRetry);
         retryCount = finalRetries;
         const responseTimestamp = Date.now();
 

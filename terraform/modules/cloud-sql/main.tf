@@ -20,17 +20,17 @@ variable "region" {
 
 variable "instance_name" {
   type    = string
-  default = "future-skillr-db"
+  default = "skillr-db"
 }
 
 variable "database_name" {
   type    = string
-  default = "futureskiller"
+  default = "skillr"
 }
 
 variable "database_user" {
   type    = string
-  default = "futureskiller"
+  default = "skillr"
 }
 
 variable "tier" {

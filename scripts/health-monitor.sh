@@ -33,7 +33,7 @@ if [[ -n "${SERVICE_URL:-}" ]]; then
 else
   PROJECT_ID="${GCP_PROJECT_ID:-gen-lang-client-0456368718}"
   REGION="${GCP_REGION:-europe-west3}"
-  SERVICE="${CLOUD_RUN_SERVICE:-future-skillr}"
+  SERVICE="${CLOUD_RUN_SERVICE:-skillr}"
   SVC_URL=$(gcloud run services describe "$SERVICE" \
     --project "$PROJECT_ID" \
     --region "$REGION" \

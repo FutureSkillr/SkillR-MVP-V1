@@ -45,7 +45,7 @@ module "cloud_sql" {
   source        = "../../modules/cloud-sql"
   project_id    = var.project_id
   region        = var.region
-  instance_name = "future-skillr-db"
+  instance_name = "skillr-db"
 
   depends_on = [module.apis]
 }
@@ -78,7 +78,7 @@ module "cloud_run" {
   source                   = "../../modules/cloud-run"
   project_id               = var.project_id
   region                   = var.region
-  service_name             = "future-skillr"
+  service_name             = "skillr"
   image_tag                = var.image_tag
   max_instances            = 10
   cloudsql_connection_name = module.cloud_sql.connection_name
@@ -89,6 +89,7 @@ module "cloud_run" {
     GEMINI_API_KEY               = var.gemini_api_key
     GCP_PROJECT_ID               = var.project_id
     GCP_REGION                   = var.region
+    GCP_TTS_REGION               = var.gcp_tts_region
     FIREBASE_API_KEY             = var.firebase_api_key
     FIREBASE_AUTH_DOMAIN         = var.firebase_auth_domain
     FIREBASE_PROJECT_ID          = var.firebase_project_id

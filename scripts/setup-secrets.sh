@@ -36,7 +36,7 @@ fi
 
 PROJECT_ID="${GCP_PROJECT_ID:-}"
 REGION="${GCP_REGION:-europe-west3}"
-SERVICE="${CLOUD_RUN_SERVICE:-future-skillr}"
+SERVICE="${CLOUD_RUN_SERVICE:-skillr}"
 SECRET_NAME="vertexai-sa-key"
 KEY_FILE="${1:-$PROJECT_ROOT/credentials/vertexai-sa.json}"
 

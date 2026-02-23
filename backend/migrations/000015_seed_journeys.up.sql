@@ -1,8 +1,8 @@
 -- Seed: Journey definitions
 INSERT INTO journey_definitions (id, journey_type, name, description, stations) VALUES
-('vuca-journey', 'vuca', 'Reise nach VUCA', 'Entdecke deine Stärken auf einer Reise durch die VUCA-Welt', '["station-v1","station-u1","station-c1","station-a1","station-v2","station-u2","station-c2","station-a2","station-v3","station-u3","station-c3","station-a3","station-v4","station-u4","station-c4","station-a4"]'),
-('entrepreneur-journey', 'entrepreneur', 'Unternehmergeist', 'Erkunde unternehmerisches Denken und Handeln', '["ent-station-1","ent-station-2","ent-station-3","ent-station-4"]'),
-('self-learning-journey', 'self-learning', 'Selbstlernreise', 'Lerne dich selbst besser kennen', '["sl-station-1","sl-station-2","sl-station-3","sl-station-4"]');
+('vuca-journey', 'vuca', 'Reise nach VUCA', 'Tauche ein in lebendige Orte und erlebe, wie du mit Veraenderung, Unsicherheit und neuen Situationen umgehst.', '["station-v1","station-u1","station-c1","station-a1","station-v2","station-u2","station-c2","station-a2","station-v3","station-u3","station-c3","station-a3","station-v4","station-u4","station-c4","station-a4"]'),
+('entrepreneur-journey', 'entrepreneur', 'Gruender-Werkstatt', 'Entwickle eigene Ideen, teste sie an der Realitaet und lerne, was es heisst, etwas Neues zu schaffen.', '["ent-station-1","ent-station-2","ent-station-3","ent-station-4"]'),
+('self-learning-journey', 'self-learning', 'Lern-Labor', 'Entdecke Lerntechniken und wende sie direkt auf deine eigenen Interessen an.', '["sl-station-1","sl-station-2","sl-station-3","sl-station-4"]');
 
 -- Seed: VUCA station definitions (16 stations — 4 per dimension)
 INSERT INTO station_definitions (id, journey_id, name, description, vuca_dimension, order_index) VALUES

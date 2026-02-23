@@ -23,6 +23,7 @@ type mockAIClient struct {
 	genFn  func(ctx context.Context, req ChatRequest) (*ChatResponse, error)
 	ttsFn  func(ctx context.Context, req TTSRequest) (*TTSResponse, error)
 	sttFn  func(ctx context.Context, req STTRequest) (*STTResponse, error)
+	pingFn func(ctx context.Context) (int64, error)
 }
 
 func (m *mockAIClient) Chat(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
@@ -51,6 +52,13 @@ func (m *mockAIClient) SpeechToText(ctx context.Context, req STTRequest) (*STTRe
 		return m.sttFn(ctx, req)
 	}
 	return &STTResponse{Text: "transkribierter Text"}, nil
+}
+
+func (m *mockAIClient) Ping(ctx context.Context) (int64, error) {
+	if m.pingFn != nil {
+		return m.pingFn(ctx)
+	}
+	return 42, nil
 }
 
 // mockOrchestrator helpers
@@ -442,7 +450,7 @@ func TestChat_FallbackToDefault(t *testing.T) {
 			if req.Message != "Hallo" {
 				t.Errorf("expected message 'Hallo', got %q", req.Message)
 			}
-			return &ChatResponse{Text: "Hallo zurueck!", ModelUsed: "gemini-2.0-flash-lite"}, nil
+			return &ChatResponse{Text: "Hallo zurueck!", ModelUsed: "gemini-2.5-flash"}, nil
 		},
 	}
 	h := newTestHandler(client)

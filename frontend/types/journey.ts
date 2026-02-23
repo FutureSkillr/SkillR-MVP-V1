@@ -42,3 +42,18 @@ export interface JourneyDimension {
   experienceLabel: string;
   description: string;
 }
+
+export interface LernreiseDefinition {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  icon: string;
+  journeyType: JourneyType;
+  location: string;
+  lat: number;
+  lng: number;
+  setting: string;
+  character: string;
+  dimensions: string[];
+}

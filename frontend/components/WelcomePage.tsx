@@ -2,6 +2,9 @@ import React, { useState, useRef, useCallback } from 'react';
 
 interface WelcomePageProps {
   onGetStarted: () => void;
+  onLogin?: () => void;
+  onNavigate?: (page: 'datenschutz' | 'impressum') => void;
+  onOpenCookieSettings?: () => void;
 }
 
 type Stakeholder = 'kids' | 'parents' | 'companies' | 'coaches' | 'ihk' | 'arbeitsagentur';
@@ -282,7 +285,7 @@ const MerchCarousel: React.FC = () => {
   );
 };
 
-export const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted }) => {
+export const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted, onLogin, onNavigate, onOpenCookieSettings }) => {
   const [activeStakeholder, setActiveStakeholder] = useState<Stakeholder>('kids');
   const active = stakeholders.find((s) => s.key === activeStakeholder)!;
 
@@ -292,17 +295,13 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted }) => {
       <nav className="glass fixed top-0 w-full z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg gradient-blue"
-            >
-              S
-            </div>
+            <img src="/icons/app-icon.png" alt="SkillR" className="w-10 h-10 rounded-xl shadow-lg" />
             <span className="text-xl font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>
               SkillR
             </span>
           </div>
           <button
-            onClick={onGetStarted}
+            onClick={onLogin ?? onGetStarted}
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold py-2 px-6 rounded-xl text-sm transition-all shadow-lg hover:shadow-blue-600/30"
           >
             Anmelden
@@ -310,8 +309,22 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted }) => {
         </div>
       </nav>
 
+      {/* EU Co-Funding Notice — FR-112 */}
+      <div className="fixed top-[72px] w-full z-40 bg-slate-900/80 backdrop-blur-sm border-b border-white/5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+          <img
+            src="/icons/eu-co-funded-neg.png"
+            alt="Kofinanziert von der Europaeischen Union"
+            className="h-8 sm:h-10 w-auto"
+          />
+          <p className="text-[10px] sm:text-xs text-slate-400 text-center leading-snug max-w-2xl">
+            Das Projekt wird im Rahmen des Programms &bdquo;Zukunftsplattform f&uuml;r soziale Innovationen und Modellvorhaben&ldquo; mit einer Zuwendung in H&ouml;he von 95&nbsp;% der zuwendungsf&auml;higen Ausgaben durch die Europ&auml;ische Union kofinanziert.
+          </p>
+        </div>
+      </div>
+
       {/* Hero */}
-      <section className="relative min-h-screen flex items-center justify-center pt-20 px-4 overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center pt-36 sm:pt-32 px-4 overflow-hidden">
         {/* Orbs */}
         <div
           className="absolute w-96 h-96 rounded-full pointer-events-none"
@@ -522,23 +535,48 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted }) => {
 
       {/* Footer */}
       <footer className="glass-light py-6 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 gradient-blue rounded-lg flex items-center justify-center font-bold text-xs shadow-lg">S</div>
-            <span>&copy; 2026 SkillR</span>
+        <div className="max-w-6xl mx-auto space-y-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+            <div className="flex items-center gap-3">
+              <img src="/icons/app-icon.png" alt="SkillR" className="w-8 h-8 rounded-lg shadow-lg" />
+              <span>&copy; 2026 SkillR</span>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
+              {stakeholders.map((s) => (
+                <a
+                  key={s.key}
+                  href={`/landing/${s.key}.html`}
+                  className="hover:text-white transition-colors"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {s.label}
+                </a>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
-            {stakeholders.map((s) => (
-              <a
-                key={s.key}
-                href={`/landing/${s.key}.html`}
-                className="hover:text-white transition-colors"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {s.label}
-              </a>
-            ))}
+          {/* EU Co-Funding — FR-112 */}
+          <div className="flex flex-col items-center gap-2 border-t border-white/5 pt-4">
+            <img
+              src="/icons/eu-co-funded-neg.png"
+              alt="Kofinanziert von der Europaeischen Union"
+              className="h-8 sm:h-10 w-auto"
+            />
+            <p className="text-[10px] sm:text-xs text-slate-500 text-center leading-snug max-w-2xl">
+              Das Projekt wird im Rahmen des Programms &bdquo;Zukunftsplattform f&uuml;r soziale Innovationen und Modellvorhaben&ldquo; mit einer Zuwendung in H&ouml;he von 95&nbsp;% der zuwendungsf&auml;higen Ausgaben durch die Europ&auml;ische Union kofinanziert.
+            </p>
+          </div>
+          {/* Compliance links — DSGVO / TMG */}
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs text-slate-500 border-t border-white/5 pt-4">
+            <button onClick={() => onNavigate?.('impressum')} className="hover:text-white transition-colors cursor-pointer min-h-[44px] inline-flex items-center">
+              Impressum
+            </button>
+            <button onClick={() => onNavigate?.('datenschutz')} className="hover:text-white transition-colors cursor-pointer min-h-[44px] inline-flex items-center">
+              Datenschutz
+            </button>
+            <button onClick={() => onOpenCookieSettings?.()} className="hover:text-white transition-colors cursor-pointer min-h-[44px] inline-flex items-center">
+              Cookie-Einstellungen
+            </button>
           </div>
         </div>
       </footer>

@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS campaigns (
+    id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+    name          TEXT NOT NULL,
+    platform      TEXT NOT NULL DEFAULT 'meta',
+    utm_source    TEXT NOT NULL DEFAULT '',
+    utm_medium    TEXT NOT NULL DEFAULT '',
+    utm_campaign  TEXT NOT NULL,
+    utm_content   TEXT,
+    utm_term      TEXT,
+    meta_pixel_id TEXT,
+    budget_cents  INTEGER,
+    currency      TEXT NOT NULL DEFAULT 'EUR',
+    start_date    TIMESTAMPTZ,
+    end_date      TIMESTAMPTZ,
+    status        TEXT NOT NULL DEFAULT 'draft',
+    notes         TEXT,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by    TEXT
+);

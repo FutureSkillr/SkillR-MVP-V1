@@ -10,6 +10,11 @@ The VUCA journey has a clear completion criterion: the user must accumulate suff
 ## Intent
 Without a finish line, the journey has no arc. The bingo matrix gives structure without rigidity — users reach the same destination through completely different paths. It also ensures pedagogical completeness: no user finishes without encountering all four dimensions.
 
+## Acceptance Criteria
+- [ ] VUCA onboarding chat shows LED progress indicator (dots/bar) matching IntroChat pattern
+- [ ] Progress fills based on user message count toward goal detection
+- [ ] Bingo board appears on VucaDashboard after curriculum generation (existing behavior)
+
 ## Dependencies
 - FR-005 (Gemini AI dialogue engine — dimension tagging)
 - FR-006 (VUCA navigation — journey steps)

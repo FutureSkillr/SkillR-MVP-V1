@@ -141,6 +141,9 @@ func RegisterRoutes(e *echo.Echo, deps *Dependencies) {
 	// The intro flow (coach selection, onboarding chat) happens before user login,
 	// so AI routes must work without Firebase auth.
 	if deps.AI != nil {
+		// AI status — public, no auth, no rate limit (lightweight ping)
+		e.GET("/api/v1/ai/status", deps.AI.Status)
+
 		var aiMiddlewares []echo.MiddlewareFunc
 		if deps.OptionalFirebaseAuth != nil {
 			aiMiddlewares = append(aiMiddlewares, deps.OptionalFirebaseAuth)
@@ -154,6 +157,33 @@ func RegisterRoutes(e *echo.Echo, deps *Dependencies) {
 		ai.POST("/generate", deps.AI.Generate)
 		ai.POST("/tts", deps.AI.TTS)
 		ai.POST("/stt", deps.AI.STT)
+
+		// Compatibility aliases: /api/gemini/* → delegate to existing AI handler.
+		// The frontend calls /api/gemini/chat, /api/gemini/tts, etc.
+		gemini := e.Group("/api/gemini", aiMiddlewares...)
+		gemini.POST("/chat", deps.AI.Chat)
+		gemini.POST("/extract-insights", deps.AI.Extract)
+		gemini.POST("/extract-station-result", deps.AI.Extract)
+		gemini.POST("/generate-curriculum", deps.AI.Generate)
+		gemini.POST("/generate-course", deps.AI.Generate)
+		gemini.POST("/tts", deps.AI.TTS)
+		gemini.POST("/stt", deps.AI.STT)
+	}
+
+	// Compatibility aliases: /api/sessions → delegate to existing Session handler.
+	// The frontend calls /api/sessions directly (Express gateway path).
+	if deps.Session != nil {
+		var sessionMiddlewares []echo.MiddlewareFunc
+		if deps.FirebaseAuthMiddleware != nil {
+			sessionMiddlewares = append(sessionMiddlewares, deps.FirebaseAuthMiddleware)
+		}
+		sessCompat := e.Group("/api/sessions", sessionMiddlewares...)
+		sessCompat.GET("", deps.Session.List)
+		sessCompat.POST("", deps.Session.Create)
+		sessCompat.GET("/:id", deps.Session.Get)
+		sessCompat.PUT("/:id", deps.Session.Update)
+		sessCompat.PATCH("/:id/end", deps.Session.Update)
+		sessCompat.DELETE("/:id", deps.Session.Delete)
 	}
 
 	// Admin: Prompts (requires admin role)
@@ -175,30 +205,158 @@ func RegisterRoutes(e *echo.Echo, deps *Dependencies) {
 		agents.GET("/:agentId/executions", deps.AdminAgents.Executions)
 		agents.POST("/:agentId/invoke", deps.AdminAgents.Invoke)
 	}
+
+	// --- Gateway routes (ported from Express gateway) ---
+
+	// Analytics — public endpoints (rate-limited)
+	if deps.GatewayAnalytics != nil {
+		e.POST("/api/analytics/events", deps.GatewayAnalytics.BatchInsert)
+		e.POST("/api/analytics/consent", deps.GatewayAnalytics.LogConsent)
+
+		// Analytics — admin endpoints
+		var adminAnalyticsMws []echo.MiddlewareFunc
+		if deps.FirebaseAuthMiddleware != nil {
+			adminAnalyticsMws = append(adminAnalyticsMws, deps.FirebaseAuthMiddleware)
+		}
+		adminAnalyticsMws = append(adminAnalyticsMws, middleware.RequireAdmin())
+		analyticsAdmin := e.Group("/api/analytics", adminAnalyticsMws...)
+		analyticsAdmin.GET("/events", deps.GatewayAnalytics.QueryEvents)
+		analyticsAdmin.GET("/overview", deps.GatewayAnalytics.Overview)
+		analyticsAdmin.GET("/sessions/:id", deps.GatewayAnalytics.SessionEvents)
+		analyticsAdmin.GET("/export-csv", deps.GatewayAnalytics.ExportCSV)
+		analyticsAdmin.DELETE("/events", deps.GatewayAnalytics.DeleteEvents)
+	}
+
+	// Legal config
+	if deps.GatewayLegal != nil {
+		e.GET("/api/config/legal", deps.GatewayLegal.GetLegal)
+
+		var adminLegalMws []echo.MiddlewareFunc
+		if deps.FirebaseAuthMiddleware != nil {
+			adminLegalMws = append(adminLegalMws, deps.FirebaseAuthMiddleware)
+		}
+		adminLegalMws = append(adminLegalMws, middleware.RequireAdmin())
+		legalAdmin := e.Group("/api/config", adminLegalMws...)
+		legalAdmin.PUT("/legal", deps.GatewayLegal.PutLegal)
+	}
+
+	// User admin
+	if deps.GatewayUserAdmin != nil {
+		var userAdminMws []echo.MiddlewareFunc
+		if deps.FirebaseAuthMiddleware != nil {
+			userAdminMws = append(userAdminMws, deps.FirebaseAuthMiddleware)
+		}
+		userAdminMws = append(userAdminMws, middleware.RequireAdmin())
+		users := e.Group("/api/users", userAdminMws...)
+		users.GET("", deps.GatewayUserAdmin.ListUsers)
+		users.PATCH("/:id/role", deps.GatewayUserAdmin.UpdateRole)
+		users.DELETE("/:id", deps.GatewayUserAdmin.DeleteUser)
+	}
+
+	// Prompt logs
+	if deps.GatewayPromptLogs != nil {
+		// POST is authenticated (not necessarily admin)
+		var promptLogAuthMws []echo.MiddlewareFunc
+		if deps.FirebaseAuthMiddleware != nil {
+			promptLogAuthMws = append(promptLogAuthMws, deps.FirebaseAuthMiddleware)
+		}
+		e.POST("/api/prompt-logs", deps.GatewayPromptLogs.LogPrompt, promptLogAuthMws...)
+
+		// Admin endpoints
+		var promptLogAdminMws []echo.MiddlewareFunc
+		if deps.FirebaseAuthMiddleware != nil {
+			promptLogAdminMws = append(promptLogAdminMws, deps.FirebaseAuthMiddleware)
+		}
+		promptLogAdminMws = append(promptLogAdminMws, middleware.RequireAdmin())
+		promptAdmin := e.Group("/api/prompt-logs", promptLogAdminMws...)
+		promptAdmin.GET("", deps.GatewayPromptLogs.QueryLogs)
+		promptAdmin.GET("/stats", deps.GatewayPromptLogs.Stats)
+		promptAdmin.GET("/export-csv", deps.GatewayPromptLogs.ExportCSV)
+		promptAdmin.DELETE("", deps.GatewayPromptLogs.DeleteAll)
+	}
+
+	// Capacity
+	if deps.GatewayCapacity != nil {
+		e.GET("/api/capacity", deps.GatewayCapacity.GetCapacity)
+		e.POST("/api/capacity/book", deps.GatewayCapacity.BookSlot)
+	}
+
+	// Campaigns
+	if deps.GatewayCampaigns != nil {
+		var campaignAdminMws []echo.MiddlewareFunc
+		if deps.FirebaseAuthMiddleware != nil {
+			campaignAdminMws = append(campaignAdminMws, deps.FirebaseAuthMiddleware)
+		}
+		campaignAdminMws = append(campaignAdminMws, middleware.RequireAdmin())
+		campaigns := e.Group("/api/campaigns", campaignAdminMws...)
+		campaigns.GET("", deps.GatewayCampaigns.List)
+		campaigns.POST("", deps.GatewayCampaigns.Create)
+		campaigns.PUT("/:id", deps.GatewayCampaigns.Update)
+		campaigns.DELETE("/:id", deps.GatewayCampaigns.Archive)
+		campaigns.GET("/:id/stats", deps.GatewayCampaigns.Stats)
+	}
+
+	// Brand
+	if deps.GatewayBrand != nil {
+		// Public: get by slug
+		e.GET("/api/brand/:slug", deps.GatewayBrand.GetBySlug)
+
+		// Admin endpoints
+		var brandAdminMws []echo.MiddlewareFunc
+		if deps.FirebaseAuthMiddleware != nil {
+			brandAdminMws = append(brandAdminMws, deps.FirebaseAuthMiddleware)
+		}
+		brandAdminMws = append(brandAdminMws, middleware.RequireAdmin())
+		brandAdmin := e.Group("/api/brand", brandAdminMws...)
+		brandAdmin.GET("", deps.GatewayBrand.List)
+		brandAdmin.POST("", deps.GatewayBrand.Create)
+
+		// Update requires auth but allows admin or sponsor_admin
+		var brandAuthMws []echo.MiddlewareFunc
+		if deps.FirebaseAuthMiddleware != nil {
+			brandAuthMws = append(brandAuthMws, deps.FirebaseAuthMiddleware)
+		}
+		e.PUT("/api/brand/:slug", deps.GatewayBrand.Update, brandAuthMws...)
+		e.DELETE("/api/brand/:slug", deps.GatewayBrand.Deactivate, brandAdminMws...)
+	}
+
+	// Content Pack — public endpoint (FR-116)
+	if deps.GatewayContentPack != nil {
+		e.GET("/api/v1/content-pack", deps.GatewayContentPack.Get)
+	}
 }
 
 // Dependencies holds all handler instances for route wiring.
 type Dependencies struct {
-	Health                  *HealthHandler
-	ConfigH                 *ConfigHandler
-	Auth                    *AuthHandler
-	Session                 SessionHandler
-	Reflection              ReflectionHandler
-	Profile                 ProfileHandler
-	Evidence                EvidenceHandler
-	Endorsement             EndorsementHandler
-	Artifact                ArtifactHandler
-	Journal                 JournalHandler
-	Engagement              EngagementHandler
-	Lernreise               LernreiseHandler
-	Pod                     PodHandler
-	AI                      AIHandler
-	AdminPrompts            AdminPromptHandler
-	AdminAgents             AdminAgentHandler
-	FirebaseAuthMiddleware  echo.MiddlewareFunc // C1/H8: auth middleware for v1 group
-	OptionalFirebaseAuth    echo.MiddlewareFunc // optional auth for AI routes (intro flow)
-	EndorsementRateLimit    echo.MiddlewareFunc // H9: rate limit for public endorsement submit
-	AIRateLimit             echo.MiddlewareFunc // rate limit for public AI endpoints
+	Health                 *HealthHandler
+	ConfigH                *ConfigHandler
+	Auth                   *AuthHandler
+	Session                SessionHandler
+	Reflection             ReflectionHandler
+	Profile                ProfileHandler
+	Evidence               EvidenceHandler
+	Endorsement            EndorsementHandler
+	Artifact               ArtifactHandler
+	Journal                JournalHandler
+	Engagement             EngagementHandler
+	Lernreise              LernreiseHandler
+	Pod                    PodHandler
+	AI                     AIHandler
+	AdminPrompts           AdminPromptHandler
+	AdminAgents            AdminAgentHandler
+	FirebaseAuthMiddleware echo.MiddlewareFunc // C1/H8: auth middleware for v1 group
+	OptionalFirebaseAuth   echo.MiddlewareFunc // optional auth for AI routes (intro flow)
+	EndorsementRateLimit   echo.MiddlewareFunc // H9: rate limit for public endorsement submit
+	AIRateLimit            echo.MiddlewareFunc // rate limit for public AI endpoints
+	// Gateway handlers (ported from Express gateway)
+	GatewayAnalytics   GatewayAnalyticsHandler
+	GatewayLegal       GatewayLegalHandler
+	GatewayUserAdmin   GatewayUserAdminHandler
+	GatewayPromptLogs  GatewayPromptLogHandler
+	GatewayCapacity    GatewayCapacityHandler
+	GatewayBrand       GatewayBrandHandler
+	GatewayCampaigns   GatewayCampaignHandler
+	GatewayContentPack GatewayContentPackHandler
 }
 
 // Handler interfaces — each domain package implements these
@@ -267,6 +425,7 @@ type AIHandler interface {
 	Generate(c echo.Context) error
 	TTS(c echo.Context) error
 	STT(c echo.Context) error
+	Status(c echo.Context) error
 }
 
 type AdminPromptHandler interface {
@@ -302,4 +461,59 @@ type LernreiseHandler interface {
 	GetInstance(c echo.Context) error
 	SubmitTask(c echo.Context) error
 	GetProgress(c echo.Context) error
+}
+
+// Gateway handler interfaces
+type GatewayAnalyticsHandler interface {
+	BatchInsert(c echo.Context) error
+	LogConsent(c echo.Context) error
+	QueryEvents(c echo.Context) error
+	Overview(c echo.Context) error
+	SessionEvents(c echo.Context) error
+	ExportCSV(c echo.Context) error
+	DeleteEvents(c echo.Context) error
+}
+
+type GatewayLegalHandler interface {
+	GetLegal(c echo.Context) error
+	PutLegal(c echo.Context) error
+}
+
+type GatewayUserAdminHandler interface {
+	ListUsers(c echo.Context) error
+	UpdateRole(c echo.Context) error
+	DeleteUser(c echo.Context) error
+}
+
+type GatewayPromptLogHandler interface {
+	LogPrompt(c echo.Context) error
+	QueryLogs(c echo.Context) error
+	Stats(c echo.Context) error
+	ExportCSV(c echo.Context) error
+	DeleteAll(c echo.Context) error
+}
+
+type GatewayCapacityHandler interface {
+	GetCapacity(c echo.Context) error
+	BookSlot(c echo.Context) error
+}
+
+type GatewayBrandHandler interface {
+	GetBySlug(c echo.Context) error
+	List(c echo.Context) error
+	Create(c echo.Context) error
+	Update(c echo.Context) error
+	Deactivate(c echo.Context) error
+}
+
+type GatewayCampaignHandler interface {
+	List(c echo.Context) error
+	Create(c echo.Context) error
+	Update(c echo.Context) error
+	Archive(c echo.Context) error
+	Stats(c echo.Context) error
+}
+
+type GatewayContentPackHandler interface {
+	Get(c echo.Context) error
 }

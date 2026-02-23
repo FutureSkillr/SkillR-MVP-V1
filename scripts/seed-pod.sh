@@ -8,7 +8,7 @@
 set -e
 
 CSS_URL="${SOLID_POD_URL:-http://localhost:3000}"
-ADMIN_EMAIL="${SOLID_POD_ADMIN_EMAIL:-admin@futureskiller.local}"
+ADMIN_EMAIL="${SOLID_POD_ADMIN_EMAIL:-admin@skillr.local}"
 ADMIN_PASSWORD="${SOLID_POD_ADMIN_PASSWORD:-skillr}"
 ADMIN_POD_NAME="admin"
 

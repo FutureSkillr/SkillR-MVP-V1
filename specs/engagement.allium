@@ -1,0 +1,513 @@
+-- engagement.allium
+--
+-- Engagement & Gamification System
+--
+-- Drives daily return and depth of exploration through XP, streaks,
+-- levels, and leaderboards. Pedagogically grounded: every mechanic
+-- serves learning, not engagement maximisation. Streak penalties are
+-- gentle (halving, not zeroing) for a 14+ audience.
+--
+-- IMPORTANT: This spec is the CANONICAL source of truth for XP values,
+-- level thresholds, and streak rules. The backend and frontend
+-- implementations currently diverge — both must converge to match
+-- this specification.
+--
+-- Divergences at time of spec creation (2026-02-23):
+--   Backend XP: onboarding=100, station=50, module=25, quiz=15, login=5
+--   Frontend XP: onboarding=50, station=100, module=30, quiz=10, login=20
+--   Backend levels: 0/100/500/1500/5000
+--   Frontend levels: 0/100/300/600/1000
+--   Backend titles: Entdecker/Pfadfinder/Abenteurer/Globetrotter/Weltenbummler
+--   Frontend titles: Entdecker/Reisender/Abenteurer/Wegbereiter/Weltenbummler
+--   Backend: No streak logic (halving, freezing, daily bonus)
+--   Frontend: Full streak logic, but engagement handler never wired in main.go
+
+use "./vuca-journey.allium" as journey
+
+------------------------------------------------------------
+-- External Entities
+------------------------------------------------------------
+
+external entity User {
+    id: String
+    display_name: String
+    status: active | suspended
+}
+
+------------------------------------------------------------
+-- Value Types
+------------------------------------------------------------
+
+value LevelDefinition {
+    level: Integer              -- 1-5
+    title: String               -- German title
+    min_xp: Integer             -- XP threshold
+}
+
+------------------------------------------------------------
+-- Entities
+------------------------------------------------------------
+
+enum XPAction {
+    onboarding_complete
+    | station_start
+    | station_complete
+    | vuca_module_complete
+    | quiz_correct
+    | daily_login
+    | profile_view
+    | intro_demo_complete
+    | lernreise_started
+    | lernreise_task_complete
+    | lernreise_module_complete
+    | lernreise_complete
+}
+
+enum StreakTier { none | bronze | silver | gold | weltreisender }
+
+entity EngagementState {
+    user: User
+    current_streak: Integer
+    longest_streak: Integer
+    last_active_date: String        -- ISO date "2026-02-23"
+    streak_freeze_available: Boolean
+    total_xp: Integer
+    weekly_xp: Integer
+    week_start_date: String         -- ISO date of Monday
+    level: Integer
+    level_title: String
+    streak_tier: StreakTier
+    updated_at: Timestamp
+
+    -- Derived
+    is_active_today: last_active_date = today
+    days_since_active: days_between(today, last_active_date)    -- black box
+    xp_to_next_level: next_level_threshold(total_xp) - total_xp -- black box
+    progress_to_next: total_xp - current_level_threshold(total_xp) -- black box
+}
+
+entity XPEvent {
+    user: User
+    action: XPAction
+    xp_awarded: Integer
+    daily_bonus: Integer            -- 0 or config.daily_login_bonus
+    total_awarded: Integer          -- xp_awarded + daily_bonus
+    timestamp: Timestamp
+}
+
+entity LeaderboardEntry {
+    user: User
+    rank: Integer
+    display_name: String
+    total_xp: Integer
+    weekly_xp: Integer
+    level: Integer
+    level_title: String
+}
+
+------------------------------------------------------------
+-- Config
+------------------------------------------------------------
+
+-- CANONICAL XP VALUES — implementations must match these exactly.
+
+config {
+    -- XP per action
+    xp_onboarding_complete: Integer = 50
+    xp_station_start: Integer = 10
+    xp_station_complete: Integer = 100
+    xp_vuca_module_complete: Integer = 30
+    xp_quiz_correct: Integer = 10
+    xp_daily_login: Integer = 0         -- login itself awards nothing; daily bonus handles it
+    xp_profile_view: Integer = 5
+    xp_intro_demo_complete: Integer = 25
+    xp_lernreise_started: Integer = 15
+    xp_lernreise_task_complete: Integer = 20
+    xp_lernreise_module_complete: Integer = 75
+    xp_lernreise_complete: Integer = 200
+
+    -- Daily bonus (awarded once per day on first action)
+    daily_login_bonus: Integer = 20
+
+    -- Level thresholds
+    level_1_xp: Integer = 0            -- "Entdecker"
+    level_2_xp: Integer = 100          -- "Reisender"
+    level_3_xp: Integer = 300          -- "Abenteurer"
+    level_4_xp: Integer = 600          -- "Wegbereiter"
+    level_5_xp: Integer = 1000         -- "Weltenbummler"
+
+    -- Streak rules
+    streak_freeze_threshold: Integer = 7    -- days to earn a freeze
+    streak_halve_minimum: Integer = 1       -- floor after halving
+
+    -- Streak tier thresholds
+    streak_tier_bronze: Integer = 3
+    streak_tier_silver: Integer = 7
+    streak_tier_gold: Integer = 14
+    streak_tier_weltreisender: Integer = 30
+
+    -- Leaderboard
+    leaderboard_default_limit: Integer = 20
+
+    -- Weekly reset
+    week_start_day: String = "monday"   -- ISO 8601
+}
+
+------------------------------------------------------------
+-- Defaults
+------------------------------------------------------------
+
+default LevelDefinition level_1 = { level: 1, title: "Entdecker",      min_xp: 0 }
+default LevelDefinition level_2 = { level: 2, title: "Reisender",      min_xp: 100 }
+default LevelDefinition level_3 = { level: 3, title: "Abenteurer",     min_xp: 300 }
+default LevelDefinition level_4 = { level: 4, title: "Wegbereiter",    min_xp: 600 }
+default LevelDefinition level_5 = { level: 5, title: "Weltenbummler",  min_xp: 1000 }
+
+------------------------------------------------------------
+-- Rules: XP Award
+------------------------------------------------------------
+
+rule AwardXP {
+    when: UserPerformsAction(user, action)
+
+    let state = EngagementState{user}
+    let action_xp = resolve_xp(action)                  -- black box: config lookup
+    let is_first_today = state.last_active_date != today
+    let daily_bonus = if is_first_today: config.daily_login_bonus else: 0
+    let total = action_xp + daily_bonus
+
+    requires: exists state
+    requires: total > 0
+
+    ensures: state.total_xp = state.total_xp + total
+    ensures: state.weekly_xp = state.weekly_xp + total
+    ensures: state.updated_at = now
+    ensures: XPEvent.created(
+        user: user,
+        action: action,
+        xp_awarded: action_xp,
+        daily_bonus: daily_bonus,
+        total_awarded: total,
+        timestamp: now
+    )
+    ensures: XPAwarded(user, total, action)
+}
+
+------------------------------------------------------------
+-- Rules: Level Progression
+------------------------------------------------------------
+
+rule RecalculateLevel {
+    when: XPAwarded(user, _, _)
+
+    let state = EngagementState{user}
+    let new_level = compute_level(state.total_xp)       -- black box: highest level where xp >= threshold
+
+    requires: new_level.level != state.level
+
+    ensures: state.level = new_level.level
+    ensures: state.level_title = new_level.title
+    ensures: LevelUp(user, new_level)
+}
+
+------------------------------------------------------------
+-- Rules: Streak Tracking
+------------------------------------------------------------
+
+-- Same day: no change
+
+rule StreakSameDay {
+    when: UserPerformsAction(user, _)
+
+    let state = EngagementState{user}
+
+    requires: state.last_active_date = today
+
+    -- No streak change needed; XP already awarded by AwardXP rule.
+    ensures: state.current_streak = state.current_streak
+}
+
+-- Consecutive day: increment streak
+
+rule StreakConsecutiveDay {
+    when: UserPerformsAction(user, _)
+
+    let state = EngagementState{user}
+
+    requires: state.days_since_active = 1
+
+    ensures: state.current_streak = state.current_streak + 1
+    ensures: state.last_active_date = today
+    ensures:
+        if state.current_streak > state.longest_streak:
+            state.longest_streak = state.current_streak
+    ensures: StreakUpdated(user, state.current_streak)
+}
+
+-- Missed exactly 1 day with freeze available: use freeze
+
+rule StreakFreezeUsed {
+    when: UserPerformsAction(user, _)
+
+    let state = EngagementState{user}
+
+    requires: state.days_since_active = 2
+    requires: state.streak_freeze_available
+
+    ensures: state.current_streak = state.current_streak + 1
+    ensures: state.streak_freeze_available = false
+    ensures: state.last_active_date = today
+    ensures:
+        if state.current_streak > state.longest_streak:
+            state.longest_streak = state.current_streak
+    ensures: StreakFreezeConsumed(user)
+}
+
+-- Missed days without freeze (or gap > 2): halve streak
+
+rule StreakBroken {
+    when: UserPerformsAction(user, _)
+
+    let state = EngagementState{user}
+
+    requires: state.days_since_active > 2
+              or (state.days_since_active = 2 and not state.streak_freeze_available)
+
+    let halved = max(state.current_streak / 2, config.streak_halve_minimum)    -- black box: integer division
+
+    ensures: state.current_streak = halved
+    ensures: state.streak_freeze_available = false
+    ensures: state.last_active_date = today
+    ensures: StreakHalved(user, halved)
+}
+
+-- First ever activity: initialise streak
+
+rule StreakFirstActivity {
+    when: UserPerformsAction(user, _)
+
+    let state = EngagementState{user}
+
+    requires: state.last_active_date = null or state.current_streak = 0
+
+    ensures: state.current_streak = 1
+    ensures: state.last_active_date = today
+    ensures: state.longest_streak =
+        if state.longest_streak < 1: 1 else: state.longest_streak
+}
+
+------------------------------------------------------------
+-- Rules: Streak Freeze Grant
+------------------------------------------------------------
+
+rule GrantStreakFreeze {
+    when: StreakUpdated(user, current_streak)
+
+    let state = EngagementState{user}
+
+    requires: current_streak >= config.streak_freeze_threshold
+    requires: not state.streak_freeze_available
+
+    ensures: state.streak_freeze_available = true
+}
+
+------------------------------------------------------------
+-- Rules: Streak Tier Advancement
+------------------------------------------------------------
+
+rule AdvanceStreakBronze {
+    when: StreakUpdated(user, streak)
+
+    let state = EngagementState{user}
+
+    requires: streak >= config.streak_tier_bronze
+    requires: state.streak_tier = none
+
+    ensures: state.streak_tier = bronze
+}
+
+rule AdvanceStreakSilver {
+    when: StreakUpdated(user, streak)
+
+    let state = EngagementState{user}
+
+    requires: streak >= config.streak_tier_silver
+    requires: state.streak_tier = bronze
+
+    ensures: state.streak_tier = silver
+}
+
+rule AdvanceStreakGold {
+    when: StreakUpdated(user, streak)
+
+    let state = EngagementState{user}
+
+    requires: streak >= config.streak_tier_gold
+    requires: state.streak_tier = silver
+
+    ensures: state.streak_tier = gold
+}
+
+rule AdvanceStreakWeltreisender {
+    when: StreakUpdated(user, streak)
+
+    let state = EngagementState{user}
+
+    requires: streak >= config.streak_tier_weltreisender
+    requires: state.streak_tier = gold
+
+    ensures: state.streak_tier = weltreisender
+}
+
+------------------------------------------------------------
+-- Rules: Weekly XP Reset
+------------------------------------------------------------
+
+rule ResetWeeklyXP {
+    when: UserPerformsAction(user, _)
+
+    let state = EngagementState{user}
+    let current_week_start = get_week_start(today)    -- black box: Monday of current week
+
+    requires: state.week_start_date != current_week_start
+
+    ensures: state.weekly_xp = 0
+    ensures: state.week_start_date = current_week_start
+}
+
+------------------------------------------------------------
+-- Rules: Initialisation
+------------------------------------------------------------
+
+rule CreateEngagementState {
+    when: UserRegistered(user)
+
+    requires: not exists EngagementState{user}
+
+    ensures: EngagementState.created(
+        user: user,
+        current_streak: 0,
+        longest_streak: 0,
+        last_active_date: null,
+        streak_freeze_available: false,
+        total_xp: 0,
+        weekly_xp: 0,
+        week_start_date: get_week_start(today),
+        level: 1,
+        level_title: "Entdecker",
+        streak_tier: none,
+        updated_at: now
+    )
+}
+
+------------------------------------------------------------
+-- Actor Declarations
+------------------------------------------------------------
+
+actor Traveller {
+    identified_by: User with status = active
+}
+
+------------------------------------------------------------
+-- Surfaces
+------------------------------------------------------------
+
+surface EngagementBar {
+    for traveller: Traveller
+
+    context state: EngagementState with user = traveller
+
+    exposes:
+        state.current_streak
+        state.streak_tier
+        state.streak_freeze_available
+        state.total_xp
+        state.weekly_xp
+        state.level
+        state.level_title
+        state.xp_to_next_level
+        state.progress_to_next
+
+    guidance:
+        -- Compact bar at top of screen.
+        -- Streak: fire emoji + count (orange when > 0, grey when 0).
+        -- Freeze indicator: snowflake icon when available.
+        -- XP: total count (yellow).
+        -- Level: "Lv.N" + progress bar (purple-to-blue gradient).
+        -- Streak tier badge next to streak count.
+}
+
+surface XPPopup {
+    for traveller: Traveller
+
+    context event: XPEvent with user = traveller
+
+    exposes:
+        event.total_awarded
+        event.action
+        event.daily_bonus
+
+    guidance:
+        -- Temporary notification: "+N XP" with action name.
+        -- Show daily bonus separately if > 0: "+N XP (+20 Tagesbonus)".
+        -- Appears for 1.5s, then fades out.
+        -- Position: top-right, z-50.
+}
+
+surface LeaderboardView {
+    for traveller: Traveller
+
+    context state: EngagementState with user = traveller
+
+    exposes:
+        state.total_xp
+        state.weekly_xp
+        state.level
+        state.level_title
+
+    provides:
+        ViewLeaderboard(traveller, period)
+            -- period: "weekly" | "all"
+
+    guidance:
+        -- Weekly and all-time tabs.
+        -- Current user highlighted in list.
+        -- Show rank, display name, XP, level title.
+        -- Top 3 get medal badges (gold, silver, bronze).
+        -- "Dein Rang: N" at bottom if user not in visible top-N.
+}
+
+surface LevelUpCelebration {
+    for traveller: Traveller
+
+    context event: LevelUp with user = traveller
+
+    exposes:
+        event.new_level.level
+        event.new_level.title
+
+    guidance:
+        -- Full-screen celebration overlay.
+        -- "Level N erreicht! Du bist jetzt [title]!"
+        -- Confetti animation.
+        -- Dismiss after 3s or on tap.
+}
+
+------------------------------------------------------------
+-- Deferred Specifications
+------------------------------------------------------------
+
+deferred LeagueSystem.weekly_leagues          -- see: specs/leagues.allium (Phase 2)
+deferred AchievementSystem.badges             -- see: specs/achievements.allium (Phase 3)
+deferred EnergySystem.reiseenergie            -- see: specs/energy.allium (Phase 2)
+deferred SmartNotifications.return_prompts    -- see: specs/notifications.allium (Phase 2)
+
+------------------------------------------------------------
+-- Open Questions
+------------------------------------------------------------
+
+open_question "Streak halving uses integer division — should Math.floor(streak/2)+1 guarantee minimum 1, or should bare halving be allowed to reach 0?"
+open_question "Should the daily login bonus (20 XP) apply to EVERY first action, or only to an explicit 'daily_login' action?"
+open_question "Leaderboard: should weekly XP reset on Monday UTC or in the user's local timezone?"
+open_question "XP for profile_view (5 XP) — is this gameable? Should there be a daily cap on passive XP actions?"
+open_question "Backend engagement handler is defined but never wired in main.go — is this intentional (frontend-only for now) or a bug?"

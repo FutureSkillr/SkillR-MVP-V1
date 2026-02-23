@@ -1,10 +1,16 @@
 package server
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"log"
 	"math"
 	"net/http"
+	"os"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -197,5 +203,27 @@ func (h *ConfigHandler) Config(c echo.Context) error {
 			"messagingSenderId": h.cfg.FirebaseMessagingSenderID,
 			"appId":             h.cfg.FirebaseAppID,
 		},
+		"sessionToken": issueSessionToken(),
 	})
+}
+
+// issueSessionToken creates an HMAC-signed session token for pre-auth Gemini access (M24).
+// Token format: "<expiresAtMs>.<hmac-hex>", valid for 30 minutes.
+func issueSessionToken() map[string]interface{} {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		secret = "dev-session-secret"
+	}
+
+	expiresAt := time.Now().Add(30 * time.Minute).UnixMilli()
+	payload := strconv.FormatInt(expiresAt, 10)
+
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(payload))
+	sig := hex.EncodeToString(mac.Sum(nil))
+
+	return map[string]interface{}{
+		"token":     fmt.Sprintf("%s.%s", payload, sig),
+		"expiresAt": expiresAt,
+	}
 }

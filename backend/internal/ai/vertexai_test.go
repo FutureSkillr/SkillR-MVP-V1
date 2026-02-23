@@ -6,7 +6,7 @@ import (
 )
 
 func TestNewVertexAIClient_EmptyProjectID(t *testing.T) {
-	_, err := NewVertexAIClient(context.Background(), "", "us-central1")
+	_, err := NewVertexAIClient(context.Background(), "", "us-central1", "")
 	if err == nil {
 		t.Fatal("expected error for empty project ID")
 	}
@@ -16,7 +16,7 @@ func TestNewVertexAIClient_EmptyProjectID(t *testing.T) {
 }
 
 func TestTTSRequest_Validation(t *testing.T) {
-	// TextToSpeech requires a non-nil uclient, but we can test the input
+	// TextToSpeech requires a non-nil ttsClient, but we can test the input
 	// validation path on a zero VertexAIClient since it checks text first.
 	client := &VertexAIClient{} // nil clients
 
@@ -65,10 +65,13 @@ func TestSTTRequest_DefaultMimeType(t *testing.T) {
 }
 
 func TestDefaultModelConstants(t *testing.T) {
-	if DefaultTTSModel != "gemini-2.5-flash-preview-tts" {
+	if DefaultChatModel != "gemini-2.5-flash" {
+		t.Errorf("unexpected Chat model: %q", DefaultChatModel)
+	}
+	if DefaultTTSModel != "gemini-2.5-flash-tts" {
 		t.Errorf("unexpected TTS model: %q", DefaultTTSModel)
 	}
-	if DefaultSTTModel != "gemini-2.0-flash-lite" {
+	if DefaultSTTModel != "gemini-2.5-flash" {
 		t.Errorf("unexpected STT model: %q", DefaultSTTModel)
 	}
 }

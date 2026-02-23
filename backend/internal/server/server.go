@@ -56,6 +56,7 @@ func New(cfg *config.Config) *Server {
 			h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
 			h.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 			h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+			h.Set("Content-Security-Policy", "default-src 'self'; script-src 'self' blob: https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://unpkg.com; worker-src 'self' blob:; frame-ancestors 'none'")
 			return next(c)
 		}
 	})

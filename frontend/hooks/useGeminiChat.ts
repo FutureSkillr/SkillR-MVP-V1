@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import type { ChatMessage } from '../types/chat';
-import { geminiService } from '../services/gemini';
+import { backendChatService } from '../services/gemini';
 import { createLoggingGeminiService } from '../services/geminiWithLogging';
 import { trackChatMessage } from '../services/analytics';
 
@@ -57,7 +57,7 @@ export function useGeminiChat({
       if (service) {
         return service.chat(systemInstruction, history, userMessage);
       }
-      const { text } = await geminiService.chat(systemInstruction, history, userMessage);
+      const { text } = await backendChatService.chat(systemInstruction, history, userMessage);
       return text;
     },
     [service]

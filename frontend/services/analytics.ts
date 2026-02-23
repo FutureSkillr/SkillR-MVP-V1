@@ -1,4 +1,6 @@
 import type { UserEvent, UserEventType, UserEventRow, AnalyticsOverview } from '../types/analytics';
+import { getStoredUTM } from './campaignAttribution';
+import { getAuthHeaders } from './auth';
 
 // --- Browser session ID (one per tab) ---
 
@@ -56,8 +58,12 @@ function flush(): void {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(batch),
-  }).catch((err) => {
-    console.warn('[analytics] flush failed:', err);
+  }).then((res) => {
+    if (!res.ok) {
+      // Silently drop — analytics failures should not disrupt the user experience
+    }
+  }).catch(() => {
+    // Network error — silently drop
   });
 }
 
@@ -85,12 +91,13 @@ if (typeof window !== 'undefined') {
 // --- Internal helper ---
 
 function track(eventType: UserEventType, properties: Record<string, unknown> = {}, promptSessionId?: string): void {
+  const utm = getStoredUTM();
   enqueue({
     event_type: eventType,
     browser_session_id: getBrowserSessionId(),
     prompt_session_id: promptSessionId,
     timestamp: Date.now(),
-    properties,
+    properties: { ...utm, ...properties },
   });
 }
 
@@ -172,10 +179,27 @@ export function trackChatSessionEnd(
   }, promptSessionId);
 }
 
+export function trackIntroFastForward(coachId: string, phase: string, messageCount: number, durationMs: number): void {
+  track('intro_fast_forward', {
+    coach_id: coachId,
+    phase_at_skip: phase,
+    message_count: messageCount,
+    duration_ms: durationMs,
+  });
+}
+
+export function trackCoachChange(previousCoachId: string | null, newCoachId: string): void {
+  track('coach_change', {
+    previous_coach_id: previousCoachId,
+    new_coach_id: newCoachId,
+  });
+}
+
 // --- Admin data fetchers ---
 
 export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
-  const res = await fetch('/api/analytics/overview');
+  const res = await fetch('/api/analytics/overview', { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error(`analytics overview: ${res.status}`);
   return res.json();
 }
 
@@ -193,20 +217,23 @@ export async function getAnalyticsEvents(filters?: {
   if (filters?.to) params.set('to', String(filters.to));
   if (filters?.limit) params.set('limit', String(filters.limit));
   const qs = params.toString();
-  const res = await fetch(`/api/analytics/events${qs ? `?${qs}` : ''}`);
+  const res = await fetch(`/api/analytics/events${qs ? `?${qs}` : ''}`, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error(`analytics events: ${res.status}`);
   return res.json();
 }
 
 export async function getSessionEvents(sessionId: string): Promise<UserEventRow[]> {
-  const res = await fetch(`/api/analytics/sessions/${sessionId}`);
+  const res = await fetch(`/api/analytics/sessions/${sessionId}`, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error(`session events: ${res.status}`);
   return res.json();
 }
 
 export async function clearAnalytics(): Promise<void> {
-  await fetch('/api/analytics/events', { method: 'DELETE' });
+  await fetch('/api/analytics/events', { method: 'DELETE', headers: getAuthHeaders() });
 }
 
 export async function exportAnalyticsCSV(): Promise<string> {
-  const res = await fetch('/api/analytics/export-csv');
+  const res = await fetch('/api/analytics/export-csv', { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error(`analytics export: ${res.status}`);
   return res.text();
 }

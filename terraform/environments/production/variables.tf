@@ -9,10 +9,16 @@ variable "region" {
   default     = "europe-west3"
 }
 
+variable "gcp_tts_region" {
+  description = "GCP region for TTS/STT (Gemini TTS not available in all regions)"
+  type        = string
+  default     = "europe-west1"
+}
+
 variable "image_tag" {
   description = "Docker image tag for Cloud Run deployment"
   type        = string
-  default     = "europe-west3-docker.pkg.dev/placeholder/cloud-run-source-deploy/future-skillr:latest"
+  default     = "europe-west3-docker.pkg.dev/placeholder/cloud-run-source-deploy/skillr:latest"
 }
 
 variable "gemini_api_key" {

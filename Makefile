@@ -24,6 +24,7 @@ REGION       ?= europe-west3
 SERVICE      ?= skillr
 IMAGE_NAME   ?= skillr
 TAG          ?= latest
+GIT_SHA      := $(shell git rev-parse --short HEAD 2>/dev/null || echo latest)
 
 # Map .env.deploy names to Makefile names (if sourced)
 ifdef GCP_PROJECT_ID
@@ -32,6 +33,7 @@ endif
 ifdef GCP_REGION
   REGION := $(GCP_REGION)
 endif
+GCP_TTS_REGION ?= europe-west1
 ifdef CLOUD_RUN_SERVICE
   SERVICE := $(CLOUD_RUN_SERVICE)
 endif
@@ -83,7 +85,7 @@ install:
 
 .PHONY: dev
 dev:
-	cd frontend && npm run dev:all
+	cd frontend && npm run dev
 
 .PHONY: run-local
 run-local: install dev
@@ -99,6 +101,39 @@ typecheck:
 .PHONY: clean
 clean:
 	rm -rf frontend/dist frontend/node_modules/.vite
+
+# ─── Local Dev (services in Docker, code runs natively) ──────────────
+
+SERVICES_COMPOSE := docker compose -f docker-compose.services.yml
+
+.PHONY: services-up
+services-up: ## Start infrastructure services (PG + Redis + Solid) for local dev
+	$(SERVICES_COMPOSE) up -d
+	@echo "Waiting for services to be healthy..."
+	@until $(SERVICES_COMPOSE) exec -T postgres pg_isready -U skillr >/dev/null 2>&1; do sleep 1; done
+	@echo "  PostgreSQL: ready (localhost:15432)"
+	@echo "  Redis:      ready (localhost:16379)"
+	@echo "  Solid Pod:  ready (localhost:3003)"
+	@echo ""
+	@echo "  Run backend:  make go-dev"
+	@echo "  Run frontend: make dev"
+	@echo "  Run both:     make dev-all"
+
+.PHONY: services-down
+services-down: ## Stop infrastructure services and remove volumes
+	$(SERVICES_COMPOSE) down -v
+
+.PHONY: services-logs
+services-logs: ## Follow infrastructure service logs
+	$(SERVICES_COMPOSE) logs -f
+
+.PHONY: dev-all
+dev-all: ## Start services + Go backend + frontend dev server (all-in-one)
+	@scripts/dev-local.sh
+
+.PHONY: dev-backend
+dev-backend: services-up ## Start services + Go backend only (no frontend)
+	cd backend && go run ./cmd/server
 
 # ─── Docker ──────────────────────────────────────────────────────────
 
@@ -183,10 +218,69 @@ test-all:
 	cd frontend && npm test
 	cd backend && go test ./...
 
+# ─── ADC / Credentials ──────────────────────────────────────────────
+
+.PHONY: check-adc
+check-adc: ## Verify ADC credentials match gcloud auth (diagnose 403 errors)
+	@echo "── ADC Credential Check ──"
+	@GCLOUD_EMAIL=$$(gcloud config get-value account 2>/dev/null); \
+	ADC_EMAIL=$$(python3 -c "import google.auth,google.auth.transport.requests; c,_=google.auth.default(); c.refresh(google.auth.transport.requests.Request()); print(getattr(c,'service_account_email','user-adc'))" 2>/dev/null || echo "unknown"); \
+	echo "  gcloud auth:  $$GCLOUD_EMAIL"; \
+	echo "  ADC (SDK):    $$ADC_EMAIL"; \
+	echo ""; \
+	if [ "$$ADC_EMAIL" = "$$GCLOUD_EMAIL" ] || [ "$$ADC_EMAIL" = "user-adc" ]; then \
+		echo "  Status: OK (or user-type ADC — verify with: make check-adc-tts)"; \
+	else \
+		echo "  WARNING: ADC and gcloud use DIFFERENT accounts!"; \
+		echo "  The Go SDK uses ADC. Fix with:"; \
+		echo "    gcloud auth application-default login --project=$(PROJECT_ID)"; \
+		echo "  Sign in with: $$GCLOUD_EMAIL"; \
+	fi
+
+.PHONY: check-adc-tts
+check-adc-tts: ## Test ADC credentials against Vertex AI TTS endpoint directly
+	@echo "── ADC TTS Endpoint Test ──"
+	@ADC_TOKEN=$$(python3 -c "import google.auth,google.auth.transport.requests; c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/cloud-platform']); c.refresh(google.auth.transport.requests.Request()); print(c.token)" 2>&1); \
+	if echo "$$ADC_TOKEN" | grep -qi "error\|traceback"; then \
+		echo "  ERROR: Cannot obtain ADC token. Run: gcloud auth application-default login"; \
+		exit 1; \
+	fi; \
+	HTTP_CODE=$$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+		-H "Authorization: Bearer $$ADC_TOKEN" \
+		-H "Content-Type: application/json" \
+		"https://$(GCP_TTS_REGION)-aiplatform.googleapis.com/v1/projects/$(PROJECT_ID)/locations/$(GCP_TTS_REGION)/publishers/google/models/gemini-2.5-flash-tts:generateContent" \
+		-d '{"contents":[{"role":"user","parts":[{"text":"Test"}]}],"generationConfig":{"responseModalities":["AUDIO"],"speechConfig":{"voiceConfig":{"prebuiltVoiceConfig":{"voiceName":"Kore"}}}}}'); \
+	echo "  Project:    $(PROJECT_ID)"; \
+	echo "  TTS Region: $(GCP_TTS_REGION)"; \
+	echo "  HTTP Code:  $$HTTP_CODE"; \
+	echo ""; \
+	if [ "$$HTTP_CODE" = "200" ]; then \
+		echo "  Result: OK — ADC can access Vertex AI TTS"; \
+	elif [ "$$HTTP_CODE" = "403" ]; then \
+		echo "  Result: FAILED — Permission denied (wrong ADC account or API not enabled)"; \
+		echo "  Fix:    gcloud auth application-default login --project=$(PROJECT_ID)"; \
+	else \
+		echo "  Result: FAILED — HTTP $$HTTP_CODE"; \
+	fi
+
+# ─── E2E / Integration Tests ────────────────────────────────────────
+API_BASE_URL ?= http://localhost:8080
+
+.PHONY: e2e-TTS-VertexAI
+e2e-TTS-VertexAI: ## E2E: TTS for all 6 coach dialects via Vertex AI (requires running backend)
+	@echo "── E2E: TTS VertexAI (all 6 coaches) ──"
+	@echo "  Backend: $(API_BASE_URL)"
+	@echo ""
+	@curl -sf --max-time 5 $(API_BASE_URL)/api/health >/dev/null 2>&1 || { \
+		echo "ERROR: $(API_BASE_URL)/api/health is not reachable."; \
+		echo "       Start the backend first: make go-dev"; \
+		exit 1; \
+	}
+	cd backend && API_BASE_URL=$(API_BASE_URL) go test -tags=integration -v -timeout=120s ./internal/ai/ -run TestIntegration_TTS
+
 # ─── Cloud Run Deploy ────────────────────────────────────────────────
 
 AR_REPO      := cloud-run-source-deploy
-GIT_SHA      := $(shell git rev-parse --short HEAD 2>/dev/null || echo latest)
 
 # Common env vars passed to Cloud Run
 ALLOWED_ORIGINS ?=
@@ -202,6 +296,7 @@ DEPLOY_ENV_VARS = GEMINI_API_KEY=$(GEMINI_API_KEY),\
 	DATABASE_URL=$(DATABASE_URL),\
 	GCP_PROJECT_ID=$(PROJECT_ID),\
 	GCP_REGION=$(REGION),\
+	GCP_TTS_REGION=$(GCP_TTS_REGION),\
 	GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/vertexai-sa.json,\
 	HEALTH_CHECK_TOKEN=$(HEALTH_CHECK_TOKEN),\
 	ALLOWED_ORIGINS=$(ALLOWED_ORIGINS),\
@@ -540,8 +635,15 @@ help:
 	@echo "  make build-all        Build frontend + backend"
 	@echo "  make test-all         Run frontend + backend tests"
 	@echo ""
-	@echo "  Local Development:"
-	@echo "  make local-up         Start local stack (app + PG + Redis + Solid) on :9090"
+	@echo "  Local Dev (native processes + Docker services):"
+	@echo "  make services-up      Start PG + Redis + Solid in Docker"
+	@echo "  make services-down    Stop services and remove volumes"
+	@echo "  make services-logs    Follow infrastructure service logs"
+	@echo "  make dev-all          Start services + Go backend + frontend concurrently"
+	@echo "  make dev-backend      Start services + Go backend only"
+	@echo ""
+	@echo "  Local Dev (full Docker stack):"
+	@echo "  make local-up         Start full stack (app + PG + Redis + Solid) on :9090"
 	@echo "  make local-down       Stop local stack and remove volumes"
 	@echo "  make local-logs       Follow local stack logs"
 	@echo "  make local-health     Health check local stack (:9090)"
@@ -564,6 +666,13 @@ help:
 	@echo "  make monitor          Continuously poll Cloud Run health (Ctrl+C to stop)"
 	@echo "  make cloudrun-list    List Cloud Run services and revisions"
 	@echo "  make cloudrun-delete  Delete all Cloud Run services (interactive)"
+	@echo ""
+	@echo "  Credentials:"
+	@echo "  make check-adc         Verify ADC matches gcloud auth (diagnose 403s)"
+	@echo "  make check-adc-tts     Test ADC against Vertex AI TTS endpoint directly"
+	@echo ""
+	@echo "  E2E / Integration:"
+	@echo "  make e2e-TTS-VertexAI  TTS for all 6 coach dialects (requires running backend)"
 	@echo ""
 	@echo "  K6 Tests:"
 	@echo "  make k6-smoke         Quick smoke test (30s)"

@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -28,9 +30,15 @@ func FirebaseAuth(fbClient *firebase.Client) echo.MiddlewareFunc {
 			}
 
 			token := parts[1]
+
+			// Try Firebase ID token verification first
 			userInfo, err := fbClient.VerifyToken(c.Request().Context(), token)
 			if err != nil {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid or expired token")
+				// Fallback: try local session token (base64-encoded JSON from /api/auth/login)
+				userInfo = decodeLocalSessionToken(token)
+				if userInfo == nil {
+					return echo.NewHTTPError(http.StatusUnauthorized, "invalid or expired token")
+				}
 			}
 
 			// Store user info in context
@@ -76,6 +84,65 @@ func OptionalFirebaseAuth(fbClient *firebase.Client) echo.MiddlewareFunc {
 				return next(c)
 			}
 			ctx := context.WithValue(c.Request().Context(), UserInfoKey, userInfo)
+			c.SetRequest(c.Request().WithContext(ctx))
+			return next(c)
+		}
+	}
+}
+
+// decodeLocalSessionToken attempts to decode a base64url-encoded JSON session token
+// issued by the local auth login endpoint.
+// Token format: base64url({"uid":"...","email":"...","name":"...","role":"...","iat":...})
+func decodeLocalSessionToken(token string) *firebase.UserInfo {
+	payload, err := base64.RawURLEncoding.DecodeString(token)
+	if err != nil {
+		return nil
+	}
+
+	var claims struct {
+		UID   string `json:"uid"`
+		Email string `json:"email"`
+		Name  string `json:"name"`
+		Role  string `json:"role"`
+	}
+	if err := json.Unmarshal(payload, &claims); err != nil || claims.UID == "" {
+		return nil
+	}
+
+	role := claims.Role
+	if role != "admin" && role != "user" {
+		role = "user"
+	}
+
+	return &firebase.UserInfo{
+		UID:         claims.UID,
+		Email:       claims.Email,
+		DisplayName: claims.Name,
+		Role:        role,
+	}
+}
+
+// LocalSessionAuth verifies base64-encoded session tokens issued by the local
+// auth login endpoint. Used when Firebase is not configured (local dev).
+func LocalSessionAuth() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			authHeader := c.Request().Header.Get("Authorization")
+			if authHeader == "" {
+				return echo.NewHTTPError(http.StatusUnauthorized, "missing authorization header")
+			}
+
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+				return echo.NewHTTPError(http.StatusUnauthorized, "invalid authorization format")
+			}
+
+			info := decodeLocalSessionToken(parts[1])
+			if info == nil {
+				return echo.NewHTTPError(http.StatusUnauthorized, "invalid session token")
+			}
+
+			ctx := context.WithValue(c.Request().Context(), UserInfoKey, info)
 			c.SetRequest(c.Request().WithContext(ctx))
 			return next(c)
 		}

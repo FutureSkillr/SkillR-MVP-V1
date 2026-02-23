@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { BrandConfig } from '../../types/brand';
 import { DEFAULT_BRAND } from '../../constants/defaultBrand';
+import { getAuthHeaders } from '../../services/auth';
 
 interface BrandListItem extends BrandConfig {
   isActive: boolean;
@@ -48,11 +49,7 @@ export const BrandConfigEditor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const token = localStorage.getItem('auth_token');
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+  const headers = getAuthHeaders();
 
   async function loadBrands() {
     try {

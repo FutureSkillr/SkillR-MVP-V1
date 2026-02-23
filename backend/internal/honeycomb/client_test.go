@@ -27,7 +27,7 @@ func TestListCourses(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
@@ -68,7 +68,7 @@ func TestGetCourseData(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(data)
+		_ = json.NewEncoder(w).Encode(data)
 	}))
 	defer srv.Close()
 
@@ -106,7 +106,7 @@ func TestSubmitTask(t *testing.T) {
 			Progress:  "6/10",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(data)
+		_ = json.NewEncoder(w).Encode(data)
 	}))
 	defer srv.Close()
 
@@ -128,7 +128,7 @@ func TestGetModified(t *testing.T) {
 		}
 		resp := modifiedResponse{Modified: expected}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
@@ -157,7 +157,7 @@ func TestPing(t *testing.T) {
 func TestListCourses_ServerError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"internal"}`))
+		_, _ = w.Write([]byte(`{"error":"internal"}`))
 	}))
 	defer srv.Close()
 
@@ -171,7 +171,7 @@ func TestListCourses_ServerError(t *testing.T) {
 func TestSubmitTask_ServerError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte(`{"error":"forbidden"}`))
+		_, _ = w.Write([]byte(`{"error":"forbidden"}`))
 	}))
 	defer srv.Close()
 

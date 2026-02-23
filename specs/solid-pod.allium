@@ -1,0 +1,635 @@
+-- solid-pod.allium
+--
+-- Solid Pod Profile System
+--
+-- User-sovereign, lifelong profile storage using SOLID (Social Linked
+-- Data) Pods. The Pod is the canonical store for personal data — the
+-- user owns it, can move it, and grants access to third parties.
+--
+-- MVP4: App-primary, Pod-mirror (one-directional sync on demand).
+-- V1.5: Pod-primary reads for profile data.
+-- V2.0: BYOP (Bring Your Own Pod) + federation.
+--
+-- Four-Tier Storage Architecture (TC-019):
+--   Tier S: SOLID Pod (canonical, user-sovereign)
+--   Tier A: Firestore (real-time cache)
+--   Tier B: PostgreSQL (queryable index)
+--   Tier C: Analytics (append-only, anonymised)
+
+use "./vuca-journey.allium" as journey
+
+------------------------------------------------------------
+-- External Entities
+------------------------------------------------------------
+
+external entity FirebaseUser {
+    uid: String
+    email: Email
+    display_name: String
+    auth_provider: google | email
+}
+
+external entity SolidServer {
+    -- Community Solid Server (CSS) or custom Go Pod server.
+    base_url: URL
+    type: managed | external
+}
+
+------------------------------------------------------------
+-- Value Types
+------------------------------------------------------------
+
+value WebID {
+    uri: URL                    -- e.g., "https://pods.maindset.academy/max/profile/card#me"
+}
+
+value TurtleDocument {
+    content: String             -- RDF in Turtle serialisation
+    content_type: String        -- always "text/turtle"
+}
+
+value PodContainerPath {
+    path: String                -- e.g., "/max/profile/state"
+}
+
+value SyncError {
+    resource_path: String
+    error_message: String
+    timestamp: Timestamp
+}
+
+value SkillCategory {
+    name: String                -- "Hard Skills", "Soft Skills", "Future Skills", "Resilience"
+    score: Decimal              -- 0.0 to 1.0
+}
+
+------------------------------------------------------------
+-- Entities
+------------------------------------------------------------
+
+enum PodProvider { none | managed | external }
+
+enum SyncStatus { not_connected | connected | synced | partial_error }
+
+entity PodConnection {
+    user: journey/User
+    firebase_user: FirebaseUser
+    pod_url: URL?
+    webid: WebID?
+    provider: PodProvider
+    status: SyncStatus
+    connected_at: Timestamp?
+    last_synced_at: Timestamp?
+
+    -- Relationships
+    sync_operations: SyncOperation for this pod_connection
+    resources: PodResource for this pod_connection
+
+    -- Projections
+    failed_syncs: sync_operations with status = failed
+    recent_syncs: sync_operations with completed_at >= now - 7.days
+
+    -- Derived
+    is_connected: provider != none and pod_url != null
+    is_synced: status = synced
+    needs_sync: is_connected and (last_synced_at = null
+                or last_synced_at + config.sync_staleness <= now)
+    days_since_sync: if last_synced_at != null: now - last_synced_at else: null
+}
+
+entity PodResource {
+    pod_connection: PodConnection
+    resource_type: user_profile | skill_profile | engagement | journey_progress | reflection | endorsement
+    container_path: PodContainerPath
+    last_written_at: Timestamp?
+    last_read_at: Timestamp?
+    status: pending | written | read_error | write_error
+
+    -- Derived
+    is_stale: last_written_at = null or last_written_at + config.sync_staleness <= now
+}
+
+entity SyncOperation {
+    pod_connection: PodConnection
+    direction: app_to_pod | pod_to_app
+    status: in_progress | completed | partial | failed
+    started_at: Timestamp
+    completed_at: Timestamp?
+    resources_synced: Integer
+    resources_failed: Integer
+    errors: List<SyncError>
+
+    -- Derived
+    is_complete: status in [completed, partial, failed]
+    has_errors: resources_failed > 0
+    duration: if completed_at != null: completed_at - started_at else: now - started_at
+}
+
+-- Portfolio evidence stored in Pod for third-party verification.
+
+entity PortfolioEntry {
+    pod_connection: PodConnection
+    source_interaction_ids: Set<String>     -- references to dialogue/station data
+    skill_dimensions: List<SkillCategory>
+    evidence_type: dialogue | reflection | endorsement
+    summary: String
+    confidence: Decimal                     -- 0.0 to 1.0
+    created_at: Timestamp
+    synced_to_pod: Boolean
+
+    -- Derived
+    is_verified: confidence >= config.verification_threshold
+}
+
+-- Third-party skill endorsement.
+
+entity Endorsement {
+    pod_connection: PodConnection           -- learner's Pod connection
+    endorser_name: String
+    endorser_role: String                   -- e.g., "Lehrer", "Mentor", "Arbeitgeber"
+    endorser_pod_url: URL?                  -- endorser's Pod, if they have one
+    skill_category: SkillCategory
+    comment: String?
+    status: pending | accepted | rejected | expired
+    requested_at: Timestamp
+    responded_at: Timestamp?
+    token: String                           -- one-time endorsement link token
+    expires_at: Timestamp
+
+    -- Derived
+    is_valid: status = pending and expires_at > now
+}
+
+------------------------------------------------------------
+-- Config
+------------------------------------------------------------
+
+config {
+    sync_staleness: Duration = 24.hours
+    max_pod_url_length: Integer = 512
+    max_sync_errors_before_partial: Integer = 2
+    endorsement_expiry: Duration = 30.days
+    verification_threshold: Decimal = 0.7
+    max_engagement_title_length: Integer = 100
+    max_xp: Integer = 1_000_000
+    max_level: Integer = 100
+    max_streak: Integer = 10_000
+}
+
+------------------------------------------------------------
+-- Rules: Pod Connection
+------------------------------------------------------------
+
+rule ConnectManagedPod {
+    when: UserConnectsPod(user, managed, pod_url)
+
+    requires: not exists PodConnection{user, provider: managed}
+    requires: not exists PodConnection{user, provider: external}
+    requires: validate_pod_url(pod_url)    -- black box: SSRF prevention
+
+    let server = resolve_solid_server(pod_url)    -- black box
+
+    ensures:
+        let connection = PodConnection.created(
+            user: user,
+            firebase_user: user.firebase_user,
+            pod_url: pod_url,
+            webid: derive_webid(user, pod_url),    -- black box
+            provider: managed,
+            status: connected,
+            connected_at: now
+        )
+        -- Initialise container structure
+        PodResource.created(
+            pod_connection: connection,
+            resource_type: user_profile,
+            container_path: PodContainerPath{ path: "/profile/state" },
+            status: pending
+        )
+        PodResource.created(
+            pod_connection: connection,
+            resource_type: skill_profile,
+            container_path: PodContainerPath{ path: "/profile/skill-profile" },
+            status: pending
+        )
+        PodResource.created(
+            pod_connection: connection,
+            resource_type: engagement,
+            container_path: PodContainerPath{ path: "/profile/engagement" },
+            status: pending
+        )
+        PodResource.created(
+            pod_connection: connection,
+            resource_type: journey_progress,
+            container_path: PodContainerPath{ path: "/journey/vuca-state" },
+            status: pending
+        )
+        -- Create WebID profile card
+        PodContainersInitialised(connection)
+}
+
+rule ConnectExternalPod {
+    when: UserConnectsPod(user, external, pod_url)
+
+    requires: not exists PodConnection{user, provider: managed}
+    requires: not exists PodConnection{user, provider: external}
+    requires: validate_pod_url(pod_url)    -- black box: SSRF prevention
+
+    ensures:
+        let connection = PodConnection.created(
+            user: user,
+            firebase_user: user.firebase_user,
+            pod_url: pod_url,
+            webid: derive_webid(user, pod_url),    -- black box
+            provider: external,
+            status: connected,
+            connected_at: now
+        )
+        PodResource.created(
+            pod_connection: connection,
+            resource_type: user_profile,
+            container_path: PodContainerPath{ path: "/profile/state" },
+            status: pending
+        )
+        PodResource.created(
+            pod_connection: connection,
+            resource_type: skill_profile,
+            container_path: PodContainerPath{ path: "/profile/skill-profile" },
+            status: pending
+        )
+        PodResource.created(
+            pod_connection: connection,
+            resource_type: engagement,
+            container_path: PodContainerPath{ path: "/profile/engagement" },
+            status: pending
+        )
+        PodResource.created(
+            pod_connection: connection,
+            resource_type: journey_progress,
+            container_path: PodContainerPath{ path: "/journey/vuca-state" },
+            status: pending
+        )
+        PodContainersInitialised(connection)
+}
+
+rule DisconnectPod {
+    when: UserDisconnectsPod(user)
+
+    let connection = PodConnection{user}
+
+    requires: exists connection
+    requires: connection.is_connected
+
+    ensures: connection.provider = none
+    ensures: connection.status = not_connected
+    -- Pod data remains on the Pod — user still owns it.
+    -- Only the platform link is severed.
+}
+
+------------------------------------------------------------
+-- Rules: Sync (App → Pod)
+------------------------------------------------------------
+
+rule TriggerManualSync {
+    when: UserTriggersSync(user, engagement_data, journey_data)
+
+    let connection = PodConnection{user}
+
+    requires: connection.is_connected
+
+    ensures:
+        let op = SyncOperation.created(
+            pod_connection: connection,
+            direction: app_to_pod,
+            status: in_progress,
+            started_at: now,
+            resources_synced: 0,
+            resources_failed: 0,
+            errors: []
+        )
+        SyncStarted(connection, op, engagement_data, journey_data)
+}
+
+rule ExecuteSync {
+    when: SyncStarted(connection, op, engagement_data, journey_data)
+
+    -- Black box: serialises each entity to Turtle and PUTs to Pod
+    let results = sync_resources_to_pod(connection, engagement_data, journey_data)    -- black box
+
+    ensures: op.resources_synced = results.success_count
+    ensures: op.resources_failed = results.failure_count
+    ensures: op.errors = results.errors
+    ensures: op.completed_at = now
+    ensures:
+        if results.failure_count = 0:
+            op.status = completed
+            connection.status = synced
+            connection.last_synced_at = now
+            connection.resources.each(r => r.status = written, r.last_written_at = now)
+        else if results.failure_count <= config.max_sync_errors_before_partial:
+            op.status = partial
+            connection.status = partial_error
+            connection.last_synced_at = now
+        else:
+            op.status = failed
+            connection.status = partial_error
+}
+
+------------------------------------------------------------
+-- Rules: Read (Pod → App)
+------------------------------------------------------------
+
+rule ReadPodData {
+    when: UserReadsPodData(user)
+
+    let connection = PodConnection{user}
+
+    requires: connection.is_connected
+
+    -- Black box: reads Turtle content from Pod resources
+    let pod_data = read_resources_from_pod(connection)    -- black box
+
+    ensures: PodDataRetrieved(user, pod_data)
+    ensures: connection.resources.each(r => r.last_read_at = now)
+}
+
+------------------------------------------------------------
+-- Rules: Portfolio Evidence Sync
+------------------------------------------------------------
+
+rule SyncPortfolioEntry {
+    when: entry: PortfolioEntry.created
+
+    let connection = entry.pod_connection
+
+    requires: connection.is_connected
+    requires: not entry.synced_to_pod
+
+    -- Black box: serialises portfolio entry to Turtle
+    let turtle = serialize_portfolio_entry(entry)    -- black box
+
+    ensures: entry.synced_to_pod = true
+    ensures: PodResource.created(
+        pod_connection: connection,
+        resource_type: endorsement,
+        container_path: PodContainerPath{
+            path: "/portfolio/entries/" + entry.source_interaction_ids.first
+        },
+        last_written_at: now,
+        status: written
+    )
+}
+
+------------------------------------------------------------
+-- Rules: Third-Party Endorsement
+------------------------------------------------------------
+
+rule RequestEndorsement {
+    when: TravellerRequestsEndorsement(user, endorser_name, endorser_role, skill_category)
+
+    let connection = PodConnection{user}
+
+    requires: connection.is_connected
+
+    -- Black box: generates a secure one-time token
+    let token = generate_endorsement_token()    -- black box
+
+    ensures: Endorsement.created(
+        pod_connection: connection,
+        endorser_name: endorser_name,
+        endorser_role: endorser_role,
+        skill_category: skill_category,
+        status: pending,
+        requested_at: now,
+        token: token,
+        expires_at: now + config.endorsement_expiry
+    )
+    ensures: EndorsementRequested(user, endorser_name, token)
+}
+
+rule SubmitEndorsement {
+    when: EndorserSubmitsEndorsement(token, comment, endorser_pod_url?)
+
+    let endorsement = Endorsement{token: token}
+
+    requires: exists endorsement
+    requires: endorsement.is_valid
+
+    ensures: endorsement.status = accepted
+    ensures: endorsement.comment = comment
+    ensures: endorsement.endorser_pod_url = endorser_pod_url
+    ensures: endorsement.responded_at = now
+    ensures: EndorsementReceived(endorsement)
+}
+
+rule WriteEndorsementToPod {
+    when: EndorsementReceived(endorsement)
+
+    let connection = endorsement.pod_connection
+
+    requires: connection.is_connected
+
+    -- Black box: serialises endorsement to Turtle, writes to Pod
+    let turtle = serialize_endorsement(endorsement)    -- black box
+
+    ensures: PodResource.created(
+        pod_connection: connection,
+        resource_type: endorsement,
+        container_path: PodContainerPath{
+            path: "/portfolio/endorsements/" + endorsement.token
+        },
+        last_written_at: now,
+        status: written
+    )
+}
+
+rule EndorsementExpires {
+    when: endorsement: Endorsement.expires_at <= now
+
+    requires: endorsement.status = pending
+
+    ensures: endorsement.status = expired
+}
+
+------------------------------------------------------------
+-- Rules: Staleness Detection
+------------------------------------------------------------
+
+rule DetectStalePod {
+    when: connection: PodConnection.needs_sync
+
+    requires: connection.status in [connected, synced, partial_error]
+
+    ensures: PodSyncNeeded(connection)
+}
+
+------------------------------------------------------------
+-- Actor Declarations
+------------------------------------------------------------
+
+actor Traveller {
+    identified_by: journey/User with status = active
+}
+
+actor Endorser {
+    identified_by: Endorsement.token    -- token-based, no account needed
+}
+
+------------------------------------------------------------
+-- Surfaces
+------------------------------------------------------------
+
+surface PodConnectionView {
+    for traveller: Traveller
+
+    context connection: PodConnection with user = traveller
+
+    exposes:
+        connection.is_connected
+        connection.provider
+        connection.pod_url
+        connection.webid
+        connection.status
+        connection.connected_at
+        connection.last_synced_at
+        connection.days_since_sync
+        connection.needs_sync
+
+    provides:
+        UserConnectsPod(traveller, managed, pod_url)
+            when not connection.is_connected
+        UserConnectsPod(traveller, external, pod_url)
+            when not connection.is_connected
+        UserDisconnectsPod(traveller)
+            when connection.is_connected
+        UserTriggersSync(traveller, engagement_data, journey_data)
+            when connection.is_connected
+
+    guidance:
+        -- "Pod verbinden" button when not connected.
+        -- Provider choice: "SkillR Pod" (managed) or "Eigener Pod" (BYOP).
+        -- Sync status indicator: green (synced), yellow (stale), red (error).
+        -- "Zuletzt synchronisiert: vor N Tagen" timestamp.
+        -- Explain data sovereignty in student-friendly terms:
+        --   "Dein Pod gehoert dir. Du entscheidest, wer deine Daten sehen darf."
+}
+
+surface PodDataView {
+    for traveller: Traveller
+
+    context connection: PodConnection with user = traveller and is_connected
+
+    provides:
+        UserReadsPodData(traveller)
+
+    guidance:
+        -- Transparent data viewer — "Das weiss SkillR ueber dich".
+        -- Show each synced resource in human-readable format.
+        -- Categories: Profil, Kompetenzen, Reisefortschritt, Engagement.
+        -- Raw Turtle view available via toggle (for transparency).
+        -- DSGVO Art. 15 compliance: right of access to personal data.
+}
+
+surface EndorsementRequestView {
+    for traveller: Traveller
+
+    context connection: PodConnection with user = traveller and is_connected
+
+    let pending_endorsements = Endorsement for connection with status = pending
+    let received_endorsements = Endorsement for connection with status = accepted
+
+    exposes:
+        pending_endorsements.count
+        received_endorsements.count
+        for e in received_endorsements:
+            e.endorser_name
+            e.endorser_role
+            e.skill_category
+            e.comment
+            e.responded_at
+
+    provides:
+        TravellerRequestsEndorsement(traveller, endorser_name, endorser_role, skill_category)
+
+    guidance:
+        -- "Bestätigung anfragen" — request skill verification from a trusted person.
+        -- Show pending requests with expiry countdown.
+        -- Show received endorsements with endorser details.
+        -- Each endorsement links to the portfolio evidence it verifies.
+}
+
+surface EndorsementSubmissionView {
+    for endorser: Endorser
+
+    context endorsement: Endorsement with token = endorser and is_valid
+
+    exposes:
+        endorsement.pod_connection.user.display_name
+        endorsement.skill_category
+        endorsement.requested_at
+        endorsement.expires_at
+
+    requires:
+        comment when endorsement.is_valid
+
+    provides:
+        EndorserSubmitsEndorsement(endorser, comment, endorser_pod_url?)
+            when endorsement.is_valid
+
+    invariant: NoAccountRequired
+        -- Endorsers do not need a SkillR account. Token-based access only.
+
+    timeout:
+        EndorsementExpires when endorsement.expires_at <= now
+
+    guidance:
+        -- Simple one-page form. No login required.
+        -- "Max hat dich gebeten, folgende Kompetenz zu bestaetigen: [skill]"
+        -- Optional: Link own Pod for cross-Pod endorsement.
+        -- Expires after config.endorsement_expiry.
+}
+
+surface PodSyncHistoryView {
+    for traveller: Traveller
+
+    context connection: PodConnection with user = traveller and is_connected
+
+    exposes:
+        for op in connection.recent_syncs:
+            op.direction
+            op.status
+            op.started_at
+            op.completed_at
+            op.resources_synced
+            op.resources_failed
+            op.duration
+
+    guidance:
+        -- Sync history log for transparency.
+        -- Show success/failure counts per operation.
+        -- Failed syncs show error details.
+        -- "Automatische Synchronisation kommt bald" hint for future auto-sync.
+}
+
+------------------------------------------------------------
+-- Deferred Specifications
+------------------------------------------------------------
+
+deferred SolidServer.create_container       -- see: specs/solid-server.allium
+deferred SolidServer.put_resource           -- see: specs/solid-server.allium
+deferred SolidServer.get_resource           -- see: specs/solid-server.allium
+deferred TurtleSerializer.serialize_all     -- see: specs/turtle-serializer.allium
+deferred SSRFValidator.validate_pod_url     -- see: specs/security.allium
+deferred PodProxy.federation_layer          -- see: specs/pod-proxy.allium (V2.0)
+deferred SolidOIDC.authentication_flow      -- see: specs/solid-oidc.allium (V2.0)
+
+------------------------------------------------------------
+-- Open Questions
+------------------------------------------------------------
+
+open_question "Should auto-sync be triggered on every station completion, or remain manual-only for MVP?"
+open_question "When Pod-primary reads ship (V1.5), how to handle Pod downtime gracefully — fallback to Firestore cache, or block the UI?"
+open_question "Endorsement trust weighting: should a teacher endorsement carry more weight than a peer endorsement, and how is role verified?"
+open_question "BYOP external Pods (V2.0): how to handle Pods that don't support the fs: vocabulary — vocabulary negotiation or strict requirement?"
+open_question "Should Pod data be encrypted at rest within the Pod, or rely on Pod server encryption?"
+open_question "DSGVO Art. 17 (right to erasure): when a user deletes their account, should the platform actively delete Pod data, or just sever the link and leave data ownership to the user?"

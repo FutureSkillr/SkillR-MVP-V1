@@ -223,7 +223,7 @@ roles/storage.objectViewer     — Read artifacts from Cloud Storage
 | Dialogue (chat) | gemini-2.0-flash-lite | gemini-2.0-flash-lite | `generateContent` |
 | Extraction (JSON) | gemini-2.0-flash-lite | gemini-2.0-flash-lite | `generateContent` |
 | Curriculum/Course gen | gemini-2.0-flash-lite | gemini-2.0-flash-lite | `generateContent` |
-| TTS | gemini-2.5-flash-preview-tts | gemini-2.5-flash-preview-tts | `generateContent` |
+| TTS | gemini-2.5-flash-preview-tts | gemini-2.5-flash-tts | `generateContent` |
 | STT | gemini-2.0-flash-lite | gemini-2.0-flash-lite | `generateContent` |
 | Profile computation | — | gemini-2.0-flash | `generateContent` |
 | Evidence extraction | — | gemini-2.0-flash | `generateContent` |

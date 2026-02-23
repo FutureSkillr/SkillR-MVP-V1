@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import { useGeminiChat } from '../hooks/useGeminiChat';
 import { usePromptLogSession } from '../hooks/usePromptLogSession';
+import { useAiStatus } from '../hooks/useAiStatus';
 import { getPrompts } from '../services/contentResolver';
 import { createLoggingGeminiService } from '../services/geminiWithLogging';
 import { geminiService } from '../services/gemini';
@@ -8,6 +9,7 @@ import { trackChatSessionEnd } from '../services/analytics';
 import { ChatBubble } from './shared/ChatBubble';
 import { ChatInput } from './shared/ChatInput';
 import { TypingIndicator } from './shared/TypingIndicator';
+import { AiStatusDiamond } from './shared/AiStatusDiamond';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 import type { OnboardingInsights, VoiceDialect } from '../types/user';
 import type { ChatMessage } from '../types/chat';
@@ -28,7 +30,9 @@ export const OnboardingChat: React.FC<OnboardingChatProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const completingRef = useRef(false);
   const chatStartTime = useRef(Date.now());
-  const { isSpeaking, speak } = useSpeechSynthesis(voiceDialect);
+  const speech = useSpeechSynthesis(voiceDialect);
+  const { speak } = speech;
+  const aiStatus = useAiStatus();
 
   const { sessionId, sessionType } = usePromptLogSession({
     sessionType: 'onboarding',
@@ -137,7 +141,11 @@ export const OnboardingChat: React.FC<OnboardingChatProps> = ({
             </svg>
           </button>
           <h2 className="font-bold flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full animate-pulse ${hasError ? 'bg-red-500' : 'bg-green-500'}`} />
+            <AiStatusDiamond
+              status={hasError ? 'error' : aiStatus.status}
+              latencyMs={aiStatus.latencyMs}
+              size={16}
+            />
             Dein Coach
           </h2>
         </div>
@@ -149,7 +157,7 @@ export const OnboardingChat: React.FC<OnboardingChatProps> = ({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin">
         {messages.map((msg, idx) => (
-          <ChatBubble key={idx} message={msg} accentColor="blue" onSpeak={speak} isSpeaking={isSpeaking} />
+          <ChatBubble key={idx} message={msg} accentColor="blue" speech={speech} />
         ))}
         {isLoading && <TypingIndicator color="blue" />}
         <div ref={scrollRef} />

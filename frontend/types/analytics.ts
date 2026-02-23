@@ -8,7 +8,9 @@ export type UserEventType =
   | 'profile_view'
   | 'chat_message_sent'
   | 'chat_session_end'
-  | 'visitor_waiting';
+  | 'visitor_waiting'
+  | 'intro_fast_forward'
+  | 'coach_change';
 
 export interface UserEvent {
   event_type: UserEventType;

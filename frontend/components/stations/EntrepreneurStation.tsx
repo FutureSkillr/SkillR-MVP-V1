@@ -8,10 +8,14 @@ import { trackChatSessionEnd } from '../../services/analytics';
 import { ChatBubble } from '../shared/ChatBubble';
 import { ChatInput } from '../shared/ChatInput';
 import { TypingIndicator } from '../shared/TypingIndicator';
+import { AiStatusDiamond } from '../shared/AiStatusDiamond';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
+import { useAiStatus } from '../../hooks/useAiStatus';
+import { COACHES_BY_ID } from '../../constants/coaches';
 import type { Station, StationResult } from '../../types/journey';
 import type { ChatMessage } from '../../types/chat';
 import type { VoiceDialect } from '../../types/user';
+import type { CoachId } from '../../types/intro';
 
 interface EntrepreneurStationProps {
   station: Station;
@@ -19,6 +23,7 @@ interface EntrepreneurStationProps {
   onBack: () => void;
   voiceEnabled?: boolean;
   voiceDialect?: VoiceDialect;
+  coachId?: CoachId;
 }
 
 export const EntrepreneurStation: React.FC<EntrepreneurStationProps> = ({
@@ -27,11 +32,15 @@ export const EntrepreneurStation: React.FC<EntrepreneurStationProps> = ({
   onBack,
   voiceEnabled = false,
   voiceDialect = 'hochdeutsch',
+  coachId,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const completingRef = useRef(false);
   const chatStartTime = useRef(Date.now());
-  const { isSpeaking, speak } = useSpeechSynthesis(voiceDialect);
+  const speech = useSpeechSynthesis(voiceDialect);
+  const { speak } = speech;
+  const aiStatus = useAiStatus();
+  const coach = coachId ? COACHES_BY_ID[coachId] : null;
 
   const { sessionId, sessionType } = usePromptLogSession({
     sessionType: 'entrepreneur-station',
@@ -148,10 +157,12 @@ Begruesse den Nutzer als Mentor und hilf ihm, ein Problem zu identifizieren.`;
               </svg>
             </button>
             <div>
-              <h2 className="font-bold text-orange-400 flex items-center gap-2">
-                <span className="text-lg">🚀</span> {station.title}
+              <h2 className={`font-bold ${coach?.colorClass || 'text-orange-400'} flex items-center gap-2`}>
+                {coach && <span className="text-lg">{coach.emoji}</span>}
+                {coach ? coach.name : station.title}
+                <AiStatusDiamond status={aiStatus.status} latencyMs={aiStatus.latencyMs} size={14} />
               </h2>
-              <p className="text-[10px] text-slate-500">{station.description}</p>
+              <p className="text-[10px] text-slate-500">{station.title} — {station.description}</p>
             </div>
           </div>
           <span className="text-xs text-slate-500 font-mono">GRUENDER</span>
@@ -161,7 +172,7 @@ Begruesse den Nutzer als Mentor und hilf ihm, ein Problem zu identifizieren.`;
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin">
         {messages.map((msg, idx) => (
-          <ChatBubble key={idx} message={msg} accentColor="orange" onSpeak={speak} isSpeaking={isSpeaking} />
+          <ChatBubble key={idx} message={msg} accentColor="orange" speech={speech} />
         ))}
         {isLoading && <TypingIndicator color="orange" />}
         <div ref={scrollRef} />

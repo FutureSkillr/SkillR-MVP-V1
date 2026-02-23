@@ -174,6 +174,9 @@ Each feature, concept, and architecture decision is classified into one of three
 | FR-108 | @maindfull/mock-server | `[PLATFORM]` | draft | Platform mock server |
 | FR-109 | Integration Guide Pipeline | `[PLATFORM]` | draft | Platform docs |
 | FR-110 | Partner Doc Sync Automation | `[PLATFORM]` | draft | Platform CI |
+| FR-111 | Frontend Passive Rendering | `[CORE]` | specified | No active components — all data from Go API |
+| FR-112 | EU Co-Funding Notice | `[CORE]` | in-progress | CFR: EU co-funding text + logo on landing pages and footers |
+| FR-113 | Meta Ad Campaign Tracking | `[CORE]` | in-progress | Campaign management admin panel + UTM/Meta Pixel wiring |
 
 ### V2.0 — SkillR-Specific Features (SELECT)
 
@@ -182,7 +185,7 @@ Each feature, concept, and architecture decision is classified into one of three
 | FR-083* | i18n Framework | `[SELECT]` | draft | Multilingual support |
 | FR-084* | Multilingual Coach Personas | `[SELECT]` | draft | Coach in multiple languages |
 | FR-085* | Language Selection UI | `[SELECT]` | draft | Locale picker |
-| FR-086* | Custom Solid Pod Server | `[SELECT]` | draft | SkillR-hosted Pod |
+| FR-095* | Custom Solid Pod Server | `[SELECT]` | draft | SkillR-hosted Pod (renumbered from FR-086*) |
 | FR-087* | PodProxy Federation Layer | `[SELECT]` | draft | Pod federation |
 | FR-088* | SkillR Profile Pod Storage | `[SELECT]` | draft | Profile in Pod |
 | FR-089* | Lernreise Content CLI | `[SELECT]` | draft | Content tooling |
@@ -200,6 +203,8 @@ Each feature, concept, and architecture decision is classified into one of three
 |-----|-------|-------|--------|-------|
 | DFR-001 | App Icon Integration | `[CORE]` | done | SkillR app icons |
 | DFR-002 | Brand Name Consistency | `[CORE]` | done | SkillR brand naming |
+| DFR-004 | Coach Select Panel Polish | `[CORE]` | done | Equal cards, photos, border, umlaut fix |
+| DFR-005 | Landing Page Footer Consistency | `[CORE]` | done | App Icon + reusable legal footer on all pages |
 
 ---
 
@@ -274,7 +279,7 @@ Each feature, concept, and architecture decision is classified into one of three
 | Scope | FRs | Concepts | Architecture |
 |-------|-----|----------|-------------|
 | **`[CORE]`** | 55 | 17 (9 DC + 4 BC + 2 MA + 2 DFR) | TC-001..TC-028 |
-| **`[SELECT]`** | 28 | 8 (3 DC + 3 BC + 1 MA + 1 FR-086*) | — |
+| **`[SELECT]`** | 28 | 8 (3 DC + 3 BC + 1 MA + 1 FR-095*) | — |
 | **`[PLATFORM]`** | 30 | 10 (4 DC + 4 BC + 4 MA) | 6 TCs removed |
 
 **SkillR-MVP-V1 ships with 55 CORE features (41 done, 7 in-progress, 7 draft).**

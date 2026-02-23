@@ -1,0 +1,51 @@
+# Infrastructure services only — for local development with native processes.
+# Usage: make services-up
+#
+# Run Go backend + frontend natively while these provide the backing services.
+# See: make dev-all, make go-dev, make dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_USER: skillr
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: skillr
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillr"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  solid:
+    image: solidproject/community-server:7
+    command: ["-c", "/config/css-local.json", "-p", "3000", "-b", "http://localhost:3003", "-f", "/data"]
+    ports:
+      - "127.0.0.1:3003:3000"
+    volumes:
+      - solid-data:/data
+      - ./solid/config:/config:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  pgdata:
+  solid-data:

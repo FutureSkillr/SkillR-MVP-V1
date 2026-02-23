@@ -45,6 +45,18 @@ handleLogin()          — Intro-State ins echte Profil uebertragen
 - 14-15: Registrierung + Eltern-Hinweis
 - 16+: Self-Consent + Datenschutz-Checkbox
 
+### Fast-Forward Skip ("Weiter >")
+
+A "Weiter >" link is shown in the page header (next to the back link) during the intro chat. Clicking it:
+
+1. Skips the remaining smalltalk/demo dialog
+2. Sets `fastForward: true` in the IntroState (localStorage)
+3. Navigates directly to `intro-register`
+4. The user is treated as someone who already knows VUCA — no penalty, no lost XP opportunity
+5. The `intro-fast-forward` property is tracked as an analytics event so we can measure skip rates
+
+This allows returning users or those familiar with the concept to bypass the chat without friction.
+
 ## Acceptance Criteria
 
 - [x] WelcomePage zeigt "Jetzt ausprobieren" Button
@@ -55,6 +67,8 @@ handleLogin()          — Intro-State ins echte Profil uebertragen
 - [x] Intro-State wird in localStorage gespeichert und bei Registrierung ins Profil uebertragen
 - [x] Anonymes Rate-Limiting: 15 Requests / 5 Min fuer unauthentifizierte Gemini-Anfragen
 - [x] XPAction 'intro_demo_complete' (25 XP) im Engagement-System
+- [x] "Weiter >" link in intro-chat header skips to intro-register
+- [x] Fast-forward sets `fastForward: true` in IntroState and tracks `intro-fast-forward` event
 - [ ] Alle bestehenden Tests bestehen weiterhin
 
 ## Dependencies

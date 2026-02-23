@@ -16,9 +16,9 @@ services:
       - RUN_MIGRATIONS=true
       - STATIC_DIR=/app/static
       - MIGRATIONS_PATH=/app/migrations
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/vertexai-sa.json
       - GCP_PROJECT_ID=gen-lang-client-0456368718
       - GCP_REGION=europe-west3
+      - GCP_TTS_REGION=europe-west1
       - ADMIN_SEED_EMAIL=admin@skillr.local
       - ADMIN_SEED_PASSWORD=Admin1local
       - SOLID_POD_URL=http://solid:3000
@@ -27,6 +27,7 @@ services:
       - SOLID_POD_ADMIN_PASSWORD=skillr
     volumes:
       - ./credentials:/app/credentials:ro
+      - ${HOME}/.config/gcloud:/home/app/.config/gcloud:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,9 +64,9 @@ services:
 
   solid:
     image: solidproject/community-server:7
-    command: ["-c", "/config/css-local.json", "-p", "3000", "-b", "http://localhost:3000", "-f", "/data"]
+    command: ["-c", "/config/css-local.json", "-p", "3000", "-b", "http://localhost:3003", "-f", "/data"]
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3003:3000"
     volumes:
       - solid-data:/data
       - ./solid/config:/config:ro

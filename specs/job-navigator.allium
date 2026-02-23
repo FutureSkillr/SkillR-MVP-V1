@@ -1,0 +1,595 @@
+-- job-navigator.allium
+--
+-- Job-Navigator & Moeglichkeitsraum
+--
+-- A discovery engine that translates a student's evolving interest
+-- profile into concrete job possibilities. Intentionally reveals
+-- possibilities without prescribing a path. The Moeglichkeitsraum
+-- (possibility space) is a living, expanding set of opportunities
+-- grounded in real labour-market data.
+--
+-- Scope: [SELECT] — available for promotion to [CORE].
+-- Dependencies: FR-016 (Wikipedia), FR-017 (Job Portal Data),
+--               FR-018 (Job-Navigator Engine).
+
+use "./vuca-journey.allium" as journey
+
+------------------------------------------------------------
+-- External Entities
+------------------------------------------------------------
+
+-- Real job data from Bundesagentur fuer Arbeit and commercial portals.
+external entity JobPortalSource {
+    name: String                -- e.g., "Bundesagentur fuer Arbeit"
+    api_url: URL
+    refresh_interval: Duration
+}
+
+-- Wikipedia knowledge base for grounding and student-friendly explanations.
+external entity WikipediaArticle {
+    title: String
+    language: String            -- "de" or "en"
+    summary: String
+    url: URL
+}
+
+------------------------------------------------------------
+-- Value Types
+------------------------------------------------------------
+
+value MatchScore {
+    overall: Decimal            -- 0.0 to 1.0
+    interest_alignment: Decimal
+    skill_alignment: Decimal
+    gegensatz_score: Decimal    -- how "contrasting" this match is (0 = aligned, 1 = opposite)
+}
+
+value SkillRequirement {
+    name: String
+    category: hard | soft | future | resilience
+    importance: required | preferred | nice_to_have
+}
+
+------------------------------------------------------------
+-- Entities
+------------------------------------------------------------
+
+enum MatchLevel { intention | verified }
+
+entity JobPosting {
+    title: String
+    company: String?
+    location: String?
+    description: String
+    required_skills: List<SkillRequirement>
+    interest_domains: Set<String>       -- e.g., {"Holzhandwerk", "Nachhaltigkeit"}
+    industry_sector: String
+    source: JobPortalSource
+    source_id: String                   -- external ID from portal
+    student_explanation: String?        -- Wikipedia-grounded, age-appropriate text
+    fetched_at: Timestamp
+    is_active: Boolean
+
+    -- Relationships
+    matches: JobMatch for this job_posting
+    wikipedia_articles: JobWikipediaLink for this job_posting
+}
+
+entity JobWikipediaLink {
+    job_posting: JobPosting
+    article: WikipediaArticle
+    relevance: primary | supplementary
+}
+
+entity JobMatch {
+    user: journey/User
+    job_posting: JobPosting
+    journey: journey/Journey
+    match_level: MatchLevel
+    score: MatchScore
+    matching_dimensions: Set<String>    -- which profile dimensions drove the match
+    is_gegensatz: Boolean               -- was this a deliberate contrast suggestion?
+    created_at: Timestamp
+    status: suggested | explored | saved | dismissed
+
+    -- Derived
+    is_high_confidence: match_level = verified and score.overall >= config.high_confidence_threshold
+    is_exploratory: match_level = intention
+}
+
+entity Moeglichkeitsraum {
+    user: journey/User
+    journey: journey/Journey
+    created_at: Timestamp
+    last_expanded_at: Timestamp
+
+    -- Relationships
+    entries: MoeglichkeitsraumEntry for this moeglichkeitsraum
+
+    -- Projections
+    active_entries: entries with status = visible
+    gegensatz_entries: entries with is_gegensatz
+    explored_entries: entries with is_explored
+
+    -- Derived
+    breadth: active_entries.count
+    gegensatz_ratio: gegensatz_entries.count / active_entries.count
+    expansion_rate: active_entries.count / days_since_creation    -- black box helper
+}
+
+entity MoeglichkeitsraumEntry {
+    moeglichkeitsraum: Moeglichkeitsraum
+    job_posting: JobPosting
+    match: JobMatch
+    added_at: Timestamp
+    status: visible | dismissed | archived
+    is_gegensatz: Boolean
+    is_explored: Boolean
+    explored_at: Timestamp?
+
+    -- Derived
+    age_days: now - added_at
+}
+
+entity ExplorationEvent {
+    user: journey/User
+    entry: MoeglichkeitsraumEntry
+    action: viewed | saved | dismissed | shared
+    timestamp: Timestamp
+    dwell_time_ms: Integer?             -- how long the student spent reading
+}
+
+------------------------------------------------------------
+-- Config
+------------------------------------------------------------
+
+config {
+    high_confidence_threshold: Decimal = 0.7
+    max_suggestions_per_query: Integer = 10
+    gegensatz_ratio_target: Decimal = 0.3      -- aim for 30% contrasting suggestions
+    min_profile_interests: Integer = 2          -- need >= 2 interests before matching
+    refresh_interval: Duration = 24.hours       -- job data refresh frequency
+    match_staleness: Duration = 7.days          -- recompute matches after this
+    explanation_max_length: Integer = 500        -- student-friendly text limit (chars)
+}
+
+------------------------------------------------------------
+-- Rules: Job Data Ingestion
+------------------------------------------------------------
+
+rule RefreshJobData {
+    when: source: JobPortalSource.fetched_at + config.refresh_interval <= now
+
+    -- Black box: fetches and normalises job data from portal API
+    let new_postings = fetch_job_postings(source)    -- black box
+
+    ensures: JobDataRefreshed(source, new_postings)
+}
+
+rule IndexJobPosting {
+    when: JobDataRefreshed(source, postings)
+
+    for posting in postings:
+        ensures:
+            if exists JobPosting{source, source_id: posting.source_id}:
+                let existing = JobPosting{source, source_id: posting.source_id}
+                existing.title = posting.title
+                existing.description = posting.description
+                existing.required_skills = posting.required_skills
+                existing.is_active = posting.is_active
+                existing.fetched_at = now
+            else:
+                JobPosting.created(
+                    title: posting.title,
+                    company: posting.company,
+                    location: posting.location,
+                    description: posting.description,
+                    required_skills: posting.required_skills,
+                    interest_domains: posting.interest_domains,
+                    industry_sector: posting.industry_sector,
+                    source: source,
+                    source_id: posting.source_id,
+                    fetched_at: now,
+                    is_active: true
+                )
+}
+
+rule GroundJobWithWikipedia {
+    when: posting: JobPosting.created
+
+    -- Black box: finds relevant Wikipedia articles and generates explanation
+    let articles = find_wikipedia_articles(posting)    -- black box
+    let explanation = generate_student_explanation(posting, articles)    -- black box
+
+    ensures: posting.student_explanation = explanation
+    ensures: for article in articles:
+        JobWikipediaLink.created(
+            job_posting: posting,
+            article: article,
+            relevance: if article = articles.first: primary else: supplementary
+        )
+}
+
+------------------------------------------------------------
+-- Rules: Two-Level Matching
+------------------------------------------------------------
+
+-- Level 1: Intention/Interest Matching
+-- Early in journey. Lower confidence. Drives exploratory discovery.
+
+rule ComputeIntentionMatches {
+    when: journey/StationScored(visit, scores)
+
+    let user = visit.journey.traveller
+    let profile = visit.journey.profile
+    let raum = Moeglichkeitsraum{user, visit.journey}
+
+    requires: profile.interests.count >= config.min_profile_interests
+    requires: exists raum
+
+    -- Black box: AI computes interest-based matches with Gegensatz candidates
+    let matches = compute_intention_matches(profile, config.max_suggestions_per_query)    -- black box
+    let gegensatz_matches = compute_gegensatz_matches(
+        profile, config.max_suggestions_per_query, config.gegensatz_ratio_target
+    )    -- black box
+
+    ensures: for match in matches:
+        let job_match = JobMatch.created(
+            user: user,
+            job_posting: match.posting,
+            journey: visit.journey,
+            match_level: intention,
+            score: match.score,
+            matching_dimensions: match.dimensions,
+            is_gegensatz: false,
+            created_at: now,
+            status: suggested
+        )
+        MoeglichkeitsraumEntry.created(
+            moeglichkeitsraum: raum,
+            job_posting: match.posting,
+            match: job_match,
+            added_at: now,
+            status: visible,
+            is_gegensatz: false,
+            is_explored: false
+        )
+
+    ensures: for match in gegensatz_matches:
+        let job_match = JobMatch.created(
+            user: user,
+            job_posting: match.posting,
+            journey: visit.journey,
+            match_level: intention,
+            score: match.score,
+            matching_dimensions: match.dimensions,
+            is_gegensatz: true,
+            created_at: now,
+            status: suggested
+        )
+        MoeglichkeitsraumEntry.created(
+            moeglichkeitsraum: raum,
+            job_posting: match.posting,
+            match: job_match,
+            added_at: now,
+            status: visible,
+            is_gegensatz: true,
+            is_explored: false
+        )
+
+    ensures: raum.last_expanded_at = now
+}
+
+-- Level 2: Verified Skill Matching
+-- After Stage 3 (Skills). Higher confidence. Portfolio-backed.
+
+rule ComputeVerifiedMatches {
+    when: journey/ProfileAdvanced(journey, skills)
+
+    let user = journey.traveller
+    let profile = journey.profile
+    let raum = Moeglichkeitsraum{user, journey}
+
+    requires: profile.stage = skills
+    requires: exists raum
+
+    -- Black box: AI computes skill-based matches using portfolio evidence
+    let verified_matches = compute_verified_matches(profile)    -- black box
+
+    ensures: for match in verified_matches:
+        let job_match = JobMatch.created(
+            user: user,
+            job_posting: match.posting,
+            journey: journey,
+            match_level: verified,
+            score: match.score,
+            matching_dimensions: match.dimensions,
+            is_gegensatz: false,
+            created_at: now,
+            status: suggested
+        )
+        MoeglichkeitsraumEntry.created(
+            moeglichkeitsraum: raum,
+            job_posting: match.posting,
+            match: job_match,
+            added_at: now,
+            status: visible,
+            is_gegensatz: false,
+            is_explored: false
+        )
+
+    ensures: raum.last_expanded_at = now
+    ensures: VerifiedMatchesAvailable(journey)
+}
+
+-- Recompute stale matches periodically
+
+rule RecomputeStaleMatches {
+    when: match: JobMatch.created_at + config.match_staleness <= now
+
+    requires: match.status = suggested
+
+    -- Black box: recompute with current profile state
+    let new_score = recompute_match_score(match)    -- black box
+
+    ensures: match.score = new_score
+    ensures: match.created_at = now
+}
+
+------------------------------------------------------------
+-- Rules: Moeglichkeitsraum Lifecycle
+------------------------------------------------------------
+
+rule CreateMoeglichkeitsraum {
+    when: journey/CompleteOnboarding(journey, _)
+
+    let user = journey.traveller
+
+    requires: not exists Moeglichkeitsraum{user, journey}
+
+    ensures: Moeglichkeitsraum.created(
+        user: user,
+        journey: journey,
+        created_at: now,
+        last_expanded_at: now
+    )
+}
+
+------------------------------------------------------------
+-- Rules: Exploration Tracking
+------------------------------------------------------------
+
+rule ExploreEntry {
+    when: TravellerExploresEntry(user, entry)
+
+    requires: entry.moeglichkeitsraum.user = user
+    requires: entry.status = visible
+
+    ensures: entry.is_explored = true
+    ensures: entry.explored_at = now
+    ensures: entry.match.status = explored
+    ensures: ExplorationEvent.created(
+        user: user,
+        entry: entry,
+        action: viewed,
+        timestamp: now
+    )
+}
+
+rule SaveEntry {
+    when: TravellerSavesEntry(user, entry)
+
+    requires: entry.moeglichkeitsraum.user = user
+    requires: entry.status = visible
+
+    ensures: entry.match.status = saved
+    ensures: ExplorationEvent.created(
+        user: user,
+        entry: entry,
+        action: saved,
+        timestamp: now
+    )
+}
+
+rule DismissEntry {
+    when: TravellerDismissesEntry(user, entry)
+
+    requires: entry.moeglichkeitsraum.user = user
+    requires: entry.status = visible
+
+    ensures: entry.status = dismissed
+    ensures: entry.match.status = dismissed
+    ensures: ExplorationEvent.created(
+        user: user,
+        entry: entry,
+        action: dismissed,
+        timestamp: now
+    )
+    -- Dismissals are informative: they shape the profile as much as saves
+    ensures: DismissalRecorded(user, entry.job_posting.interest_domains)
+}
+
+------------------------------------------------------------
+-- Rules: Gegensatzsuche Feedback Loop
+------------------------------------------------------------
+
+-- When a student explores a Gegensatz entry, that signal
+-- feeds back into the interest profile as a broadening indicator.
+
+rule GegensatzExplored {
+    when: ExploreEntry(user, entry)
+
+    requires: entry.is_gegensatz
+
+    let profile = entry.moeglichkeitsraum.journey.profile
+
+    ensures: profile.orientation_indicators.add(
+        "job-gegensatz:" + entry.job_posting.industry_sector
+    )
+    ensures: GegensatzEngagement(user, entry.job_posting.interest_domains)
+}
+
+------------------------------------------------------------
+-- Actor Declarations
+------------------------------------------------------------
+
+actor Traveller {
+    identified_by: journey/User with status = active
+}
+
+------------------------------------------------------------
+-- Surfaces
+------------------------------------------------------------
+
+surface JobNavigatorView {
+    for traveller: Traveller
+
+    context raum: Moeglichkeitsraum with user = traveller
+
+    exposes:
+        raum.breadth
+        raum.gegensatz_ratio
+        raum.last_expanded_at
+        for entry in raum.active_entries:
+            entry.job_posting.title
+            entry.job_posting.company
+            entry.job_posting.location
+            entry.job_posting.student_explanation
+            entry.job_posting.interest_domains
+            entry.match.score.overall
+            entry.match.match_level
+            entry.match.is_gegensatz
+            entry.is_explored
+
+    provides:
+        for entry in raum.active_entries:
+            TravellerExploresEntry(traveller, entry)
+                when not entry.is_explored
+            TravellerSavesEntry(traveller, entry)
+            TravellerDismissesEntry(traveller, entry)
+
+    navigates_to:
+        for entry in raum.active_entries:
+            JobDetailView(entry)
+
+    guidance:
+        -- Moeglichkeitsraum visualization: expanding network/cluster diagram.
+        -- Gegensatz entries visually distinct (different colour or "Neu fuer dich" badge).
+        -- Never say "career recommendation" — frame as "Moeglichkeiten entdecken".
+        -- Verified matches (Level 2) get a confidence indicator.
+        -- Show breadth metric: "Du kennst jetzt N Berufsfelder".
+}
+
+surface JobDetailView {
+    for traveller: Traveller
+
+    context entry: MoeglichkeitsraumEntry
+        with moeglichkeitsraum.user = traveller
+
+    let posting = entry.job_posting
+
+    exposes:
+        posting.title
+        posting.company
+        posting.location
+        posting.student_explanation
+        posting.description
+        posting.required_skills
+        posting.interest_domains
+        posting.industry_sector
+        entry.match.score
+        entry.match.matching_dimensions
+        entry.match.match_level
+        entry.is_gegensatz
+        for link in posting.wikipedia_articles:
+            link.article.title
+            link.article.summary
+            link.article.url
+
+    provides:
+        TravellerSavesEntry(traveller, entry)
+            when entry.match.status != saved
+        TravellerDismissesEntry(traveller, entry)
+            when entry.status = visible
+
+    guidance:
+        -- Student-friendly language: no jargon, explain every technical term.
+        -- Wikipedia articles shown as "Mehr erfahren" expandable sections.
+        -- Required skills mapped to profile dimensions with gap indicator.
+        -- Gegensatz entries framed as: "Das ist vielleicht ueberraschend,
+        --   aber es passt zu deinen Staerken in [dimension]."
+        -- If match_level = verified: show portfolio evidence links.
+}
+
+surface SavedJobsView {
+    for traveller: Traveller
+
+    context raum: Moeglichkeitsraum with user = traveller
+
+    let saved = raum.entries with match.status = saved
+
+    exposes:
+        saved.count
+        for entry in saved:
+            entry.job_posting.title
+            entry.job_posting.company
+            entry.job_posting.interest_domains
+            entry.match.score.overall
+            entry.match.match_level
+            entry.is_gegensatz
+
+    navigates_to:
+        for entry in saved:
+            JobDetailView(entry)
+
+    guidance:
+        -- Personal collection of interesting possibilities.
+        -- Grouped by interest domain.
+        -- Show how saved jobs relate to profile dimensions.
+}
+
+surface MoeglichkeitsraumVisualization {
+    for traveller: Traveller
+
+    context raum: Moeglichkeitsraum with user = traveller
+
+    exposes:
+        raum.breadth
+        raum.gegensatz_ratio
+        raum.expansion_rate
+        for entry in raum.active_entries:
+            entry.job_posting.interest_domains
+            entry.job_posting.industry_sector
+            entry.is_gegensatz
+            entry.is_explored
+            entry.match.score.overall
+
+    guidance:
+        -- Abstract visualization of the expanding possibility space.
+        -- Clusters by interest domain, lines between related domains.
+        -- Gegensatz connections shown as cross-cluster bridges.
+        -- Explored regions glow brighter; unexplored areas pulse gently.
+        -- Growth animation when new entries are added.
+        -- Frame: "Dein Moeglichkeitsraum waechst" — never "Deine Karriere".
+}
+
+------------------------------------------------------------
+-- Deferred Specifications
+------------------------------------------------------------
+
+deferred MatchingEngine.compute_intention_matches    -- see: specs/matching-engine.allium
+deferred MatchingEngine.compute_gegensatz_matches    -- see: specs/matching-engine.allium
+deferred MatchingEngine.compute_verified_matches     -- see: specs/matching-engine.allium
+deferred WikipediaService.find_wikipedia_articles    -- see: specs/wikipedia-service.allium
+deferred WikipediaService.generate_student_explanation -- see: specs/wikipedia-service.allium
+deferred JobPortalService.fetch_job_postings         -- see: specs/job-portal-service.allium
+
+------------------------------------------------------------
+-- Open Questions
+------------------------------------------------------------
+
+open_question "Should Gegensatz ratio be adaptive per student (more contrasts for narrow profiles, fewer for already-broad ones)?"
+open_question "How to handle regional job data — should results be filtered by student location, or should distance be a soft signal?"
+open_question "Should dismissed entries ever resurface (e.g., after profile evolves significantly)?"
+open_question "Job data freshness: is 24h refresh sufficient, or do we need real-time for high-demand postings?"
+open_question "Should employer-sponsored postings be visually distinguished, and if so, how to avoid compromising trust with 14-year-olds?"

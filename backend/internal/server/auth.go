@@ -2,10 +2,11 @@ package server
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"sync"
 	"time"
@@ -174,9 +175,19 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "E-Mail oder Passwort falsch."})
 	}
 
-	// H11: Issue a session token after successful login
-	sessionToken := uuid.New().String()
-	log.Printf("session token issued for user %s", id)
+	// H11: Issue a session token after successful login.
+	// Encode user info as base64 JSON so the LocalSessionAuth middleware
+	// can extract user identity without a database lookup.
+	tokenPayload := map[string]interface{}{
+		"uid":   id.String(),
+		"email": email,
+		"name":  displayName,
+		"role":  role,
+		"iat":   time.Now().Unix(),
+	}
+	payloadBytes, _ := json.Marshal(tokenPayload)
+	sessionToken := base64.RawURLEncoding.EncodeToString(payloadBytes)
+	log.Printf("session token issued for user %s (role=%s)", id, role)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"user": authUserResponse{
@@ -296,7 +307,10 @@ func (h *AuthHandler) LoginProvider(c echo.Context) error {
 	displayName := name + "-Nutzer"
 
 	var count int
-	h.db.QueryRow(ctx, `SELECT COUNT(*) FROM users`).Scan(&count)
+	if err := h.db.QueryRow(ctx, `SELECT COUNT(*) FROM users`).Scan(&count); err != nil {
+		log.Printf("auth login-provider count error: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
+	}
 	role := "user"
 	if count == 0 {
 		role = "admin"
@@ -342,7 +356,9 @@ func (h *AuthHandler) ResetPassword(c echo.Context) error {
 	// Check if user exists (don't reveal to client)
 	var exists bool
 	ctx := c.Request().Context()
-	h.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, req.Email).Scan(&exists)
+	if err := h.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, req.Email).Scan(&exists); err != nil {
+		log.Printf("auth reset-password check error: %v", err)
+	}
 	if exists {
 		resetToken := uuid.New().String()
 		log.Printf("password reset requested for %s — token: %s (email sending not yet implemented)", req.Email, resetToken)
@@ -407,17 +423,10 @@ func (h *AuthHandler) DeleteAccount(c echo.Context) error {
 }
 
 // SeedAdmin creates the default admin user if no users exist.
-// Reads credentials from ADMIN_SEED_EMAIL and ADMIN_SEED_PASSWORD env vars.
-// Skips seeding if either is empty.
-func (h *AuthHandler) SeedAdmin(ctx context.Context) {
+// Credentials come from Config (resolved from env vars with dev defaults in FR-115).
+func (h *AuthHandler) SeedAdmin(ctx context.Context, email, password string) {
 	if h.db == nil {
 		return
-	}
-
-	seedEmail := os.Getenv("ADMIN_SEED_EMAIL")
-	seedPassword := os.Getenv("ADMIN_SEED_PASSWORD")
-	if seedEmail == "" || seedPassword == "" {
-		return // Skip seeding when env vars are not configured
 	}
 
 	var count int
@@ -430,7 +439,7 @@ func (h *AuthHandler) SeedAdmin(ctx context.Context) {
 		return
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(seedPassword), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Printf("seed admin: hash error: %v", err)
 		return
@@ -441,13 +450,13 @@ func (h *AuthHandler) SeedAdmin(ctx context.Context) {
 	_, err = h.db.Exec(ctx,
 		`INSERT INTO users (id, email, display_name, role, auth_provider, password_hash, created_at, updated_at)
 		 VALUES ($1, $2, $3, $4::user_role, $5::auth_provider, $6, $7, $7)`,
-		id, seedEmail, "Admin", "admin", "email", string(hash), now)
+		id, email, "Admin", "admin", "email", string(hash), now)
 	if err != nil {
 		log.Printf("seed admin: insert error: %v", err)
 		return
 	}
 
-	log.Println("seeded default admin user")
+	log.Printf("seeded default admin user — email: %s  password: %s", email, password)
 }
 
 func mapProvider(p string) string {

@@ -4,9 +4,17 @@ import type { OnboardingInsights, VoiceDialect } from '../types/user';
 import type { StationResult } from '../types/journey';
 import type { VucaCurriculum, CourseContent } from '../types/vuca';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-export const MODEL_NAME = 'gemini-2.0-flash-lite';
-const TTS_MODEL = 'gemini-2.5-flash-preview-tts';
+let _ai: GoogleGenAI | null = null;
+function getAI(): GoogleGenAI {
+  if (!_ai) {
+    const key = (globalThis as any).process?.env?.API_KEY || '';
+    if (!key) throw new Error('Gemini API key not configured. AI features are unavailable.');
+    _ai = new GoogleGenAI({ apiKey: key });
+  }
+  return _ai;
+}
+export const MODEL_NAME = 'gemini-2.5-flash';
+const TTS_MODEL = 'gemini-2.5-flash-tts';
 
 const DIALECT_PROMPTS: Record<VoiceDialect, string> = {
   hochdeutsch: 'Lies diesen Text in klarem Hochdeutsch vor.',
@@ -50,6 +58,128 @@ async function withRetry<T>(
   throw new Error('Max retries exceeded');
 }
 
+/**
+ * backendChatService routes chat through the Go backend (/api/v1/ai/chat)
+ * instead of calling the Google AI SDK directly from the browser.
+ * Same signature as geminiService.chat() for drop-in replacement.
+ */
+export const backendChatService = {
+  async chat(
+    systemInstruction: string,
+    history: ChatMessage[],
+    userMessage: string,
+    _onRetry?: (info: RetryInfo) => void
+  ): Promise<{ text: string; retryCount: number }> {
+    const res = await fetch('/api/v1/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: systemInstruction,
+        message: userMessage,
+        history: history.map((h) => ({
+          role: h.role === 'assistant' ? 'model' : h.role,
+          content: h.content,
+        })),
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error_code: 'unknown' }));
+      throw new Error(`${res.status} ${body.error_code || res.statusText}`);
+    }
+
+    const data = await res.json();
+    return { text: data.text || '', retryCount: 0 };
+  },
+
+  async generateCurriculum(
+    goal: string,
+    _onRetry?: (info: RetryInfo) => void
+  ): Promise<{ data: VucaCurriculum; retryCount: number; rawText: string }> {
+    const res = await fetch('/api/v1/ai/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        context: { generate_type: 'curriculum' },
+        parameters: { goal },
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error_code: 'unknown' }));
+      throw new Error(`${res.status} ${body.error_code || res.statusText}`);
+    }
+
+    const data = await res.json();
+    const rawText = JSON.stringify(data.result);
+    const parsed = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
+    return {
+      data: {
+        goal: parsed.goal || goal,
+        modules: (parsed.modules || []).map((m: Record<string, unknown>) => ({
+          ...m,
+          completed: false,
+        })),
+      },
+      retryCount: 0,
+      rawText,
+    };
+  },
+
+  async generateCourse(
+    module: { title: string; description: string; category: string },
+    goal: string,
+    _onRetry?: (info: RetryInfo) => void
+  ): Promise<{ data: CourseContent; retryCount: number; rawText: string }> {
+    const res = await fetch('/api/v1/ai/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        context: { generate_type: 'course' },
+        parameters: { goal, module },
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error_code: 'unknown' }));
+      throw new Error(`${res.status} ${body.error_code || res.statusText}`);
+    }
+
+    const data = await res.json();
+    const rawText = JSON.stringify(data.result);
+    const parsed = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
+    return {
+      data: {
+        moduleId: module.title,
+        title: parsed.title || module.title,
+        sections: parsed.sections || [],
+        quiz: parsed.quiz || [],
+      },
+      retryCount: 0,
+      rawText,
+    };
+  },
+
+  async textToSpeech(
+    text: string,
+    dialect: VoiceDialect = 'hochdeutsch'
+  ): Promise<string> {
+    const res = await fetch('/api/v1/ai/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voice_dialect: dialect }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error_code: 'unknown' }));
+      throw new Error(`${res.status} ${body.error_code || res.statusText}`);
+    }
+
+    const data = await res.json();
+    return data.audio;
+  },
+};
+
 export const geminiService = {
   async chat(
     systemInstruction: string,
@@ -58,7 +188,7 @@ export const geminiService = {
     onRetry?: (info: RetryInfo) => void
   ): Promise<{ text: string; retryCount: number }> {
     const { result, retryCount } = await withRetry(async () => {
-      const response = await ai.models.generateContent({
+      const response = await getAI().models.generateContent({
         model: MODEL_NAME,
         contents: [
           ...history.map((h) => ({
@@ -85,7 +215,7 @@ export const geminiService = {
       .join('\n');
 
     const { result, retryCount } = await withRetry(async () => {
-      const response = await ai.models.generateContent({
+      const response = await getAI().models.generateContent({
         model: MODEL_NAME,
         contents: `Analysiere dieses Onboarding-Gespraech und extrahiere strukturierte Insights:\n\n${transcript}`,
         config: {
@@ -164,7 +294,7 @@ export const geminiService = {
       .join('\n');
 
     const { result, retryCount } = await withRetry(async () => {
-      const response = await ai.models.generateContent({
+      const response = await getAI().models.generateContent({
         model: MODEL_NAME,
         contents: `Analysiere diese Station und bewerte die gezeigten Faehigkeiten auf einer Skala von 0-100:\n\nReise-Typ: ${journeyType}\nStation: ${stationId}\n\n${transcript}`,
         config: {
@@ -227,7 +357,7 @@ export const geminiService = {
     onRetry?: (info: RetryInfo) => void
   ): Promise<{ data: VucaCurriculum; retryCount: number; rawText: string }> {
     const { result, retryCount } = await withRetry(async () => {
-      const response = await ai.models.generateContent({
+      const response = await getAI().models.generateContent({
         model: MODEL_NAME,
         contents: `Erstelle einen Lehrplan fuer das Berufsziel: "${goal}". Der Lehrplan soll 12 Module haben, 3 pro VUCA-Kategorie (V=Volatility, U=Uncertainty, C=Complexity, A=Ambiguity). Jedes Modul soll auf Deutsch sein und zum Berufsziel passen.`,
         config: {
@@ -289,7 +419,7 @@ export const geminiService = {
     onRetry?: (info: RetryInfo) => void
   ): Promise<{ data: CourseContent; retryCount: number; rawText: string }> {
     const { result, retryCount } = await withRetry(async () => {
-      const response = await ai.models.generateContent({
+      const response = await getAI().models.generateContent({
         model: MODEL_NAME,
         contents: `Erstelle Kursinhalt fuer das Modul "${module.title}" (${module.description}). VUCA-Dimension: ${module.category}. Berufsziel: "${goal}". Erstelle 2-3 Abschnitte mit Lerninhalt und 3 Quiz-Fragen (Multiple-Choice mit je 4 Optionen). Alles auf Deutsch.`,
         config: {
@@ -368,7 +498,7 @@ export const geminiService = {
   ): Promise<string> {
     const dialectPrompt = DIALECT_PROMPTS[dialect] || DIALECT_PROMPTS.hochdeutsch;
     const { result } = await withRetry(async () => {
-      const response = await ai.models.generateContent({
+      const response = await getAI().models.generateContent({
         model: TTS_MODEL,
         contents: [`${dialectPrompt}\n\n${text}`],
         config: {
@@ -412,7 +542,7 @@ export const geminiService = {
     onRetry?: (info: RetryInfo) => void
   ): Promise<string> {
     const { result } = await withRetry(async () => {
-      const response = await ai.models.generateContent({
+      const response = await getAI().models.generateContent({
         model: MODEL_NAME,
         contents: [
           {

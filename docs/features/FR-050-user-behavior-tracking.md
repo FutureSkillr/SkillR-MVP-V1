@@ -26,10 +26,30 @@ Implement client-side clickstream analytics that tracks every meaningful user in
 | `chat_message_sent` | Each chat message | `message_index`, `message_length`, `is_user`, `session_type` |
 | `chat_session_end` | Chat completed/aborted | `total_messages`, `user_messages`, `avg_message_length`, `duration_ms`, `completion_status` |
 
+### Dialog Data Capture (Profile-Scoped)
+
+For all dialog flows (intro chat, journey stations, onboarding), capture the full dialog context as part of the client's profile data. This is separate from anonymous clickstream analytics — it is tied to the user's profile and stored in IntroState / profile storage.
+
+| Data Point | Description | Storage |
+|------------|-------------|---------|
+| `dialogFlow` | Ordered list of phases completed (`smalltalk`, `demo`, or `fast-forward`) | IntroState / profile |
+| `dialogTiming` | Timestamps for phase transitions (`startedAt`, `smalltalkCompletedAt`, `demoCompletedAt`, `completedAt`) | IntroState / profile |
+| `conversationContent` | Full message history (role + content + timestamp per message) | IntroState / profile |
+| `fastForward` | Boolean — whether user skipped via "Weiter >" | IntroState / profile |
+| `messageCount` | Total messages exchanged | IntroState / profile |
+| `userMessageCount` | Messages sent by user | IntroState / profile |
+| `totalDurationMs` | Time from first message to completion/skip | IntroState / profile |
+
+This data is transferred to the backend profile on registration (see FR-054 intro flow) and enables:
+- Personalized follow-up based on conversation content
+- Understanding of user engagement depth
+- Identification of drop-off points in dialog flows
+
 ### Privacy Constraints
 
-- No message content in events (only metadata: length, index, count)
-- No user IDs or emails
+- No message content in **anonymous clickstream events** (only metadata: length, index, count)
+- Dialog content is stored in **profile data** (tied to authenticated user after registration)
+- No user IDs or emails in clickstream
 - No API keys or tokens
 - `browser_session_id` is a random UUID, not linked to auth identity
 
@@ -39,7 +59,9 @@ Implement client-side clickstream analytics that tracks every meaningful user in
 - [ ] Events are batched client-side (2s flush) with `sendBeacon` on tab close
 - [ ] Admin dashboard shows conversion funnel, journey popularity, session replay
 - [ ] CSV export works for all events
-- [ ] No personal data or message content is stored in events
+- [ ] No personal data or message content is stored in anonymous clickstream events
+- [x] Dialog flows capture full conversation content, timing, and flow in profile-scoped storage (IntroState)
+- [x] `intro-fast-forward` event tracked when user skips intro chat via "Weiter >"
 - [ ] TypeScript compiles without errors
 
 ## Dependencies

@@ -13,7 +13,7 @@ func TestPing_Success(t *testing.T) {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"issuer":"http://localhost:3000"}`))
+		_, _ = w.Write([]byte(`{"issuer":"http://localhost:3000"}`))
 	}))
 	defer srv.Close()
 
@@ -64,7 +64,7 @@ func TestPutResource_Success(t *testing.T) {
 func TestPutResource_ServerError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal error"))
+		_, _ = w.Write([]byte("internal error"))
 	}))
 	defer srv.Close()
 
@@ -85,7 +85,7 @@ func TestGetResource_Success(t *testing.T) {
 			t.Errorf("expected Accept: text/turtle, got %s", r.Header.Get("Accept"))
 		}
 		w.Header().Set("Content-Type", "text/turtle")
-		w.Write([]byte(expected))
+		_, _ = w.Write([]byte(expected))
 	}))
 	defer srv.Close()
 

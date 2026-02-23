@@ -53,7 +53,7 @@ func (c *HTTPClient) CreateContainer(ctx context.Context, path string) error {
 	if err != nil {
 		return fmt.Errorf("create container: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		body, _ := io.ReadAll(resp.Body)
@@ -75,7 +75,7 @@ func (c *HTTPClient) PutResource(ctx context.Context, path string, turtle string
 	if err != nil {
 		return fmt.Errorf("put resource: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		body, _ := io.ReadAll(resp.Body)
@@ -97,7 +97,7 @@ func (c *HTTPClient) GetResource(ctx context.Context, path string) (string, erro
 	if err != nil {
 		return "", fmt.Errorf("get resource: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return "", fmt.Errorf("resource not found: %s", path)
@@ -126,7 +126,7 @@ func (c *HTTPClient) DeleteResource(ctx context.Context, path string) error {
 	if err != nil {
 		return fmt.Errorf("delete resource: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
 		body, _ := io.ReadAll(resp.Body)
@@ -147,7 +147,7 @@ func (c *HTTPClient) Ping(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("ping: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("ping: status %d", resp.StatusCode)

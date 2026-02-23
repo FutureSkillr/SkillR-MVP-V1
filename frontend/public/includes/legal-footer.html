@@ -1,0 +1,25 @@
+<!-- SkillR Legal Footer — reusable partial for static HTML pages -->
+<!-- Include via <iframe> or server-side include (SSI) -->
+<footer id="skillr-legal-footer" style="
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1.5rem 1rem;
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.875rem;
+  color: #64748b;
+">
+  <div style="max-width: 72rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <img src="/icons/app-icon.png" alt="SkillR" width="32" height="32" style="border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);" />
+      <span>&copy; 2026 SkillR</span>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem;">
+      <a href="/?view=impressum" style="color: #64748b; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#64748b'">Impressum</a>
+      <a href="/?view=datenschutz" style="color: #64748b; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#64748b'">Datenschutz</a>
+      <a href="#" onclick="if(window.opener||window.parent!==window){window.parent.postMessage('openCookieSettings','*')}else{alert('Cookie-Einstellungen sind in der App verfügbar.')};return false;" style="color: #64748b; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#64748b'">Cookie-Einstellungen</a>
+    </div>
+  </div>
+</footer>

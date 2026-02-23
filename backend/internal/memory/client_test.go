@@ -44,7 +44,7 @@ func TestRegisterUser(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(accessResponse{
+		_ = json.NewEncoder(w).Encode(accessResponse{
 			CtxID: "ctx-abc-123",
 			Tier:  "free",
 		})
@@ -72,7 +72,7 @@ func TestRegisterUser_EmptyEmail(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(accessResponse{CtxID: "ctx-456"})
+		_ = json.NewEncoder(w).Encode(accessResponse{CtxID: "ctx-456"})
 	}))
 	defer srv.Close()
 
@@ -89,7 +89,7 @@ func TestRegisterUser_EmptyEmail(t *testing.T) {
 func TestRegisterUser_ServerError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte(`{"error":"forbidden"}`))
+		_, _ = w.Write([]byte(`{"error":"forbidden"}`))
 	}))
 	defer srv.Close()
 
@@ -103,7 +103,7 @@ func TestRegisterUser_ServerError(t *testing.T) {
 func TestRegisterUser_EmptyCtxID(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(accessResponse{CtxID: ""})
+		_ = json.NewEncoder(w).Encode(accessResponse{CtxID: ""})
 	}))
 	defer srv.Close()
 

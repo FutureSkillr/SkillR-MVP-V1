@@ -137,7 +137,7 @@ run_docker() {
   fi
 
   echo "  Building Docker image..."
-  if docker build -t future-skillr:mvp3-test . 2>&1; then
+  if docker build -t skillr:mvp3-test . 2>&1; then
     pass "Docker image builds"
   else
     fail "Docker image build failed"
@@ -145,7 +145,7 @@ run_docker() {
   fi
 
   # Check no build-arg secrets in image history
-  if docker history future-skillr:mvp3-test 2>/dev/null | grep -q "GEMINI_API_KEY"; then
+  if docker history skillr:mvp3-test 2>/dev/null | grep -q "GEMINI_API_KEY"; then
     fail "GEMINI_API_KEY found in Docker image history"
   else
     pass "No secrets in Docker image history"

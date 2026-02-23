@@ -1,0 +1,8 @@
+# Copy to backend.tf and fill in your project ID.
+# First run: cd terraform/bootstrap && terraform apply -var="project_id=YOUR_PROJECT"
+terraform {
+  backend "gcs" {
+    bucket = "YOUR_PROJECT_ID-tfstate"
+    prefix = "production"
+  }
+}

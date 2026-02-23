@@ -1,4 +1,5 @@
 import type { JourneyType } from './journey';
+import type { CoachId } from './intro';
 
 export type VoiceDialect =
   | 'hochdeutsch'
@@ -8,22 +9,21 @@ export type VoiceDialect =
   | 'saechsisch'
   | 'koelsch';
 
-export interface VoiceDialectOption {
-  key: VoiceDialect;
-  label: string;
-  region: string;
-  greeting: string;
-  color: string;
-}
+/** Maps each coach to their dialect for TTS voice selection. */
+const COACH_DIALECT_MAP: Record<CoachId, VoiceDialect> = {
+  susi: 'koelsch',
+  karlshains: 'schwaebisch',
+  rene: 'hochdeutsch',
+  heiko: 'berlinerisch',
+  andreas: 'bayerisch',
+  cloudia: 'saechsisch',
+};
 
-export const VOICE_DIALECTS: VoiceDialectOption[] = [
-  { key: 'hochdeutsch', label: 'Hochdeutsch', region: 'Standard', greeting: 'Hallo! Schoen, dass du da bist. Lass uns deine Reise starten.', color: 'blue' },
-  { key: 'bayerisch', label: 'Bayerisch', region: 'Bayern', greeting: 'Servus! Schee, dass d\' da bist. Pack ma\'s, mir starten dei Reis!', color: 'blue' },
-  { key: 'schwaebisch', label: 'Schwaebisch', region: 'Baden-Wuerttemberg', greeting: 'Grueß Gott! Schee, dass du do bisch. Komm, mir gangat los!', color: 'orange' },
-  { key: 'berlinerisch', label: 'Berlinerisch', region: 'Berlin', greeting: 'Na, Mensch! Jut, datt du da bist. Lass ma loslegen, wa?', color: 'purple' },
-  { key: 'saechsisch', label: 'Saechsisch', region: 'Sachsen', greeting: 'Tach! Scheene, dass de da bist. Na, dann gomma los!', color: 'orange' },
-  { key: 'koelsch', label: 'Koelsch', region: 'Koeln / Rheinland', greeting: 'Tach! Schoen, dat du do bes. Kumm, mer fange aan!', color: 'purple' },
-];
+/** Derive the voice dialect from the selected coach. */
+export function getDialectForCoach(coachId: CoachId | null): VoiceDialect {
+  if (!coachId) return 'hochdeutsch';
+  return COACH_DIALECT_MAP[coachId] ?? 'hochdeutsch';
+}
 
 export interface OnboardingInsights {
   interests: string[];
@@ -35,6 +35,8 @@ export interface OnboardingInsights {
 
 export interface UserProfile {
   name: string;
+  /** Selected coach — determines voice dialect and AI personality. */
+  coachId: CoachId | null;
   voiceDialect: VoiceDialect;
   onboardingInsights: OnboardingInsights | null;
   journeyProgress: Record<JourneyType, JourneyProgress>;
@@ -50,6 +52,7 @@ export interface JourneyProgress {
 export function createInitialProfile(): UserProfile {
   return {
     name: 'Entdecker',
+    coachId: null,
     voiceDialect: 'hochdeutsch',
     onboardingInsights: null,
     journeyProgress: {
