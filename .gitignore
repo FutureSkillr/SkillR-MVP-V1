@@ -10,6 +10,7 @@ backend/server
 .env
 .env.local
 .env.*.local
+.env.deploy
 frontend/.env.local
 
 # OS files
@@ -29,6 +30,21 @@ frontend/node_modules/.vite/
 # Firebase service account keys (NEVER commit these)
 **/service-account-key*.json
 **/firebase-adminsdk*.json
+credentials/
+
+# Local TLS certificates
+.certs/
+
+# Design source files and archives (keep only web-optimized in public/)
+*.eps
+*.zip
+frontend/graphx-design/co-funded_de/
+
+# k6 load test reports (regenerated on each run)
+k6/reports/*.json
+
+# Large document assets (PDFs, protocol recordings)
+docs/**/*.pdf
 
 # Dev server SQLite data
 frontend/server/data/
