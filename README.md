@@ -97,9 +97,9 @@ make dev-all
 This starts:
 - PostgreSQL, Redis, and Solid Pod in Docker containers
 - Go backend as a native process (with hot reload on restart)
-- Vite dev server + Express API gateway as native processes
+- Vite dev server as a native process
 
-Access the app at **http://localhost:3000** (frontend) and **http://localhost:3001** (API gateway).
+Access the app at **http://localhost:3000** (frontend) and **http://localhost:8080** (Go backend API).
 
 **Option B: Full Docker stack**
 
@@ -163,8 +163,8 @@ Tier C: Analytics          — append-only, anonymised
 │                                                             │
 │  Native processes:                Docker services:          │
 │  ├─ Vite dev (localhost:3000)     ├─ PostgreSQL (:5432)     │
-│  ├─ Express API (localhost:3001)  ├─ Redis (:6379)          │
-│  └─ Go backend (localhost:8080)   └─ Solid Pod (:3003)      │
+│  └─ Go backend (localhost:8080)   ├─ Redis (:6379)          │
+│                                   └─ Solid Pod (:3003)      │
 │                                                             │
 │  make local-up                                              │
 │  └─ All in Docker ─────────────── App (localhost:9090)      │
@@ -190,7 +190,7 @@ SkillR-MVP-V1/
 │   ├── App.tsx                   Root component
 │   ├── components/               UI components
 │   ├── services/                 API clients (Gemini, analytics)
-│   ├── server/                   Express API gateway
+│   ├── hooks/                    React hooks (Gemini chat, speech, AI status)
 │   ├── styles/                   CSS / Tailwind
 │   ├── public/                   Static assets
 │   │   ├── icons/                App icons (app-icon.png, favicons)
@@ -203,6 +203,7 @@ SkillR-MVP-V1/
 │   │   ├── server/               HTTP server, auth, routing
 │   │   ├── ai/                   Gemini / Vertex AI integration
 │   │   ├── admin/                Admin panel handlers
+│   │   ├── gateway/              API gateway handlers (analytics, brand, campaign, etc.)
 │   │   ├── config/               Configuration loading
 │   │   ├── postgres/             Database repositories
 │   │   ├── redis/                Cache, rate limiting
@@ -210,7 +211,7 @@ SkillR-MVP-V1/
 │   │   ├── honeycomb/            Lernreise tracking
 │   │   ├── memory/               User context sync
 │   │   └── middleware/           HTTP middleware
-│   └── migrations/               PostgreSQL migrations (000001..000020)
+│   └── migrations/               PostgreSQL migrations (000001..000023)
 │
 ├── specs/                     ← Allium behavioural specifications
 │   ├── vuca-journey.allium       VUCA journey domain model
@@ -219,6 +220,11 @@ SkillR-MVP-V1/
 │   ├── lernreise.allium          Learning journey (Lernreise)
 │   ├── solid-pod.allium          Solid Pod profile system
 │   ├── skill-wallet.allium       Skill-Wallet (credentials + portfolio)
+│   ├── views/                    UI view companion docs
+│   │   ├── intro-chat.md            Intro chat view
+│   │   ├── intro-coach-select.md    Coach selection view
+│   │   ├── journey-select.md        Journey selection view
+│   │   └── profile.md               Profile view
 │   └── flows/                    UI flow companion docs
 │       ├── FORMAT.md                Flow document format spec
 │       ├── wallet-overview.md       Wallet dashboard flows
@@ -374,6 +380,7 @@ make k6-smoke
 # Stakeholder-specific suites
 make k6-student       # Student flows (TS-001..008)
 make k6-admin         # Admin flows (TS-010..013)
+make k6-operator      # Operator monitoring (TS-020..022)
 make k6-security      # Security validation (TS-030..037)
 
 # Load testing
