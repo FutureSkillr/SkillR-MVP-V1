@@ -117,7 +117,7 @@ func Load() (*Config, error) {
 		SolidPodEnabled: getEnvBool("SOLID_POD_ENABLED", false),
 		// Admin seed (FR-115) — defaults for local dev
 		AdminSeedEmail:    getEnv("ADMIN_SEED_EMAIL", "admin@skillr.local"),
-		AdminSeedPassword: getEnv("ADMIN_SEED_PASSWORD", "Skillr1dev"),
+		AdminSeedPassword: getEnv("ADMIN_SEED_PASSWORD", "Admin1local"),
 	}
 	// M12: Warn about ALLOWED_ORIGINS in production
 	if os.Getenv("ALLOWED_ORIGINS") == "" {

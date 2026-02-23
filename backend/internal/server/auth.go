@@ -422,20 +422,22 @@ func (h *AuthHandler) DeleteAccount(c echo.Context) error {
 	})
 }
 
-// SeedAdmin creates the default admin user if no users exist.
+// SeedAdmin creates the default admin user if it does not already exist.
 // Credentials come from Config (resolved from env vars with dev defaults in FR-115).
 func (h *AuthHandler) SeedAdmin(ctx context.Context, email, password string) {
 	if h.db == nil {
 		return
 	}
 
+	// OBS-005: Check if the specific admin account exists, not if the table is empty.
 	var count int
-	err := h.db.QueryRow(ctx, `SELECT COUNT(*) FROM users`).Scan(&count)
+	err := h.db.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE email = $1`, email).Scan(&count)
 	if err != nil {
 		log.Printf("seed admin: count error: %v", err)
 		return
 	}
 	if count > 0 {
+		log.Printf("seed admin: account %s already exists, skipping", email)
 		return
 	}
 

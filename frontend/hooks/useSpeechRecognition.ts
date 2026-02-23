@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { blobToWavBase64 } from '../services/audioUtils';
-import { geminiService } from '../services/gemini';
+import { backendChatService } from '../services/gemini';
 
 export function useSpeechRecognition(onResult: (transcript: string) => void) {
   const [isListening, setIsListening] = useState(false);
@@ -59,7 +59,7 @@ export function useSpeechRecognition(onResult: (transcript: string) => void) {
         setIsProcessing(true);
         try {
           const wavBase64 = await blobToWavBase64(blob);
-          const transcript = await geminiService.speechToText(wavBase64);
+          const transcript = await backendChatService.speechToText(wavBase64);
           if (transcript) {
             onResult(transcript);
           }

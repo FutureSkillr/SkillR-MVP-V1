@@ -178,6 +178,20 @@ export const backendChatService = {
     const data = await res.json();
     return data.audio;
   },
+
+  async speechToText(audioBase64: string, mimeType = 'audio/wav'): Promise<string> {
+    const res = await fetch('/api/v1/ai/stt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ audio: audioBase64, mime_type: mimeType }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error_code: 'unknown' }));
+      throw new Error(`${res.status} ${body.error_code || res.statusText}`);
+    }
+    const data = await res.json();
+    return data.text;
+  },
 };
 
 export const geminiService = {

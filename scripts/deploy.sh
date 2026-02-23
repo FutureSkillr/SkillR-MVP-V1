@@ -89,7 +89,7 @@ AR_REPO="cloud-run-source-deploy"
 IMAGE_TAG="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPO}/${SERVICE}:${GIT_SHA}"
 
 info "Step 1/2: Building image locally..."
-docker build --build-arg GIT_SHA="$GIT_SHA" -t "$IMAGE_TAG" . && BUILD_OK=true || BUILD_OK=false
+docker build --platform linux/amd64 --build-arg GIT_SHA="$GIT_SHA" -t "$IMAGE_TAG" . && BUILD_OK=true || BUILD_OK=false
 
 if [ "$BUILD_OK" = true ]; then
   info "Pushing image to Artifact Registry..."
@@ -101,40 +101,44 @@ if [ "$BUILD_OK" = false ]; then
 else
   info "Step 2/2: Deploying to Cloud Run..."
 
-  # FR-057/FR-061: Write env vars to temp file (avoids secrets in ps aux)
-  ENVFILE=$(mktemp)
+  # FR-057/FR-061: Write env vars to temp YAML file (avoids secrets in ps aux)
+  # gcloud --env-vars-file expects YAML map format: KEY: "value"
+  ENVFILE=$(mktemp -t envvars.XXXXXX.yaml)
   trap 'rm -f "$ENVFILE"' EXIT
-  cat > "$ENVFILE" <<ENVEOF
-DATABASE_URL=${DATABASE_URL}
-GEMINI_API_KEY=${GEMINI_API_KEY}
-FIREBASE_API_KEY=${FIREBASE_API_KEY:-}
-FIREBASE_AUTH_DOMAIN=${FIREBASE_AUTH_DOMAIN:-}
-FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
-FIREBASE_STORAGE_BUCKET=${FIREBASE_STORAGE_BUCKET:-}
-FIREBASE_MESSAGING_SENDER_ID=${FIREBASE_MESSAGING_SENDER_ID:-}
-FIREBASE_APP_ID=${FIREBASE_APP_ID:-}
-GCP_PROJECT_ID=${GCP_PROJECT_ID}
-GCP_REGION=${GCP_REGION}
-GCP_TTS_REGION=${GCP_TTS_REGION:-europe-west1}
-GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/vertexai-sa.json
-HEALTH_CHECK_TOKEN=${HEALTH_CHECK_TOKEN:-}
-ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
-HONEYCOMB_URL=${HONEYCOMB_URL:-}
-HONEYCOMB_API_KEY=${HONEYCOMB_API_KEY:-}
-MEMORY_SERVICE_URL=${MEMORY_SERVICE_URL:-}
-MEMORY_SERVICE_API_KEY=${MEMORY_SERVICE_API_KEY:-}
-SOLID_POD_URL=${SOLID_POD_URL:-http://localhost:3000}
-SOLID_POD_ENABLED=${SOLID_POD_ENABLED:-false}
-SOLID_POD_ADMIN_EMAIL=${SOLID_POD_ADMIN_EMAIL:-admin@skillr.local}
-SOLID_POD_ADMIN_PASSWORD=${SOLID_POD_ADMIN_PASSWORD:-skillr}
-RUN_MIGRATIONS=true
-STATIC_DIR=/app/static
-MIGRATIONS_PATH=/app/migrations
-ENVEOF
+
+  # Helper: write YAML key-value pair with proper quoting
+  yaml_kv() { echo "$1: \"$2\"" >> "$ENVFILE"; }
+
+  : > "$ENVFILE"
+  yaml_kv DATABASE_URL "${DATABASE_URL}"
+  yaml_kv GEMINI_API_KEY "${GEMINI_API_KEY}"
+  yaml_kv FIREBASE_API_KEY "${FIREBASE_API_KEY:-}"
+  yaml_kv FIREBASE_AUTH_DOMAIN "${FIREBASE_AUTH_DOMAIN:-}"
+  yaml_kv FIREBASE_PROJECT_ID "${FIREBASE_PROJECT_ID:-}"
+  yaml_kv FIREBASE_STORAGE_BUCKET "${FIREBASE_STORAGE_BUCKET:-}"
+  yaml_kv FIREBASE_MESSAGING_SENDER_ID "${FIREBASE_MESSAGING_SENDER_ID:-}"
+  yaml_kv FIREBASE_APP_ID "${FIREBASE_APP_ID:-}"
+  yaml_kv GCP_PROJECT_ID "${GCP_PROJECT_ID}"
+  yaml_kv GCP_REGION "${GCP_REGION}"
+  yaml_kv GCP_TTS_REGION "${GCP_TTS_REGION:-europe-west1}"
+  yaml_kv GOOGLE_APPLICATION_CREDENTIALS "/app/credentials/vertexai-sa.json"
+  yaml_kv HEALTH_CHECK_TOKEN "${HEALTH_CHECK_TOKEN:-}"
+  yaml_kv ALLOWED_ORIGINS "${ALLOWED_ORIGINS:-}"
+  yaml_kv HONEYCOMB_URL "${HONEYCOMB_URL:-}"
+  yaml_kv HONEYCOMB_API_KEY "${HONEYCOMB_API_KEY:-}"
+  yaml_kv MEMORY_SERVICE_URL "${MEMORY_SERVICE_URL:-}"
+  yaml_kv MEMORY_SERVICE_API_KEY "${MEMORY_SERVICE_API_KEY:-}"
+  yaml_kv SOLID_POD_URL "${SOLID_POD_URL:-http://localhost:3000}"
+  yaml_kv SOLID_POD_ENABLED "${SOLID_POD_ENABLED:-false}"
+  yaml_kv SOLID_POD_ADMIN_EMAIL "${SOLID_POD_ADMIN_EMAIL:-admin@skillr.local}"
+  yaml_kv SOLID_POD_ADMIN_PASSWORD "${SOLID_POD_ADMIN_PASSWORD:-skillr}"
+  yaml_kv RUN_MIGRATIONS "true"
+  yaml_kv STATIC_DIR "/app/static"
+  yaml_kv MIGRATIONS_PATH "/app/migrations"
 
   # Only include admin seed credentials if explicitly set
-  [ -n "${ADMIN_SEED_EMAIL:-}" ] && echo "ADMIN_SEED_EMAIL=${ADMIN_SEED_EMAIL}" >> "$ENVFILE"
-  [ -n "${ADMIN_SEED_PASSWORD:-}" ] && echo "ADMIN_SEED_PASSWORD=${ADMIN_SEED_PASSWORD}" >> "$ENVFILE"
+  [ -n "${ADMIN_SEED_EMAIL:-}" ] && yaml_kv ADMIN_SEED_EMAIL "${ADMIN_SEED_EMAIL}"
+  [ -n "${ADMIN_SEED_PASSWORD:-}" ] && yaml_kv ADMIN_SEED_PASSWORD "${ADMIN_SEED_PASSWORD}"
 
   # Build deploy command with env-vars-file
   DEPLOY_CMD=(gcloud run deploy "$SERVICE"
