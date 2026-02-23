@@ -2,8 +2,6 @@
   <img src="frontend/public/icons/app-icon.png" alt="SkillR" width="120" />
 </p>
 
-<h1 align="center">SkillR</h1>
-
 <p align="center">
   <strong>Bist Du ein SkillR? — Die Reise nach VUCA.</strong><br/>
   AI-powered skill discovery for young people aged 14+.
