@@ -211,7 +211,7 @@ SkillR-MVP-V1/
 │   │   ├── honeycomb/            Lernreise tracking
 │   │   ├── memory/               User context sync
 │   │   └── middleware/           HTTP middleware
-│   └── migrations/               PostgreSQL migrations (000001..000023)
+│   └── migrations/               PostgreSQL migrations (000001..000027)
 │
 ├── specs/                     ← Allium behavioural specifications
 │   ├── vuca-journey.allium       VUCA journey domain model
