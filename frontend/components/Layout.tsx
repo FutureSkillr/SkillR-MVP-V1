@@ -9,6 +9,7 @@ import { BrandConfigEditor } from './admin/BrandConfigEditor';
 import { BusinessConfigTab } from './admin/BusinessConfigTab';
 import { CampaignDashboard } from './admin/CampaignDashboard';
 import { DialogTraceViewer } from './admin/DialogTraceViewer';
+import { ContentPackEditor } from './admin/ContentPackEditor';
 import { LegalFooter } from './legal/LegalFooter';
 import type { AuthUser } from '../types/auth';
 import type { AdminTab } from '../types/admin';
@@ -37,6 +38,7 @@ const ADMIN_LABELS: Record<AdminTab, string> = {
   roles: 'Rollen',
   brands: 'Partner-Brands',
   'meta-kurs': 'Content Editor',
+  'content-packs': 'Content Packs',
   analytics: 'Analytics',
   dialogs: 'Dialog-Trace',
   campaigns: 'Kampagnen',
@@ -226,6 +228,7 @@ export const Layout: React.FC<LayoutProps> = ({
               {adminTab === 'roles' && <RoleManager currentUser={authUser} />}
               {adminTab === 'brands' && <BrandConfigEditor />}
               {adminTab === 'meta-kurs' && <MetaKursEditor />}
+              {adminTab === 'content-packs' && <ContentPackEditor />}
               {adminTab === 'analytics' && <AnalyticsDashboard />}
               {adminTab === 'dialogs' && <DialogTraceViewer />}
               {adminTab === 'campaigns' && <CampaignDashboard />}

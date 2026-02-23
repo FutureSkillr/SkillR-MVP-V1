@@ -1,8 +1,11 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { fetchPartnerList } from '../services/partner';
+import type { PartnerSummary } from '../types/partner';
 
 interface WelcomePageProps {
   onGetStarted: () => void;
   onLogin?: () => void;
+  onPartnerClick?: (slug: string) => void;
   onNavigate?: (page: 'datenschutz' | 'impressum') => void;
   onOpenCookieSettings?: () => void;
 }
@@ -285,14 +288,56 @@ const MerchCarousel: React.FC = () => {
   );
 };
 
-export const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted, onLogin, onNavigate, onOpenCookieSettings }) => {
+export const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted, onLogin, onPartnerClick, onNavigate, onOpenCookieSettings }) => {
   const [activeStakeholder, setActiveStakeholder] = useState<Stakeholder>('kids');
+  const [euBarDismissed, setEuBarDismissed] = useState(false);
+  const [euBarHover, setEuBarHover] = useState(false);
+  const [partners, setPartners] = useState<PartnerSummary[]>([]);
+
+  useEffect(() => {
+    fetchPartnerList().then(setPartners);
+  }, []);
   const active = stakeholders.find((s) => s.key === activeStakeholder)!;
+  const euBarVisible = !euBarDismissed || euBarHover;
 
   return (
     <div className="min-h-screen">
-      {/* Nav */}
-      <nav className="glass fixed top-0 w-full z-50">
+      {/* EU Co-Funding Notice — FR-112, DFR-006, DFR-007: dismissable */}
+      <div
+        className="fixed top-0 w-full z-50 transition-all duration-300 ease-in-out"
+        onMouseEnter={() => euBarDismissed && setEuBarHover(true)}
+        onMouseLeave={() => setEuBarHover(false)}
+        style={{ height: euBarVisible ? undefined : '4px' }}
+      >
+        <div
+          className={`bg-slate-900/80 backdrop-blur-sm border-b border-white/5 transition-all duration-300 ease-in-out overflow-hidden ${
+            euBarVisible ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 relative">
+            <img
+              src="/icons/eu-co-funded-neg.png"
+              alt="Kofinanziert von der Europaeischen Union"
+              className="h-8 sm:h-10 w-auto"
+            />
+            <p className="text-[10px] sm:text-xs text-slate-400 text-center leading-snug max-w-2xl">
+              Das Projekt wird im Rahmen des Programms &bdquo;Zukunftsplattform f&uuml;r soziale Innovationen und Modellvorhaben&ldquo; mit einer Zuwendung in H&ouml;he von 95&nbsp;% der zuwendungsf&auml;higen Ausgaben durch die Europ&auml;ische Union kofinanziert.
+            </p>
+            {!euBarDismissed && (
+              <button
+                onClick={() => setEuBarDismissed(true)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                aria-label="EU-Hinweis ausblenden"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Nav — DFR-006: below EU bar, shifts up when EU bar dismissed */}
+      <nav className={`glass fixed w-full z-40 transition-all duration-300 ease-in-out ${euBarVisible ? 'top-[48px]' : 'top-0'}`}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/icons/app-icon.png" alt="SkillR" className="w-10 h-10 rounded-xl shadow-lg" />
@@ -308,20 +353,6 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted, onLogin,
           </button>
         </div>
       </nav>
-
-      {/* EU Co-Funding Notice — FR-112 */}
-      <div className="fixed top-[72px] w-full z-40 bg-slate-900/80 backdrop-blur-sm border-b border-white/5">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
-          <img
-            src="/icons/eu-co-funded-neg.png"
-            alt="Kofinanziert von der Europaeischen Union"
-            className="h-8 sm:h-10 w-auto"
-          />
-          <p className="text-[10px] sm:text-xs text-slate-400 text-center leading-snug max-w-2xl">
-            Das Projekt wird im Rahmen des Programms &bdquo;Zukunftsplattform f&uuml;r soziale Innovationen und Modellvorhaben&ldquo; mit einer Zuwendung in H&ouml;he von 95&nbsp;% der zuwendungsf&auml;higen Ausgaben durch die Europ&auml;ische Union kofinanziert.
-          </p>
-        </div>
-      </div>
 
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center pt-36 sm:pt-32 px-4 overflow-hidden">
@@ -424,6 +455,58 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted, onLogin,
           </div>
         </div>
       </section>
+
+      {/* Bildungspartner */}
+      {partners.length > 0 && (
+        <section className="py-20 px-4 sm:px-6">
+          <div className="max-w-5xl mx-auto space-y-10">
+            <div className="text-center space-y-4">
+              <div className="inline-block px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono tracking-wider">
+                PARTNER
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold">Unsere Bildungspartner</h2>
+              <p className="text-slate-400 max-w-xl mx-auto">
+                Entdecke Lernreisen von unseren Partnern — echte Orte, echte Geschichten.
+              </p>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {partners.map((partner) => (
+                <button
+                  key={partner.slug}
+                  onClick={() => onPartnerClick?.(partner.slug)}
+                  className="glass rounded-2xl p-6 space-y-4 hover:scale-[1.02] transition-transform cursor-pointer text-left"
+                >
+                  <div
+                    className="h-1 rounded-full w-16"
+                    style={{ backgroundColor: partner.theme.accentColor }}
+                  />
+                  <h3 className="text-lg font-bold text-white">{partner.brandName}</h3>
+                  <p className="text-sm text-slate-400 leading-relaxed">{partner.tagline}</p>
+                  <div className="flex items-center justify-between pt-2">
+                    {partner.lernreisenCount > 0 && (
+                      <span
+                        className="text-xs px-3 py-1 rounded-full font-medium"
+                        style={{
+                          backgroundColor: `${partner.theme.primaryColor}33`,
+                          color: partner.theme.accentColor,
+                        }}
+                      >
+                        {partner.lernreisenCount} Lernreise{partner.lernreisenCount !== 1 ? 'n' : ''}
+                      </span>
+                    )}
+                    <span
+                      className="text-xs font-semibold"
+                      style={{ color: partner.theme.accentColor }}
+                    >
+                      Erkunden &rarr;
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Stakeholder Universe */}
       <section id="universe" className="py-20 px-4 sm:px-6">
@@ -555,17 +638,19 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted, onLogin,
               ))}
             </div>
           </div>
-          {/* EU Co-Funding — FR-112 */}
-          <div className="flex flex-col items-center gap-2 border-t border-white/5 pt-4">
-            <img
-              src="/icons/eu-co-funded-neg.png"
-              alt="Kofinanziert von der Europaeischen Union"
-              className="h-8 sm:h-10 w-auto"
-            />
-            <p className="text-[10px] sm:text-xs text-slate-500 text-center leading-snug max-w-2xl">
-              Das Projekt wird im Rahmen des Programms &bdquo;Zukunftsplattform f&uuml;r soziale Innovationen und Modellvorhaben&ldquo; mit einer Zuwendung in H&ouml;he von 95&nbsp;% der zuwendungsf&auml;higen Ausgaben durch die Europ&auml;ische Union kofinanziert.
-            </p>
-          </div>
+          {/* EU Co-Funding — FR-112, DFR-007: only show in footer when top bar is dismissed */}
+          {euBarDismissed && (
+            <div className="flex flex-col items-center gap-2 border-t border-white/5 pt-4">
+              <img
+                src="/icons/eu-co-funded-neg.png"
+                alt="Kofinanziert von der Europaeischen Union"
+                className="h-8 sm:h-10 w-auto"
+              />
+              <p className="text-[10px] sm:text-xs text-slate-500 text-center leading-snug max-w-2xl">
+                Das Projekt wird im Rahmen des Programms &bdquo;Zukunftsplattform f&uuml;r soziale Innovationen und Modellvorhaben&ldquo; mit einer Zuwendung in H&ouml;he von 95&nbsp;% der zuwendungsf&auml;higen Ausgaben durch die Europ&auml;ische Union kofinanziert.
+              </p>
+            </div>
+          )}
           {/* Compliance links — DSGVO / TMG */}
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs text-slate-500 border-t border-white/5 pt-4">
             <button onClick={() => onNavigate?.('impressum')} className="hover:text-white transition-colors cursor-pointer min-h-[44px] inline-flex items-center">

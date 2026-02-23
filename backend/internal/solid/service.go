@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -43,18 +44,20 @@ func (s *Service) Connect(ctx context.Context, userID string, req ConnectRequest
 	}
 
 	username := sanitizeUsername(userID)
-	webID := podURL + "/" + username + "/profile/card#me"
+	// Store only the relative path so sync uses client.baseURL + path (no double-host)
+	podPath := "/" + username
+	webID := podURL + podPath + "/profile/card#me"
 
 	// Initialize Pod container structure
 	if err := s.initializePodStructure(ctx, username); err != nil {
 		return nil, fmt.Errorf("initialize pod structure: %w", err)
 	}
 
-	// Persist connection in database
+	// Persist connection in database — store relative path, not full URL
 	now := time.Now().UTC()
 	_, err := s.db.Exec(ctx,
 		`UPDATE users SET pod_url=$1, pod_webid=$2, pod_provider=$3, pod_connected_at=$4, pod_sync_status='connected' WHERE id=$5`,
-		podURL+"/"+username, webID, string(provider), now, userID,
+		podPath, webID, string(provider), now, userID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("save pod connection: %w", err)
@@ -62,7 +65,7 @@ func (s *Service) Connect(ctx context.Context, userID string, req ConnectRequest
 
 	return &PodConnection{
 		UserID:      userID,
-		PodURL:      podURL + "/" + username,
+		PodURL:      podURL + podPath,
 		WebID:       webID,
 		Provider:    provider,
 		ConnectedAt: &now,
@@ -136,7 +139,7 @@ func (s *Service) Sync(ctx context.Context, userID string, req SyncRequest) (*Sy
 		return nil, fmt.Errorf("database not available")
 	}
 
-	// Get Pod URL
+	// Get Pod path (relative path like /af95a07c-.../; older rows may contain full URLs)
 	var podURL *string
 	err := s.db.QueryRow(ctx, `SELECT pod_url FROM users WHERE id=$1`, userID).Scan(&podURL)
 	if err != nil {
@@ -146,10 +149,18 @@ func (s *Service) Sync(ctx context.Context, userID string, req SyncRequest) (*Sy
 		return nil, fmt.Errorf("no pod connected")
 	}
 
-	result := &SyncResult{}
+	// Normalize: strip scheme+host if a full URL was stored (legacy data)
+	podPath := normalizePodPath(*podURL)
+
+	result := &SyncResult{Errors: []string{}}
+
+	// Full overwrite: wipe all known resources, then recreate from scratch.
+	// CSS does not support recursive DELETE on non-empty containers, so we
+	// delete resources first (leaves), then containers bottom-up.
+	s.wipePodContents(ctx, podPath)
 
 	// 1. Sync user profile
-	if err := s.syncUserProfile(ctx, userID, *podURL); err != nil {
+	if err := s.syncUserProfile(ctx, userID, podPath); err != nil {
 		log.Printf("pod sync: user profile error: %v", err)
 		result.Errors = append(result.Errors, fmt.Sprintf("profile: %v", err))
 	} else {
@@ -157,7 +168,7 @@ func (s *Service) Sync(ctx context.Context, userID string, req SyncRequest) (*Sy
 	}
 
 	// 2. Sync skill profile
-	if err := s.syncSkillProfile(ctx, userID, *podURL); err != nil {
+	if err := s.syncSkillProfile(ctx, userID, podPath); err != nil {
 		log.Printf("pod sync: skill profile error: %v", err)
 		result.Errors = append(result.Errors, fmt.Sprintf("skill-profile: %v", err))
 	} else {
@@ -167,7 +178,7 @@ func (s *Service) Sync(ctx context.Context, userID string, req SyncRequest) (*Sy
 	// 3. Sync engagement (from request body, not DB)
 	if req.Engagement != nil {
 		turtle := SerializeEngagement(*req.Engagement)
-		if err := s.client.PutResource(ctx, *podURL+"/profile/engagement", turtle); err != nil {
+		if err := s.client.PutResource(ctx, podPath+"/profile/engagement", turtle); err != nil {
 			log.Printf("pod sync: engagement error: %v", err)
 			result.Errors = append(result.Errors, fmt.Sprintf("engagement: %v", err))
 		} else {
@@ -178,7 +189,7 @@ func (s *Service) Sync(ctx context.Context, userID string, req SyncRequest) (*Sy
 	// 4. Sync journey progress (from request body, not DB)
 	if req.JourneyProgress != nil {
 		turtle := SerializeJourneyProgress(*req.JourneyProgress)
-		if err := s.client.PutResource(ctx, *podURL+"/journey/vuca-state", turtle); err != nil {
+		if err := s.client.PutResource(ctx, podPath+"/journey/vuca-state", turtle); err != nil {
 			log.Printf("pod sync: journey progress error: %v", err)
 			result.Errors = append(result.Errors, fmt.Sprintf("journey: %v", err))
 		} else {
@@ -187,7 +198,7 @@ func (s *Service) Sync(ctx context.Context, userID string, req SyncRequest) (*Sy
 	}
 
 	// 5. Sync reflections
-	if err := s.syncReflections(ctx, userID, *podURL); err != nil {
+	if err := s.syncReflections(ctx, userID, podPath); err != nil {
 		log.Printf("pod sync: reflections error: %v", err)
 		result.Errors = append(result.Errors, fmt.Sprintf("reflections: %v", err))
 	} else {
@@ -228,6 +239,8 @@ func (s *Service) Data(ctx context.Context, userID string) (*PodData, error) {
 		return nil, fmt.Errorf("no pod connected")
 	}
 
+	podPath := normalizePodPath(*podURL)
+
 	data := &PodData{
 		Profile: make(map[string]any),
 		Journey: make(map[string]any),
@@ -235,7 +248,7 @@ func (s *Service) Data(ctx context.Context, userID string) (*PodData, error) {
 
 	// Read profile resources
 	for _, resource := range []string{"state", "skill-profile", "engagement"} {
-		content, err := s.client.GetResource(ctx, *podURL+"/profile/"+resource)
+		content, err := s.client.GetResource(ctx, podPath+"/profile/"+resource)
 		if err != nil {
 			log.Printf("pod data: read %s: %v", resource, err)
 			continue
@@ -244,7 +257,7 @@ func (s *Service) Data(ctx context.Context, userID string) (*PodData, error) {
 	}
 
 	// Read journey state
-	content, err := s.client.GetResource(ctx, *podURL+"/journey/vuca-state")
+	content, err := s.client.GetResource(ctx, podPath+"/journey/vuca-state")
 	if err != nil {
 		log.Printf("pod data: read journey: %v", err)
 	} else {
@@ -280,6 +293,58 @@ func (s *Service) initializePodStructure(ctx context.Context, username string) e
 	return nil
 }
 
+// wipePodContents removes all known resources and containers from the Pod
+// in leaf-to-root order. CSS requires containers to be empty before deletion,
+// so we delete resources first, then containers from deepest to shallowest.
+// Errors are logged but not fatal — resources may not exist (first sync).
+func (s *Service) wipePodContents(ctx context.Context, podPath string) {
+	// 1. Delete known resource files (leaves)
+	resources := []string{
+		podPath + "/profile/card",
+		podPath + "/profile/state",
+		podPath + "/profile/skill-profile",
+		podPath + "/profile/engagement",
+		podPath + "/journey/vuca-state",
+	}
+
+	// Also delete any reflections currently in the DB (they'll be re-created).
+	// Reflections not in the DB but still in the pod will remain — but since
+	// we also delete the reflections container itself, CSS will reject that
+	// only if unknown reflections exist. We query known IDs to clean them.
+	if s.db != nil {
+		rows, err := s.db.Query(ctx, `SELECT id FROM reflections WHERE user_id=$1`, podPath[1:])
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var id string
+				if rows.Scan(&id) == nil {
+					resources = append(resources, podPath+"/journal/reflections/"+id)
+				}
+			}
+		}
+	}
+
+	for _, r := range resources {
+		if err := s.client.DeleteResource(ctx, r); err != nil {
+			log.Printf("pod wipe: delete %s: %v", r, err)
+		}
+	}
+
+	// 2. Delete containers bottom-up (deepest first)
+	containers := []string{
+		podPath + "/journal/reflections",
+		podPath + "/journal",
+		podPath + "/journey",
+		podPath + "/profile",
+	}
+	for _, c := range containers {
+		if err := s.client.DeleteResource(ctx, c+"/"); err != nil {
+			log.Printf("pod wipe: delete container %s: %v", c, err)
+		}
+	}
+	// Note: we keep the root container (podPath/) so the Pod identity persists.
+}
+
 func (s *Service) syncUserProfile(ctx context.Context, userID, podURL string) error {
 	var user UserRow
 	err := s.db.QueryRow(ctx,
@@ -297,7 +362,7 @@ func (s *Service) syncUserProfile(ctx context.Context, userID, podURL string) er
 func (s *Service) syncSkillProfile(ctx context.Context, userID, podURL string) error {
 	var sp SkillProfileRow
 	err := s.db.QueryRow(ctx,
-		`SELECT id, user_id, categories, created_at FROM skill_profiles WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1`,
+		`SELECT id, user_id, skill_categories, created_at FROM skill_profiles WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1`,
 		userID,
 	).Scan(&sp.ID, &sp.UserID, &sp.Categories, &sp.CreatedAt)
 	if err != nil {
@@ -311,7 +376,7 @@ func (s *Service) syncSkillProfile(ctx context.Context, userID, podURL string) e
 
 func (s *Service) syncReflections(ctx context.Context, userID, podURL string) error {
 	rows, err := s.db.Query(ctx,
-		`SELECT id, user_id, question_id, answer, score, created_at FROM reflections WHERE user_id=$1`,
+		`SELECT id, user_id, question_id, response, capability_scores, created_at FROM reflections WHERE user_id=$1`,
 		userID,
 	)
 	if err != nil {
@@ -321,7 +386,7 @@ func (s *Service) syncReflections(ctx context.Context, userID, podURL string) er
 
 	for rows.Next() {
 		var r ReflectionRow
-		if err := rows.Scan(&r.ID, &r.UserID, &r.QuestionID, &r.Answer, &r.Score, &r.CreatedAt); err != nil {
+		if err := rows.Scan(&r.ID, &r.UserID, &r.QuestionID, &r.Response, &r.CapabilityScores, &r.CreatedAt); err != nil {
 			return fmt.Errorf("scan reflection: %w", err)
 		}
 		turtle := SerializeReflection(r)
@@ -331,6 +396,21 @@ func (s *Service) syncReflections(ctx context.Context, userID, podURL string) er
 	}
 
 	return rows.Err()
+}
+
+// normalizePodPath extracts the path component from a pod_url value.
+// New connections store a relative path (e.g. "/af95a07c-..."), but legacy
+// rows may contain a full URL (e.g. "http://localhost:3000/af95a07c-...").
+// Stripping the scheme+host prevents double-host URLs when the client
+// prepends its own baseURL.
+func normalizePodPath(raw string) string {
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Host == "" {
+		// Already a relative path
+		return raw
+	}
+	// Full URL — extract just the path
+	return parsed.Path
 }
 
 // sanitizeUsername creates a URL-safe Pod username from a user ID.

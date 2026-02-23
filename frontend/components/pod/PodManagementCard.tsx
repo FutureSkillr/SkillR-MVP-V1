@@ -9,6 +9,7 @@ interface PodManagementCardProps {
   onConnect: () => void;
   onDisconnect: () => void;
   onSync: () => void;
+  onViewData?: () => void;
 }
 
 function formatDate(iso: string | null): string {
@@ -31,6 +32,7 @@ export const PodManagementCard: React.FC<PodManagementCardProps> = ({
   onConnect,
   onDisconnect,
   onSync,
+  onViewData,
 }) => {
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
 
@@ -65,14 +67,28 @@ export const PodManagementCard: React.FC<PodManagementCardProps> = ({
             </p>
           </div>
         </div>
-        {!connected && (
-          <button
-            onClick={onConnect}
-            className="text-xs bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-medium py-2 px-4 rounded-lg hover:from-emerald-400 hover:to-blue-400 transition-all"
-          >
-            Verbinden
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {connected && onViewData && (
+            <button
+              onClick={onViewData}
+              className="w-8 h-8 rounded-lg glass flex items-center justify-center text-slate-400 hover:text-emerald-400 transition-colors"
+              title="Pod-Daten anzeigen"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          )}
+          {!connected && (
+            <button
+              onClick={onConnect}
+              className="text-xs bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-medium py-2 px-4 rounded-lg hover:from-emerald-400 hover:to-blue-400 transition-all"
+            >
+              Verbinden
+            </button>
+          )}
+        </div>
       </div>
 
       {connected && podState && (
@@ -100,7 +116,7 @@ export const PodManagementCard: React.FC<PodManagementCardProps> = ({
             </div>
           </div>
 
-          {syncResult && syncResult.errors.length === 0 && (
+          {syncResult && (syncResult.errors ?? []).length === 0 && (
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 text-center">
               <p className="text-emerald-400 text-xs">{syncResult.syncedEntities} Bereiche synchronisiert</p>
             </div>
@@ -133,6 +149,7 @@ export const PodManagementCard: React.FC<PodManagementCardProps> = ({
           </div>
         </>
       )}
+
     </div>
   );
 };

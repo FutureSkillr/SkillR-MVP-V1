@@ -3,6 +3,7 @@ import { UserAdmin } from './UserAdmin';
 import { RoleManager } from './RoleManager';
 import { MetaKursEditor } from './MetaKursEditor';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { ContentPackEditor } from './ContentPackEditor';
 import type { AuthUser } from '../../types/auth';
 import type { AdminTab } from '../../types/admin';
 
@@ -15,6 +16,7 @@ const TABS: { key: AdminTab; label: string }[] = [
   { key: 'users', label: 'Benutzer' },
   { key: 'roles', label: 'Rollen' },
   { key: 'meta-kurs', label: 'Meta Kurs Editor' },
+  { key: 'content-packs', label: 'Content Packs' },
   { key: 'analytics', label: 'Analytics' },
 ];
 
@@ -64,6 +66,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
         {tab === 'users' && <UserAdmin currentUser={currentUser} />}
         {tab === 'roles' && <RoleManager currentUser={currentUser} />}
         {tab === 'meta-kurs' && <MetaKursEditor />}
+        {tab === 'content-packs' && <ContentPackEditor />}
         {tab === 'analytics' && <AnalyticsDashboard />}
       </div>
     </div>

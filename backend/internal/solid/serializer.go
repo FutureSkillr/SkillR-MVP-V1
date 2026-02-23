@@ -96,8 +96,8 @@ func SerializeReflection(r ReflectionRow) string {
 	b.WriteString("<> a fs:Reflection ;\n")
 	fmt.Fprintf(&b, "    fs:reflectionId %q ;\n", r.ID)
 	fmt.Fprintf(&b, "    fs:questionId %q ;\n", r.QuestionID)
-	fmt.Fprintf(&b, "    fs:answer %q ;\n", r.Answer)
-	fmt.Fprintf(&b, "    fs:score \"%.2f\"^^xsd:decimal ;\n", r.Score)
+	fmt.Fprintf(&b, "    fs:response %q ;\n", r.Response)
+	fmt.Fprintf(&b, "    fs:capabilityScores %q ;\n", string(r.CapabilityScores))
 	fmt.Fprintf(&b, "    fs:createdAt %q^^xsd:dateTime .\n", r.CreatedAt.UTC().Format(time.RFC3339))
 	return b.String()
 }

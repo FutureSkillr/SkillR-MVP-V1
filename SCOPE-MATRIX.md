@@ -177,6 +177,9 @@ Each feature, concept, and architecture decision is classified into one of three
 | FR-111 | Frontend Passive Rendering | `[CORE]` | specified | No active components — all data from Go API |
 | FR-112 | EU Co-Funding Notice | `[CORE]` | in-progress | CFR: EU co-funding text + logo on landing pages and footers |
 | FR-113 | Meta Ad Campaign Tracking | `[CORE]` | in-progress | Campaign management admin panel + UTM/Meta Pixel wiring |
+| FR-119 | Partner Preview Page | `[CORE]` | specified | Public `?partner=slug` page showing partner branding + Lernreisen |
+| FR-120 | Partner Content Pack Admin | `[CORE]` | specified | Admin `?partner-admin=slug` page for managing partner content |
+| FR-121 | Space Service International Example Partner | `[CORE]` | specified | SSI seed data, brand config, fallback constants |
 
 ### V2.0 — SkillR-Specific Features (SELECT)
 

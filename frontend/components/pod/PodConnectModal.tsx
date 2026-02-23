@@ -252,7 +252,7 @@ const PodSyncStep: React.FC<{
         <p className="text-slate-400">Daten werden synchronisiert...</p>
       </>
     )}
-    {!loading && result && result.errors.length === 0 && (
+    {!loading && result && (result.errors ?? []).length === 0 && (
       <>
         <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-full flex items-center justify-center mx-auto shadow-[0_0_40px_rgba(16,185,129,0.3)]">
           <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -271,7 +271,7 @@ const PodSyncStep: React.FC<{
         </button>
       </>
     )}
-    {!loading && result && result.errors.length > 0 && (
+    {!loading && result && (result.errors ?? []).length > 0 && (
       <>
         <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto">
           <svg className="w-8 h-8 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -279,7 +279,7 @@ const PodSyncStep: React.FC<{
           </svg>
         </div>
         <p className="text-yellow-400 text-sm">
-          {result.syncedEntities} synchronisiert, {result.errors.length} Fehler
+          {result.syncedEntities} synchronisiert, {(result.errors ?? []).length} Fehler
         </p>
         <button onClick={onDone} className="glass px-6 py-2 rounded-xl text-sm text-slate-300 hover:text-white transition-colors">
           Schliessen

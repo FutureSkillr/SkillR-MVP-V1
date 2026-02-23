@@ -1,4 +1,4 @@
-export type AdminTab = 'users' | 'roles' | 'brands' | 'meta-kurs' | 'analytics' | 'dialogs' | 'campaigns' | 'legal';
+export type AdminTab = 'users' | 'roles' | 'brands' | 'meta-kurs' | 'content-packs' | 'analytics' | 'dialogs' | 'campaigns' | 'legal';
 
 export interface EditablePrompts {
   onboarding: string;

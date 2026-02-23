@@ -64,6 +64,27 @@ func (r *BrandRepository) List(ctx context.Context) ([]BrandConfig, error) {
 	return brands, rows.Err()
 }
 
+func (r *BrandRepository) ListActive(ctx context.Context) ([]BrandConfig, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT slug, config, is_active, created_at, updated_at, updated_by
+		 FROM brand_configs WHERE is_active = true ORDER BY created_at DESC`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list active brands: %w", err)
+	}
+	defer rows.Close()
+
+	var brands []BrandConfig
+	for rows.Next() {
+		var b BrandConfig
+		if err := rows.Scan(&b.Slug, &b.Config, &b.IsActive, &b.CreatedAt, &b.UpdatedAt, &b.UpdatedBy); err != nil {
+			return nil, fmt.Errorf("scan brand row: %w", err)
+		}
+		brands = append(brands, b)
+	}
+	return brands, rows.Err()
+}
+
 func (r *BrandRepository) Create(ctx context.Context, slug string, config json.RawMessage, updatedBy string) error {
 	now := time.Now()
 	_, err := r.pool.Exec(ctx,

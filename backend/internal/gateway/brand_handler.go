@@ -96,6 +96,42 @@ func (h *BrandHandler) List(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
+// ListPublic handles GET /api/v1/partners — public.
+// Returns simplified partner summaries (no legal/admin fields).
+func (h *BrandHandler) ListPublic(c echo.Context) error {
+	if !h.dbReady() {
+		return echo.NewHTTPError(http.StatusServiceUnavailable, "database not available")
+	}
+
+	brands, err := h.repo.ListActive(c.Request().Context())
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to list partners")
+	}
+
+	var result []map[string]interface{}
+	for _, b := range brands {
+		var config map[string]interface{}
+		if json.Unmarshal(b.Config, &config) != nil {
+			continue
+		}
+
+		entry := map[string]interface{}{
+			"slug": b.Slug,
+		}
+		// Pick only public-safe fields from the config
+		for _, key := range []string{"brandName", "brandNameShort", "tagline", "theme", "sponsorLabel"} {
+			if v, ok := config[key]; ok {
+				entry[key] = v
+			}
+		}
+		result = append(result, entry)
+	}
+	if result == nil {
+		result = []map[string]interface{}{}
+	}
+	return c.JSON(http.StatusOK, result)
+}
+
 // Create handles POST /api/brand — admin.
 func (h *BrandHandler) Create(c echo.Context) error {
 	if !h.dbReady() {

@@ -1,18 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { getJourneysAsDefinitions, getStationCountPerJourney } from '../services/contentResolver';
+import { fetchPartnerList } from '../services/partner';
 import type { JourneyType } from '../types/journey';
 import type { JourneyProgress } from '../types/user';
+import type { PartnerSummary } from '../types/partner';
 
 interface LandingPageProps {
   onStart: () => void;
   onSelectJourney: (journey: JourneyType) => void;
   onViewProfile?: () => void;
+  onPartnerClick?: (slug: string) => void;
   journeyProgress?: Record<JourneyType, JourneyProgress>;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onSelectJourney, onViewProfile, journeyProgress }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onSelectJourney, onViewProfile, onPartnerClick, journeyProgress }) => {
   const journeyList = Object.values(getJourneysAsDefinitions());
   const stationCounts = getStationCountPerJourney();
+  const [partners, setPartners] = useState<PartnerSummary[]>([]);
+
+  useEffect(() => {
+    fetchPartnerList().then(setPartners);
+  }, []);
 
   const hasAnyProgress = journeyProgress && Object.values(journeyProgress).some(
     (p) => p.stationsCompleted > 0
@@ -176,6 +184,51 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onSelectJourn
           ))}
         </div>
       </section>
+
+      {/* Partners Section */}
+      {partners.length > 0 && (
+        <section className="space-y-6">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold">Unsere Bildungspartner</h2>
+            <p className="text-slate-400 text-sm">Entdecke Lernreisen von unseren Partnern</p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {partners.map((partner) => (
+              <button
+                key={partner.slug}
+                onClick={() => onPartnerClick?.(partner.slug)}
+                className="glass rounded-2xl p-6 space-y-4 hover:scale-[1.02] transition-transform cursor-pointer text-left"
+              >
+                <div
+                  className="h-1 rounded-full w-16"
+                  style={{ backgroundColor: partner.theme.accentColor }}
+                />
+                <h3 className="text-lg font-bold text-white">{partner.brandName}</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">{partner.tagline}</p>
+                <div className="flex items-center justify-between pt-2">
+                  {partner.lernreisenCount > 0 && (
+                    <span
+                      className="text-xs px-3 py-1 rounded-full font-medium"
+                      style={{
+                        backgroundColor: `${partner.theme.primaryColor}33`,
+                        color: partner.theme.accentColor,
+                      }}
+                    >
+                      {partner.lernreisenCount} Lernreise{partner.lernreisenCount !== 1 ? 'n' : ''}
+                    </span>
+                  )}
+                  <span
+                    className="text-xs font-semibold"
+                    style={{ color: partner.theme.accentColor }}
+                  >
+                    Erkunden &rarr;
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Bottom CTA */}
       <section className="text-center py-8">

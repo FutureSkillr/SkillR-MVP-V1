@@ -55,7 +55,8 @@ func (c *HTTPClient) CreateContainer(ctx context.Context, path string) error {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+	// 409 = container already exists — not an error
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusResetContent && resp.StatusCode != http.StatusConflict {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("create container %s: status %d: %s", path, resp.StatusCode, string(body))
 	}
@@ -77,7 +78,7 @@ func (c *HTTPClient) PutResource(ctx context.Context, path string, turtle string
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusResetContent {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("put resource %s: status %d: %s", path, resp.StatusCode, string(body))
 	}

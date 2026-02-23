@@ -209,10 +209,10 @@ type SkillProfileRow struct {
 
 // ReflectionRow represents a reflection from the database.
 type ReflectionRow struct {
-	ID         string
-	UserID     string
-	QuestionID string
-	Answer     string
-	Score      float64
-	CreatedAt  time.Time
+	ID               string
+	UserID           string
+	QuestionID       string
+	Response         string
+	CapabilityScores []byte // JSONB
+	CreatedAt        time.Time
 }

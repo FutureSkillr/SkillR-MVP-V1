@@ -11,6 +11,10 @@ import {
 import { getJourneysAsDefinitions, getAllDimensions, getStations } from '../services/contentResolver';
 import { COACHES } from '../constants/coaches';
 import { CoachCard } from './intro/CoachCard';
+import { PodManagementCard } from './pod/PodManagementCard';
+import { PodConnectModal } from './pod/PodConnectModal';
+import { PodDataViewerModal } from './pod/PodDataViewerModal';
+import { usePodConnection } from '../hooks/usePodConnection';
 import type { UserProfile } from '../types/user';
 import type { CoachId } from '../types/intro';
 import type { StationResult, JourneyType } from '../types/journey';
@@ -108,6 +112,10 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
   onSelectJourney,
   onCoachChange,
 }) => {
+  // FR-076/077/078: Solid Pod connection
+  const pod = usePodConnection({ enabled: true });
+  const [podDataOpen, setPodDataOpen] = useState(false);
+
   // FR-070 AC8: 3-tier responsive radar chart sizing
   const [radarSize, setRadarSize] = useState(() =>
     typeof window !== 'undefined'
@@ -349,6 +357,21 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
         );
       })()}
 
+      {/* Solid Pod — FR-076/077/078 */}
+      <PodManagementCard
+        podState={pod.podState}
+        loading={pod.loading}
+        syncResult={pod.syncResult}
+        error={pod.error}
+        onConnect={pod.openModal}
+        onDisconnect={pod.disconnect}
+        onSync={() => pod.sync({
+          engagement: { totalXP: 0, level: 1, streak: 0, title: 'Entdecker' },
+          journeyProgress: {},
+        })}
+        onViewData={() => setPodDataOpen(true)}
+      />
+
       {/* Actions */}
       <div className="flex gap-4 justify-center pt-4">
         <button
@@ -364,6 +387,26 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
           Nächste Reise starten
         </button>
       </div>
+
+      {/* Pod Data Viewer Modal */}
+      <PodDataViewerModal open={podDataOpen} onClose={() => setPodDataOpen(false)} />
+
+      {/* Pod Connect Modal — FR-076 */}
+      {pod.modalOpen && (
+        <PodConnectModal
+          open={pod.modalOpen}
+          step={pod.modalStep}
+          permissions={pod.permissions}
+          loading={pod.loading}
+          syncResult={pod.syncResult}
+          error={pod.error}
+          onClose={pod.closeModal}
+          onSetStep={pod.setStep}
+          onTogglePermission={pod.togglePermission}
+          onConnect={pod.connect}
+          onSync={pod.sync}
+        />
+      )}
     </div>
   );
 };

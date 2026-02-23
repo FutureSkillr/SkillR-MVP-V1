@@ -315,7 +315,7 @@
 <div class="header">
   <h1>Future SkillR — Roadmap Status Report</h1>
   <div class="subtitle">Product development status across all phases and entities</div>
-  <div class="date">Generated: 2026-02-22 &nbsp;|&nbsp; Source: docs/ROADMAP.md &nbsp;|&nbsp; Branch: claude/ecstatic-joliot</div>
+  <div class="date">Generated: 2026-02-23 &nbsp;|&nbsp; Source: docs/ROADMAP.md &nbsp;|&nbsp; Branch: main</div>
   <div class="entity-row">
     <span class="entity-badge entity-skillr">SkillR — Kids Education Brand &amp; Sub-Branding Provider</span>
     <span class="entity-badge entity-academy">maindset.ACADEMY — New Learning Education Brand</span>
@@ -326,28 +326,43 @@
 <!-- Overview Stats -->
 <div class="overview">
   <div class="stat-card complete">
-    <div class="number">4</div>
-    <div class="label">Phases Complete</div>
-  </div>
-  <div class="stat-card complete">
-    <div class="number">26</div>
+    <div class="number">33</div>
     <div class="label">FRs Done</div>
   </div>
   <div class="stat-card active">
-    <div class="number">13</div>
-    <div class="label">V1.0 FRs Next</div>
+    <div class="number">19</div>
+    <div class="label">In Progress</div>
   </div>
   <div class="stat-card planned">
-    <div class="number">8+2+11</div>
-    <div class="label">MVP5 + MVP6 + V2</div>
+    <div class="number">56</div>
+    <div class="label">Draft</div>
+  </div>
+  <div class="stat-card planned">
+    <div class="number">1</div>
+    <div class="label">Specified</div>
   </div>
   <div class="stat-card complete">
-    <div class="number">56</div>
-    <div class="label">Tests Passing</div>
+    <div class="number">30%</div>
+    <div class="label">Overall Progress</div>
   </div>
   <div class="stat-card active">
-    <div class="number">97</div>
+    <div class="number">109</div>
     <div class="label">Total FRs</div>
+  </div>
+</div>
+
+<!-- Overall Progress Bars -->
+<div style="margin-bottom:2.5rem;">
+  <div class="progress-container">
+    <div class="progress-label"><span>Done: 33 of 109 FRs</span><span>30%</span></div>
+    <div class="progress-bar"><div class="progress-fill green" style="width:30%"></div></div>
+  </div>
+  <div class="progress-container" style="margin-top:0.75rem;">
+    <div class="progress-label"><span>In Progress: 19 of 109 FRs</span><span>17%</span></div>
+    <div class="progress-bar"><div class="progress-fill blue" style="width:17%"></div></div>
+  </div>
+  <div style="display:flex; gap:1.5rem; margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">
+    <span>Priority: <strong style="color:var(--red);">62 must</strong> &nbsp;|&nbsp; <strong style="color:var(--yellow);">37 should</strong> &nbsp;|&nbsp; <strong>10 could</strong></span>
   </div>
 </div>
 
@@ -567,21 +582,21 @@
   </div>
 </div>
 
-<!-- ═══════════════ V1.0 ═══════════════ -->
+<!-- ═══════════════ SkillR V1.0 ═══════════════ -->
 <div class="phase">
   <div class="phase-header">
     <div class="phase-title">
-      <h2>V1.0</h2>
-      <span class="codename">"Zeig es der Welt"</span>
+      <h2>SkillR V1.0</h2>
+      <span class="codename">"Erste Reise"</span>
     </div>
-    <span class="status-badge status-next">Next Up</span>
+    <span class="status-badge status-next">In Progress</span>
   </div>
   <div class="phase-body">
-    <div class="phase-goal">Production launch. DSGVO compliance for minors, real job data, knowledge grounding, parent visibility. Ready for IHK pilot with 100+ users.</div>
+    <div class="phase-goal">Production-ready SkillR app for IHK pilot. DSGVO-compliant, role-based views, parent dashboard. Ready for 100+ users.</div>
 
     <div class="progress-container">
-      <div class="progress-label"><span>7 of 13 FRs in progress, 2 done</span><span>15%</span></div>
-      <div class="progress-bar"><div class="progress-fill blue" style="width:15%"></div></div>
+      <div class="progress-label"><span>41 of 55 CORE FRs done, 7 in-progress, 7 draft</span><span>75%</span></div>
+      <div class="progress-bar"><div class="progress-fill green" style="width:75%"></div></div>
     </div>
 
     <table class="fr-table">
@@ -589,19 +604,62 @@
         <tr><th>FR</th><th>Feature</th><th>Priority</th><th>Status</th></tr>
       </thead>
       <tbody>
+        <tr><td colspan="4" style="color:var(--green); font-weight:600; padding-top:0.75rem;">Already Built (41 FRs done)</td></tr>
+        <tr><td class="fr-id">FR-001</td><td>Social Login (Google OAuth)</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span> Google works; Apple/Meta remaining</td></tr>
+        <tr><td class="fr-id">FR-002</td><td>Email-Password Login</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-003</td><td>Firebase Persistence</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-004</td><td>Interest-Based Journey Entry</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-005</td><td>Gemini Dialogue Engine</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-006</td><td>VUCA Navigation + Gegensatzsuche</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-007</td><td>VUCA Bingo Matrix</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-008</td><td>Skill Profile Generation</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-009</td><td>Profile Visualization</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-010</td><td>AI Coach Voice (TTS)</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-011</td><td>Text/Voice Switching</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-012</td><td>Session Continuity</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-013</td><td>Web App Deployment</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-014</td><td>Interest Profile Tracking</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-020</td><td>Level 2 Reflection Engine</td><td class="priority-should">should</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-026</td><td>Micro-Session UX (5 min)</td><td class="priority-should">should</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-031</td><td>3D World Globe Interface</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-032</td><td>Transit Audio Mode</td><td class="priority-should">should</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-038</td><td>Duolingo-Style Engagement</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-039</td><td>Prompt Tracking</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-040</td><td>Docker &amp; Cloud Run</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-041</td><td>Makefile</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-042</td><td>CI/CD Pipeline</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-043</td><td>Admin Panel (5-tab)</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-044</td><td>Role Management</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-045</td><td>Meta Kurs Editor</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-046</td><td>User Administration</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-047</td><td>Management Console</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-048</td><td>Journey Progress Cards</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-049</td><td>Profile + Activity History</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-050</td><td>Clickstream Analytics</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-051</td><td>Secure API Gateway</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-052</td><td>Docker Compose Local Staging</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-076</td><td>Solid Pod Connection</td><td class="priority-should">should</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-077</td><td>Pod Data Sync</td><td class="priority-should">should</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-078</td><td>Pod Data Viewer</td><td class="priority-could">could</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">FR-086</td><td>Partner Branding System</td><td class="priority-should">should</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">DFR-001</td><td>App Icon Integration</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td class="fr-id">DFR-002</td><td>Brand Name Consistency</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td colspan="4" style="color:var(--muted); font-size:0.8rem; font-style:italic; padding-top:0.25rem;">+ 2 additional completed FRs from MVP1-MVP4 scope</td></tr>
+
+        <tr><td colspan="4" style="color:var(--blue); font-weight:600; padding-top:0.75rem;">In Progress (7 FRs)</td></tr>
         <tr><td class="fr-id">FR-070</td><td>Mobile-First Campaign UI Redesign</td><td class="priority-must">must</td><td><span class="fr-status fr-partial">In Progress</span></td></tr>
         <tr><td class="fr-id">FR-071</td><td>GCP Terraform Infrastructure as Code</td><td class="priority-should">should</td><td><span class="fr-status fr-partial">In Progress</span></td></tr>
         <tr><td class="fr-id">FR-072</td><td>Honeycomb Service Configuration</td><td class="priority-must">must</td><td><span class="fr-status fr-partial">In Progress</span></td></tr>
         <tr><td class="fr-id">FR-073</td><td>User Context Synchronization</td><td class="priority-must">must</td><td><span class="fr-status fr-partial">In Progress</span></td></tr>
         <tr><td class="fr-id">FR-074</td><td>Lernreise Catalog and Selection</td><td class="priority-must">must</td><td><span class="fr-status fr-partial">In Progress</span></td></tr>
         <tr><td class="fr-id">FR-075</td><td>Lernprogress Tracking</td><td class="priority-must">must</td><td><span class="fr-status fr-partial">In Progress</span></td></tr>
-        <tr><td class="fr-id">FR-001</td><td>Social Login (Google, Apple, Meta)</td><td class="priority-must">must</td><td><span class="fr-status fr-todo">Draft</span></td></tr>
+        <tr><td class="fr-id">FR-001</td><td>Social Login (complete Apple + Meta)</td><td class="priority-must">must</td><td><span class="fr-status fr-partial">In Progress</span></td></tr>
+
+        <tr><td colspan="4" style="color:var(--muted); font-weight:600; padding-top:0.75rem;">Remaining (7 FRs draft)</td></tr>
         <tr><td class="fr-id">FR-033</td><td>Datenschutz for Minors (DSGVO/GDPR Compliance Framework)</td><td class="priority-must">must</td><td><span class="fr-status fr-todo">Draft</span></td></tr>
         <tr><td class="fr-id">FR-027</td><td>Rollenbasierte App-Ansichten (Role-Based App Views)</td><td class="priority-should">should</td><td><span class="fr-status fr-todo">Draft</span></td></tr>
         <tr><td class="fr-id">FR-025</td><td>Eltern-Dashboard</td><td class="priority-could">could</td><td><span class="fr-status fr-todo">Draft</span></td></tr>
-        <tr><td class="fr-id">DFR-001</td><td>App Icon Integration</td><td class="priority-must">must</td><td><span class="fr-status fr-partial">In Progress</span></td></tr>
-        <tr><td class="fr-id">DFR-002</td><td>Brand Name Consistency</td><td class="priority-must">must</td><td><span class="fr-status fr-done">Done</span></td></tr>
-        <tr><td class="fr-id">FR-086</td><td>Partner Branding System</td><td class="priority-should">should</td><td><span class="fr-status fr-done">Done</span></td></tr>
+        <tr><td colspan="4" style="color:var(--muted); font-size:0.8rem; font-style:italic; padding-top:0.25rem;">+ 4 additional draft FRs for V1.0 scope</td></tr>
       </tbody>
     </table>
 
@@ -621,138 +679,90 @@
   </div>
 </div>
 
-<!-- ═══════════════ MVP5 ═══════════════ -->
+<!-- ═══════════════ SkillR V1.1 ═══════════════ -->
 <div class="phase">
   <div class="phase-header">
     <div class="phase-title">
-      <h2>MVP5</h2>
-      <span class="codename">"Sponsor Showrooms"</span>
+      <h2>SkillR V1.1</h2>
+      <span class="codename">"Mehr entdecken"</span>
     </div>
     <span class="status-badge status-planned">Planned</span>
   </div>
   <div class="phase-body">
-    <div class="phase-goal">Multi-tenant B2B platform where companies sponsor skills and earn visibility. Branded micro-sites at <code>{slug}.maindset.academy</code>.</div>
+    <div class="phase-goal">Enhanced experience. Toggle on SELECT features that improve the user journey. Candidate features from the SELECT pool.</div>
 
     <div class="progress-container">
-      <div class="progress-label"><span>1 of 8 FRs done — depends on V1.0</span><span>13%</span></div>
-      <div class="progress-bar"><div class="progress-fill yellow" style="width:13%"></div></div>
-    </div>
-
-    <table class="fr-table">
-      <thead>
-        <tr><th>FR</th><th>Feature</th><th>Priority</th><th>Phase</th></tr>
-      </thead>
-      <tbody>
-        <tr><td class="fr-id">FR-079</td><td>Sponsor Showrooms</td><td class="priority-must">must</td><td>MVP5.1</td></tr>
-        <tr><td class="fr-id">FR-080</td><td>Lernreise Editor (Tiered)</td><td class="priority-must">must</td><td>MVP5.3</td></tr>
-        <tr><td class="fr-id">FR-081</td><td>Sponsor Analytics Dashboard</td><td class="priority-should">should</td><td>MVP5.4</td></tr>
-        <tr><td class="fr-id">FR-082</td><td>Stripe Subscription Management</td><td class="priority-must">must</td><td>MVP5.3</td></tr>
-        <tr><td class="fr-id">FR-086</td><td>Partner Branding System</td><td class="priority-should">should</td><td><span class="fr-status fr-done">Done</span></td></tr>
-        <tr><td class="fr-id">FR-022</td><td>Company Profile → Showroom</td><td class="priority-should">should</td><td>MVP5.1</td></tr>
-        <tr><td class="fr-id">FR-028</td><td>Sponsored Content → Skill Showcase</td><td class="priority-should">should</td><td>MVP5.4</td></tr>
-        <tr><td class="fr-id">FR-029</td><td>Multiplikatoren → Sponsor Onboarding</td><td class="priority-should">should</td><td>MVP5.2</td></tr>
-      </tbody>
-    </table>
-
-    <div class="exit-criteria">
-      <h4>Implementation Phases</h4>
-      <ul class="criteria-list">
-        <li class="pending"><strong>MVP5.1</strong> — Foundation: DB, CRUD, TenantResolver, showroom pages, wildcard DNS (2-3 weeks)</li>
-        <li class="pending"><strong>MVP5.2</strong> — Dashboard: 7-step wizard, 7-tab dashboard, theming (2-3 weeks)</li>
-        <li class="pending"><strong>MVP5.3</strong> — Journeys: Lernreise editor, Stripe, trial logic (2-3 weeks)</li>
-        <li class="pending"><strong>MVP5.4</strong> — Integration: LLM context, referral tracking, analytics (1-2 weeks)</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ V2.0 ═══════════════ -->
-<div class="phase">
-  <div class="phase-header">
-    <div class="phase-title">
-      <h2>MVP6</h2>
-      <span class="codename">"Oekosystem"</span>
-    </div>
-    <span class="status-badge status-future">Future</span>
-  </div>
-  <div class="phase-body">
-    <div class="phase-goal">Chamber-specific ecosystem. Chambers manage apprenticeship landscapes, demand signals feed into matching. Revenue through matching fees.</div>
-
-    <div class="progress-container">
-      <div class="progress-label"><span>0 of 2 FRs — depends on MVP5</span><span>0%</span></div>
-
+      <div class="progress-label"><span>0 FRs started — depends on V1.0 completion</span><span>0%</span></div>
       <div class="progress-bar"><div class="progress-fill yellow" style="width:0%"></div></div>
     </div>
 
     <table class="fr-table">
       <thead>
-        <tr><th>FR</th><th>Feature</th><th>Priority</th></tr>
+        <tr><th>FR</th><th>Feature</th><th>Impact</th><th>Effort</th></tr>
       </thead>
       <tbody>
-        <tr><td class="fr-id">FR-021</td><td>Chamber Dashboard</td><td class="priority-could">could</td></tr>
-        <tr><td class="fr-id">FR-023</td><td>Bedarfserfassung der Kammern</td><td class="priority-could">could</td></tr>
-        <tr><td colspan="3" style="color:var(--muted); font-style:italic;">+ Matching revenue (BC-001, BC-002, BC-009), chamber-company relationships, demand-weighted matching</td></tr>
+        <tr><td class="fr-id">FR-016</td><td>Wikipedia Knowledge Service</td><td>Grounds AI responses with facts</td><td>Medium</td></tr>
+        <tr><td class="fr-id">FR-017</td><td>Job Portal Data Service</td><td>Real German job data</td><td>Medium</td></tr>
+        <tr><td class="fr-id">FR-018</td><td>Job-Navigator Engine</td><td>Shows career possibilities</td><td>High</td></tr>
+        <tr><td class="fr-id">FR-024</td><td>AI Multi-Agent Reisebegleiter</td><td>Advanced coaching</td><td>High</td></tr>
+        <tr><td class="fr-id">FR-034</td><td>UI Theme System</td><td>Visual customization</td><td>Medium</td></tr>
+        <tr><td class="fr-id">FR-030</td><td>Third-Party Skill Endorsement</td><td>External validation</td><td>Medium</td></tr>
+        <tr><td class="fr-id">FR-015</td><td>GeoQB / OpenStreetMap</td><td>Location-based features</td><td>Low</td></tr>
+        <tr><td class="fr-id">FR-019</td><td>Multimodal Storage Layer</td><td>Richer content</td><td>Medium</td></tr>
+        <tr><td class="fr-id">FR-053</td><td>Agent Consent Dashboard</td><td>Advanced consent</td><td>Low</td></tr>
       </tbody>
     </table>
 
     <div class="exit-criteria">
-      <h4>Exit Criteria</h4>
+      <h4>Selection Criteria</h4>
       <ul class="criteria-list">
-        <li class="pending">Chambers can see apprenticeship landscape</li>
-        <li class="pending">Matching revenue model generates first income</li>
-        <li class="pending">Chamber-company relationships managed through platform</li>
-        <li class="pending">1000+ users in IHK pilot regions</li>
+        <li class="pending">Directly improves user experience for teens (14+)</li>
+        <li class="pending">Creates demonstrable value for IHK pilot</li>
+        <li class="pending">Can be built within 1-2 sprints</li>
+        <li class="pending">Does NOT require platform-level infrastructure changes</li>
       </ul>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════ V3.0 ═══════════════ -->
+<!-- ═══════════════ SkillR V2.0 ═══════════════ -->
 <div class="phase">
   <div class="phase-header">
     <div class="phase-title">
-      <h2>V2.0</h2>
-      <span class="codename">"SkillR on maindfull.LEARNING"</span>
+      <h2>SkillR V2.0</h2>
+      <span class="codename">"Partner &amp; Sponsoren"</span>
     </div>
-    <span class="status-badge status-future">Future</span>
+    <span class="status-badge status-future">Planned</span>
   </div>
   <div class="phase-body">
-    <div class="phase-goal">Full integration with maindset.ACADEMY system. Lernziel catalog, Rahmenlernplan mapping, skill dependencies, content lifecycle, three-layer role model, SkillR client branding on maindfull.LEARNING.</div>
+    <div class="phase-goal">B2B sponsor integration. Companies sponsor skills and learning journeys. Revenue through Bildungssponsoring.</div>
 
     <div class="progress-container">
-      <div class="progress-label"><span>0 of 11 FRs — depends on MVP6</span><span>0%</span></div>
+      <div class="progress-label"><span>0 FRs started — depends on V1.0 stable with real users</span><span>0%</span></div>
       <div class="progress-bar"><div class="progress-fill yellow" style="width:0%"></div></div>
     </div>
 
     <table class="fr-table">
       <thead>
-        <tr><th>FR</th><th>Feature</th><th>Priority</th></tr>
+        <tr><th>FR</th><th>Feature</th><th>Priority</th><th>Notes</th></tr>
       </thead>
       <tbody>
-        <tr><td class="fr-id">FR-083</td><td>i18n Framework</td><td class="priority-must">must</td></tr>
-        <tr><td class="fr-id">FR-084</td><td>Multilingual AI Coaches</td><td class="priority-should">should</td></tr>
-        <tr><td class="fr-id">FR-085</td><td>Language Selection UI</td><td class="priority-must">must</td></tr>
-        <tr><td class="fr-id">FR-087</td><td>PodProxy Federation</td><td class="priority-should">should</td></tr>
-        <tr><td class="fr-id">FR-088</td><td>SkillR Profile Pod Storage</td><td class="priority-must">must</td></tr>
-        <tr><td class="fr-id">FR-089</td><td>Lernreise Content CLI</td><td class="priority-must">must</td></tr>
-        <tr><td class="fr-id">FR-090</td><td>ER1 Sync Service</td><td class="priority-must">must</td></tr>
-        <tr><td class="fr-id">FR-091</td><td>AI Candidate Generation</td><td class="priority-should">should</td></tr>
-        <tr><td class="fr-id">FR-092</td><td>Memory Insights Processor</td><td class="priority-should">should</td></tr>
-        <tr><td class="fr-id">FR-093</td><td>Lernreise REST API</td><td class="priority-must">must</td></tr>
-        <tr><td class="fr-id">FR-094</td><td>Report Generation Pipeline</td><td class="priority-could">could</td></tr>
+        <tr><td class="fr-id">FR-079</td><td>Sponsor Showrooms</td><td class="priority-must">must</td><td>Multi-tenant sponsor micro-sites</td></tr>
+        <tr><td class="fr-id">FR-080</td><td>Lernreise Editor (Tiered)</td><td class="priority-must">must</td><td>Content customization for sponsors</td></tr>
+        <tr><td class="fr-id">FR-081</td><td>Sponsor Analytics Dashboard</td><td class="priority-should">should</td><td>B2B analytics</td></tr>
+        <tr><td class="fr-id">FR-082</td><td>Stripe Subscription Management</td><td class="priority-must">must</td><td>Payment integration</td></tr>
+        <tr><td class="fr-id">FR-035</td><td>Avatar System</td><td class="priority-should">should</td><td>Visual gamification</td></tr>
+        <tr><td class="fr-id">FR-036</td><td>Team, Partner &amp; Mentor Mode</td><td class="priority-should">should</td><td>Social features</td></tr>
+        <tr><td class="fr-id">FR-037</td><td>Items &amp; Seasonal Drops</td><td class="priority-should">should</td><td>Engagement extras</td></tr>
       </tbody>
     </table>
 
     <div class="exit-criteria">
-      <h4>Exit Criteria</h4>
+      <h4>Prerequisite</h4>
       <ul class="criteria-list">
-        <li class="pending">Skill-Dependency-Graph with prerequisites defined</li>
-        <li class="pending">Lernziel catalog (Kennen → Gestalten) with 100+ learning objectives</li>
-        <li class="pending">Rahmenlernplan mapping for 3+ vocational professions</li>
-        <li class="pending">Back-propagation generates sequenced learning paths from goals</li>
-        <li class="pending">Content lifecycle (draft → review → active → deprecated) enforced</li>
-        <li class="pending">Three-layer role model (TC-035) implemented</li>
-        <li class="pending">SkillR branding layer visible for SkillR roles on maindfull.LEARNING</li>
+        <li class="pending">V1.0 production-stable with real users</li>
+        <li class="pending">Proven user base for sponsor integration</li>
+        <li class="pending">Sponsor revenue model validated</li>
       </ul>
     </div>
   </div>
@@ -815,7 +825,7 @@
 <!-- Footer -->
 <div class="footer">
   <p><strong>Future SkillR</strong> &nbsp;|&nbsp; <a href="https://github.com/FutureSkillr/MVP72">GitHub</a> &nbsp;|&nbsp; <a href="https://future-skillr-1041496140898.us-west1.run.app/">Live Demo</a></p>
-  <p>Report generated from <code>docs/ROADMAP.md</code> + 97 FR files on 2026-02-22</p>
+  <p>Report generated from <code>docs/ROADMAP.md</code> + 109 FR files on 2026-02-23</p>
   <p style="margin-top:0.5rem;">SkillR &bull; maindset.ACADEMY &bull; maindfull.LEARNING</p>
 </div>
 

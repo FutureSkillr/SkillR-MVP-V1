@@ -1,1 +1,0 @@
-Ausbildungsbotschafter: Infos für Auszubildende und Unternehmen | IHK zu Leipzig https://share.google/SIG4GxDO1OX62mbu6

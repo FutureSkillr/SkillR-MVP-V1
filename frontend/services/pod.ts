@@ -5,13 +5,14 @@ import type {
   PodSyncRequest,
   PodData,
 } from '../types/pod';
+import { getAuthHeaders } from './auth';
 
 const API_BASE = '/api/v1/pod';
 
 /** Get current Pod connection status. */
 export async function getPodStatus(): Promise<PodConnectionState | null> {
   try {
-    const res = await fetch(`${API_BASE}/status`);
+    const res = await fetch(`${API_BASE}/status`, { headers: getAuthHeaders() });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -23,7 +24,7 @@ export async function getPodStatus(): Promise<PodConnectionState | null> {
 export async function connectPod(req: PodConnectRequest): Promise<PodConnectionState> {
   const res = await fetch(`${API_BASE}/connect`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(req),
   });
   if (!res.ok) {
@@ -37,6 +38,7 @@ export async function connectPod(req: PodConnectRequest): Promise<PodConnectionS
 export async function disconnectPod(): Promise<void> {
   const res = await fetch(`${API_BASE}/connect`, {
     method: 'DELETE',
+    headers: getAuthHeaders(),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -48,7 +50,7 @@ export async function disconnectPod(): Promise<void> {
 export async function syncPod(req: PodSyncRequest): Promise<PodSyncResult> {
   const res = await fetch(`${API_BASE}/sync`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(req),
   });
   if (!res.ok) {
@@ -61,7 +63,7 @@ export async function syncPod(req: PodSyncRequest): Promise<PodSyncResult> {
 /** Read Pod contents in human-readable format. */
 export async function getPodData(): Promise<PodData | null> {
   try {
-    const res = await fetch(`${API_BASE}/data`);
+    const res = await fetch(`${API_BASE}/data`, { headers: getAuthHeaders() });
     if (!res.ok) return null;
     return await res.json();
   } catch {

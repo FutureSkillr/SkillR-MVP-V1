@@ -36,6 +36,15 @@
   "@graph": [
     {
       "comment": "Local dev config: allow-all authorization for unauthenticated access from Go backend."
+    },
+    {
+      "comment": "Accept requests regardless of Host header (allows both http://solid:3000 from Docker and http://localhost:3003 from browser).",
+      "@id": "urn:solid-server:default:TargetExtractor",
+      "OriginalUrlExtractor:_args_fixedBaseUrl": { "@id": "urn:solid-server:default:variable:baseUrl" }
+    },
+    {
+      "@id": "urn:solid-server:default:DPoPUrlExtractor",
+      "OriginalUrlExtractor:_args_fixedBaseUrl": { "@id": "urn:solid-server:default:variable:baseUrl" }
     }
   ]
 }

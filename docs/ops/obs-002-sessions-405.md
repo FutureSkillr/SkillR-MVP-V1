@@ -2,7 +2,7 @@
 
 **Beobachtet:** 2026-02-23
 **Severity:** medium
-**Status:** open
+**Status:** fixed
 
 ---
 

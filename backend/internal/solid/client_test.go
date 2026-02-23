@@ -61,6 +61,19 @@ func TestPutResource_Success(t *testing.T) {
 	}
 }
 
+func TestPutResource_ResetContent(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusResetContent)
+	}))
+	defer srv.Close()
+
+	client := NewHTTPClient(srv.URL)
+	err := client.PutResource(context.Background(), "/test/resource", "data")
+	if err != nil {
+		t.Fatalf("expected 205 to be accepted, got error: %v", err)
+	}
+}
+
 func TestPutResource_ServerError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -130,6 +143,19 @@ func TestCreateContainer_Success(t *testing.T) {
 	}
 	if gotLinkHeader == "" {
 		t.Error("expected Link header for container creation")
+	}
+}
+
+func TestCreateContainer_ResetContent(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusResetContent)
+	}))
+	defer srv.Close()
+
+	client := NewHTTPClient(srv.URL)
+	err := client.CreateContainer(context.Background(), "/test/container")
+	if err != nil {
+		t.Fatalf("expected 205 to be accepted, got error: %v", err)
 	}
 }
 

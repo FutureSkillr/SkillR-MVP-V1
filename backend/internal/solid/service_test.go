@@ -3,6 +3,7 @@ package solid
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -42,6 +43,21 @@ func (m *mockClient) GetResource(_ context.Context, path string) (string, error)
 }
 
 func (m *mockClient) DeleteResource(_ context.Context, path string) error {
+	// Simulate recursive container deletion: trailing slash removes all children
+	if strings.HasSuffix(path, "/") {
+		prefix := path
+		for k := range m.resources {
+			if strings.HasPrefix(k, prefix) || k+"/" == prefix {
+				delete(m.resources, k)
+			}
+		}
+		for k := range m.containers {
+			if strings.HasPrefix(k+"/", prefix) || k+"/" == prefix {
+				delete(m.containers, k)
+			}
+		}
+		return nil
+	}
 	delete(m.resources, path)
 	return nil
 }

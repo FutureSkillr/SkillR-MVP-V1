@@ -15,6 +15,8 @@ import { IntroRegisterPage } from './components/intro/IntroRegisterPage';
 import { DatenschutzPage } from './components/legal/DatenschutzPage';
 import { ImpressumPage } from './components/legal/ImpressumPage';
 import { CookieSettingsModal } from './components/legal/CookieSettingsModal';
+import { PartnerPreviewPage } from './components/partner/PartnerPreviewPage';
+import { PartnerAdminPage } from './components/partner/PartnerAdminPage';
 import { getStationsAsRecord } from './services/contentResolver';
 import { getCurrentUser, logout as authLogout, seedDefaultAdmin } from './services/auth';
 import { refreshAuthUser } from './services/firebaseAuth';
@@ -125,6 +127,8 @@ const App: React.FC = () => {
   const [introCoachId, setIntroCoachId] = useState<CoachId | null>(() => loadIntroState()?.coachId ?? null);
   const [cookieModalOpen, setCookieModalOpen] = useState(false);
   const [legalReturnView, setLegalReturnView] = useState<ViewState>('welcome');
+  const [partnerSlug, setPartnerSlug] = useState<string | null>(null);
+  const [partnerAdminSlug, setPartnerAdminSlug] = useState<string | null>(null);
   const onboardingStartTime = useRef<number>(0);
   const stationStartTime = useRef<number>(0);
 
@@ -161,6 +165,20 @@ const App: React.FC = () => {
       // Clean up URL without reload
       if (view) {
         window.history.replaceState({}, '', window.location.pathname);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // FR-119/FR-120: Detect ?partner= and ?partner-admin= URL params
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const partner = params.get('partner');
+      const partnerAdmin = params.get('partner-admin');
+      if (partner) {
+        setPartnerSlug(partner);
+      } else if (partnerAdmin) {
+        setPartnerAdminSlug(partnerAdmin);
       }
     } catch { /* ignore */ }
   }, []);
@@ -337,6 +355,12 @@ const App: React.FC = () => {
     });
   }, []);
 
+  // Partner click — navigate to partner preview page
+  const handlePartnerClick = useCallback((slug: string) => {
+    setPartnerSlug(slug);
+    window.history.pushState({}, '', `?partner=${encodeURIComponent(slug)}`);
+  }, []);
+
   // Completed journeys (at least 1 station)
   const completedJourneys = (
     Object.entries(state.profile.journeyProgress) as [JourneyType, any][]
@@ -354,6 +378,60 @@ const App: React.FC = () => {
     setView(legalReturnView);
   }, [legalReturnView, setView]);
 
+  // FR-119: Partner preview page (public, no auth required)
+  if (partnerSlug) {
+    return (
+      <PartnerPreviewPage
+        partnerSlug={partnerSlug}
+        onBack={() => {
+          setPartnerSlug(null);
+          window.history.replaceState({}, '', window.location.pathname);
+        }}
+        onStartJourney={(slug) => {
+          setPartnerSlug(null);
+          // Set sponsor param so BrandContext picks up the partner branding
+          const url = new URL(window.location.href);
+          url.searchParams.delete('partner');
+          url.searchParams.set('sponsor', slug);
+          window.location.href = url.toString();
+        }}
+      />
+    );
+  }
+
+  // FR-120: Partner admin page (requires admin role)
+  if (partnerAdminSlug) {
+    if (authUser?.role !== 'admin') {
+      return (
+        <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="text-6xl">🔒</div>
+            <h1 className="text-2xl font-bold text-white">Zugriff verweigert</h1>
+            <p className="text-slate-400">Admin-Berechtigung erforderlich.</p>
+            <button
+              onClick={() => {
+                setPartnerAdminSlug(null);
+                window.history.replaceState({}, '', window.location.pathname);
+              }}
+              className="mt-4 px-6 py-2.5 rounded-xl glass text-sm text-slate-300 hover:text-white transition-colors"
+            >
+              Zurueck
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <PartnerAdminPage
+        partnerSlug={partnerAdminSlug}
+        onBack={() => {
+          setPartnerAdminSlug(null);
+          window.history.replaceState({}, '', window.location.pathname);
+        }}
+      />
+    );
+  }
+
   // Show welcome, intro, and login pages without layout chrome
   if (state.view === 'welcome') {
     return (
@@ -361,6 +439,7 @@ const App: React.FC = () => {
         <WelcomePage
           onGetStarted={() => setView('intro-coach-select')}
           onLogin={() => setView('login')}
+          onPartnerClick={handlePartnerClick}
           onNavigate={handleLegalNavigate}
           onOpenCookieSettings={() => setCookieModalOpen(true)}
         />
@@ -487,7 +566,7 @@ const App: React.FC = () => {
       onOpenCookieSettings={() => setCookieModalOpen(true)}
     >
       {state.view === 'landing' && (
-        <LandingPage onStart={handleStartJourney} onSelectJourney={handleSelectJourney} onViewProfile={handleViewProfile} journeyProgress={state.profile.journeyProgress} />
+        <LandingPage onStart={handleStartJourney} onSelectJourney={handleSelectJourney} onViewProfile={handleViewProfile} onPartnerClick={handlePartnerClick} journeyProgress={state.profile.journeyProgress} />
       )}
 
       {state.view === 'onboarding' && (

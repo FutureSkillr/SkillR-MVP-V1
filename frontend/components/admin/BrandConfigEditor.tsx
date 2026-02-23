@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import type { BrandConfig } from '../../types/brand';
 import { DEFAULT_BRAND } from '../../constants/defaultBrand';
 import { getAuthHeaders } from '../../services/auth';
+import { fetchBrandContentPacks, toggleBrandContentPack, type BrandContentPack } from '../../services/contentPack';
+import { SSI_BRAND } from '../../constants/partners/spaceServiceIntl';
+import { CZ_BRAND } from '../../constants/partners/carlsZukunft';
+import { MA_BRAND } from '../../constants/partners/maindsetAcademy';
 
 interface BrandListItem extends BrandConfig {
   isActive: boolean;
@@ -45,17 +49,41 @@ export const BrandConfigEditor: React.FC = () => {
   const [brands, setBrands] = useState<BrandListItem[]>([]);
   const [editing, setEditing] = useState<BrandConfig | null>(null);
   const [isNew, setIsNew] = useState(false);
+  const [isOnboarding, setIsOnboarding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [dbWarning, setDbWarning] = useState<string | null>(null);
 
   const headers = getAuthHeaders();
 
   async function loadBrands() {
+    let dbBrands: BrandListItem[] = [];
     try {
       const res = await fetch('/api/brand', { headers });
-      if (res.ok) setBrands(await res.json());
-    } catch { /* ignore */ }
+      if (res.ok) {
+        dbBrands = await res.json();
+        setDbWarning(null);
+      } else {
+        setDbWarning('Brand-Liste konnte nicht vom Server geladen werden — lokale Konfigurationen werden angezeigt.');
+      }
+    } catch {
+      setDbWarning('Brand-Liste konnte nicht vom Server geladen werden — lokale Konfigurationen werden angezeigt.');
+    }
+
+    // Merge hardcoded partners not yet in the database
+    const dbSlugs = new Set(dbBrands.map((b) => b.slug));
+    const hardcoded: BrandConfig[] = [SSI_BRAND, CZ_BRAND, MA_BRAND];
+    const extras: BrandListItem[] = hardcoded
+      .filter((h) => h.slug && !dbSlugs.has(h.slug))
+      .map((h) => ({
+        ...h,
+        isActive: true,
+        createdAt: 0,
+        updatedAt: 0,
+      }));
+
+    setBrands([...dbBrands, ...extras]);
   }
 
   useEffect(() => { loadBrands(); }, []);
@@ -63,13 +91,17 @@ export const BrandConfigEditor: React.FC = () => {
   function startCreate() {
     setEditing(emptyBrand());
     setIsNew(true);
+    setIsOnboarding(false);
     setError(null);
     setSuccess(null);
   }
 
   function startEdit(brand: BrandListItem) {
+    // Hardcoded-only brands (not yet in DB) need onboarding (POST), not update (PUT)
+    const notInDb = brand.createdAt === 0;
     setEditing({ ...brand });
-    setIsNew(false);
+    setIsNew(notInDb);
+    setIsOnboarding(notInDb);
     setError(null);
     setSuccess(null);
   }
@@ -92,8 +124,21 @@ export const BrandConfigEditor: React.FC = () => {
           body: JSON.stringify({ slug, ...config }),
         });
         if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Fehler beim Erstellen');
+          // OBS-001: If onboarding a hardcoded brand that already exists in DB, fall back to PUT
+          if (isOnboarding && res.status === 409) {
+            const putRes = await fetch(`/api/brand/${slug}`, {
+              method: 'PUT',
+              headers,
+              body: JSON.stringify(config),
+            });
+            if (!putRes.ok) {
+              const putData = await putRes.json();
+              throw new Error(putData.error || 'Fehler beim Speichern');
+            }
+          } else {
+            const data = await res.json();
+            throw new Error(data.error || 'Fehler beim Erstellen');
+          }
         }
       } else {
         const res = await fetch(`/api/brand/${slug}`, {
@@ -106,7 +151,15 @@ export const BrandConfigEditor: React.FC = () => {
           throw new Error(data.error || 'Fehler beim Speichern');
         }
       }
-      setSuccess(isNew ? 'Brand erstellt!' : 'Brand gespeichert!');
+      setSuccess(isOnboarding ? 'Brand in Datenbank gespeichert!' : isNew ? 'Brand erstellt!' : 'Brand gespeichert!');
+      // OBS-002: Optimistic update — mark brand as persisted so "Nur lokal" disappears immediately
+      if (isOnboarding && slug) {
+        setBrands((prev) =>
+          prev.map((b) =>
+            b.slug === slug ? { ...b, createdAt: Date.now(), updatedAt: Date.now() } : b,
+          ),
+        );
+      }
       setEditing(null);
       loadBrands();
     } catch (err: any) {
@@ -148,7 +201,11 @@ export const BrandConfigEditor: React.FC = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold">
-            {isNew ? 'Neue Partner-Brand' : `Brand bearbeiten: ${editing.slug}`}
+            {isOnboarding
+              ? `Brand onboarden: ${editing.slug}`
+              : isNew
+                ? 'Neue Partner-Brand'
+                : `Brand bearbeiten: ${editing.slug}`}
           </h3>
           <button
             onClick={() => setEditing(null)}
@@ -172,8 +229,8 @@ export const BrandConfigEditor: React.FC = () => {
             value={editing.slug || ''}
             onChange={(v) => updateField('slug', v)}
             placeholder="ihk-muenchen"
-            disabled={!isNew}
-            hint="Wird zur Subdomain: {slug}.maindset.academy"
+            disabled={!isNew || isOnboarding}
+            hint={isOnboarding ? 'Slug ist durch die lokale Konfiguration festgelegt' : 'Wird zur Subdomain: {slug}.maindset.academy'}
           />
           <Field label="Brand Name" value={editing.brandName} onChange={(v) => updateField('brandName', v)} placeholder="IHK Muenchen" />
           <Field label="Kurzname" value={editing.brandNameShort} onChange={(v) => updateField('brandNameShort', v)} placeholder="IHK" />
@@ -260,6 +317,11 @@ export const BrandConfigEditor: React.FC = () => {
           <Field label="Inhaltlich Verantwortlicher" value={editing.legal.contentResponsible} onChange={(v) => updateField('legal.contentResponsible', v)} />
         </fieldset>
 
+        {/* Content Packs (FR-119) — show for existing brands and onboarding brands (packs already in DB) */}
+        {(!isNew || isOnboarding) && editing.slug && (
+          <ContentPackToggle brandSlug={editing.slug} />
+        )}
+
         {/* Preview */}
         <fieldset className="space-y-3">
           <legend className="text-sm font-bold text-slate-300">Vorschau</legend>
@@ -285,7 +347,13 @@ export const BrandConfigEditor: React.FC = () => {
           disabled={saving}
           className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-lg transition-all min-h-[48px]"
         >
-          {saving ? 'Speichern...' : isNew ? 'Brand erstellen' : 'Aenderungen speichern'}
+          {saving
+            ? 'Speichern...'
+            : isOnboarding
+              ? 'In Datenbank speichern'
+              : isNew
+                ? 'Brand erstellen'
+                : 'Aenderungen speichern'}
         </button>
       </div>
     );
@@ -308,6 +376,12 @@ export const BrandConfigEditor: React.FC = () => {
           + Neue Brand
         </button>
       </div>
+
+      {dbWarning && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-amber-400 text-xs">
+          {dbWarning}
+        </div>
+      )}
 
       {success && (
         <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-green-400 text-sm">
@@ -340,7 +414,14 @@ export const BrandConfigEditor: React.FC = () => {
                   {(b.brandNameShort || 'B')[0]}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-bold text-sm truncate">{b.brandName || b.slug}</div>
+                  <div className="font-bold text-sm truncate flex items-center gap-2">
+                    {b.brandName || b.slug}
+                    {b.createdAt === 0 && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 font-normal">
+                        Nur lokal
+                      </span>
+                    )}
+                  </div>
                   <div className="text-[10px] text-slate-500">
                     {b.slug}.maindset.academy
                     {!b.isActive && <span className="text-red-400 ml-2">(deaktiviert)</span>}
@@ -348,6 +429,19 @@ export const BrandConfigEditor: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                {b.isActive && (
+                  <a
+                    href={`?partner=${b.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors min-h-[44px] px-2 flex items-center gap-1"
+                  >
+                    Partner-Seite
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                )}
                 <button
                   onClick={() => startEdit(b)}
                   className="text-xs text-blue-400 hover:text-blue-300 transition-colors min-h-[44px] px-2"
@@ -368,6 +462,82 @@ export const BrandConfigEditor: React.FC = () => {
         </div>
       )}
     </div>
+  );
+};
+
+// Content Pack toggle section for a brand (FR-119)
+const ContentPackToggle: React.FC<{ brandSlug: string }> = ({ brandSlug }) => {
+  const [packs, setPacks] = useState<BrandContentPack[]>([]);
+  const [toggling, setToggling] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchBrandContentPacks(brandSlug).then(setPacks);
+  }, [brandSlug]);
+
+  async function handleToggle(packId: string, active: boolean) {
+    setToggling(packId);
+    const ok = await toggleBrandContentPack(brandSlug, packId, active);
+    if (ok) {
+      setPacks((prev) =>
+        prev.map((p) => (p.id === packId ? { ...p, brandActive: active } : p)),
+      );
+    }
+    setToggling(null);
+  }
+
+  if (packs.length === 0) return null;
+
+  return (
+    <fieldset className="space-y-3">
+      <legend className="text-sm font-bold text-slate-300">Content Packs</legend>
+      <p className="text-[10px] text-slate-500">
+        Aktiviere oder deaktiviere Lernreise-Pakete fuer diese Partner-Brand.
+        Pakete mit &quot;Standard&quot; sind fuer alle Nutzer sichtbar.
+      </p>
+      <div className="space-y-2">
+        {packs.map((p) => (
+          <div
+            key={p.id}
+            className="glass rounded-lg p-3 flex items-center justify-between gap-3"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-sm">{p.name}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-400">
+                  Pack {p.id}
+                </span>
+                {p.defaultEnabled && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">
+                    Standard
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-500 mt-0.5 truncate">{p.description}</p>
+              {p.sponsor && (
+                <p className="text-[10px] text-amber-400/70 mt-0.5">Sponsor: {p.sponsor}</p>
+              )}
+            </div>
+            <button
+              onClick={() => handleToggle(p.id, !p.brandActive)}
+              disabled={toggling === p.id}
+              className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${
+                p.brandActive
+                  ? 'bg-emerald-500/30 border border-emerald-500/50'
+                  : 'bg-slate-700/50 border border-white/10'
+              } ${toggling === p.id ? 'opacity-50' : ''}`}
+            >
+              <span
+                className={`absolute top-1 w-5 h-5 rounded-full transition-all ${
+                  p.brandActive
+                    ? 'left-6 bg-emerald-400'
+                    : 'left-1 bg-slate-500'
+                }`}
+              />
+            </button>
+          </div>
+        ))}
+      </div>
+    </fieldset>
   );
 };
 

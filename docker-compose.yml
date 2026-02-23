@@ -64,7 +64,7 @@ services:
 
   solid:
     image: solidproject/community-server:7
-    command: ["-c", "/config/css-local.json", "-p", "3000", "-b", "http://localhost:3003", "-f", "/data"]
+    command: ["-c", "/config/css-local.json", "-p", "3000", "-b", "http://solid:3000", "-f", "/data"]
     ports:
       - "127.0.0.1:3003:3000"
     volumes:

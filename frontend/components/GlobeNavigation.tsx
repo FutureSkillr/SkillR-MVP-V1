@@ -58,7 +58,9 @@ function GlobeInner({
 }: GlobeNavigationProps) {
   const globeRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const carouselRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [carouselIdx, setCarouselIdx] = useState(0);
+  const [carouselAnimating, setCarouselAnimating] = useState(false);
   const [selectedStation, setSelectedStation] = useState<PointData | null>(null);
   const [selectedJourney, setSelectedJourney] = useState<string | null>(null);
   const [selectedLernreise, setSelectedLernreise] = useState<LernreiseDefinition | null>(null);
@@ -221,8 +223,45 @@ function GlobeInner({
   // Dimensions for the selected journey (level-2 filter labels)
   const selectedJourneyDef = selectedJourney ? JOURNEYS[selectedJourney] : null;
 
+  // ── Infinite Carousel ─────────────────────────────────────────
+  const allCarouselItems = useMemo(() => [
+    ...journeyList.map(j => ({ kind: 'journey' as const, journey: j, lr: null as LernreiseDefinition | null })),
+    ...lernreisen.map(lr => ({ kind: 'lernreise' as const, journey: null as any, lr })),
+  ], [journeyList, lernreisen]);
+
+  const totalCarousel = allCarouselItems.length;
+  const CARD_STEP = 240; // w-56 (224px) + gap-4 (16px)
+  const carouselTranslateX = -(totalCarousel + carouselIdx) * CARD_STEP;
+
+  const handleCarouselLeft = useCallback(() => {
+    if (carouselAnimating) return;
+    setCarouselAnimating(true);
+    setCarouselIdx(i => i - 1);
+  }, [carouselAnimating]);
+
+  const handleCarouselRight = useCallback(() => {
+    if (carouselAnimating) return;
+    setCarouselAnimating(true);
+    setCarouselIdx(i => i + 1);
+  }, [carouselAnimating]);
+
+  const handleTrackTransitionEnd = useCallback(() => {
+    setCarouselAnimating(false);
+    if (Math.abs(carouselIdx) >= totalCarousel) {
+      const el = trackRef.current;
+      if (!el) return;
+      el.style.transition = 'none';
+      setCarouselIdx(0);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (trackRef.current) trackRef.current.style.removeProperty('transition');
+        });
+      });
+    }
+  }, [carouselIdx, totalCarousel]);
+
   return (
-    <div className="max-w-5xl mx-auto space-y-4 py-2">
+    <div className="w-full space-y-4 py-2 bg-gradient-to-b from-transparent via-slate-900/50 to-slate-950/80 px-4 sm:px-6">
       {/* Summary — hidden in globe view to reduce visual clutter */}
 
       <h2 className="text-2xl font-bold text-center">Wähle dein Reiseziel</h2>
@@ -297,140 +336,139 @@ function GlobeInner({
         </button>
       </div>
 
-      {/* Journey Carousel */}
-      <div className="relative group">
-        {/* Scroll left arrow */}
+      {/* Journey Carousel — infinite rotation, arrows outside */}
+      <div className="flex items-center gap-3">
+        {/* Left arrow — outside the card panel */}
         <button
-          onClick={() => {
-            if (carouselRef.current) {
-              carouselRef.current.scrollBy({ left: -240, behavior: 'smooth' });
-            }
-          }}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-all shadow-lg backdrop-blur-sm"
-          aria-label="Scroll left"
+          onClick={handleCarouselLeft}
+          className="shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-all shadow-lg backdrop-blur-sm"
+          aria-label="Zurück"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
 
-        {/* Scroll right arrow */}
+        {/* Card viewport — hidden overflow, no scrollbar */}
+        <div className="flex-1 overflow-hidden">
+          <div
+            ref={trackRef}
+            className="flex gap-4 transition-transform duration-300 ease-in-out"
+            style={{ transform: `translateX(${carouselTranslateX}px)` }}
+            onTransitionEnd={handleTrackTransitionEnd}
+          >
+            {/* Render 3 copies for seamless infinite wrap */}
+            {[0, 1, 2].flatMap(copy =>
+              allCarouselItems.map((item, idx) => {
+                if (item.kind === 'journey') {
+                  const journey = item.journey!;
+                  const isSelected = selectedJourney === journey.type;
+                  const isRecommended = journey.type === recommended;
+                  const stationsInJourney = STATION_COORDINATES.filter(c => c.journeyType === journey.type);
+                  const completedCount = stationsInJourney.filter(c => completedStations.includes(c.stationId)).length;
+                  const color = JOURNEY_COLORS[journey.type] || '#94A3B8';
+                  const glowColor = JOURNEY_HEX_GLOW[journey.type] || 'rgba(148,163,184,0.3)';
+
+                  return (
+                    <button
+                      key={`${copy}-j-${journey.type}`}
+                      onClick={() => isSelected ? handleClearJourney() : handleSelectJourney(journey.type)}
+                      className={`shrink-0 w-56 glass rounded-2xl p-4 text-left transition-all hover:scale-[1.02] ${
+                        isSelected ? 'ring-2' : 'hover:ring-1 hover:ring-slate-600'
+                      }`}
+                      style={isSelected ? {
+                        boxShadow: `0 0 20px ${glowColor}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                        borderColor: color,
+                        outline: `2px solid ${color}`,
+                        outlineOffset: '-2px',
+                      } : undefined}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-2xl">{journey.icon}</span>
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-sm truncate" style={{ color }}>
+                            {journey.title}
+                          </h3>
+                          <p className="text-[10px] text-slate-500 truncate">{journey.subtitle}</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-400 line-clamp-2 mb-3">{journey.description}</p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-slate-500">
+                            {completedCount}/{stationsInJourney.length} Stationen
+                          </span>
+                        </div>
+                        {isRecommended && (
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">
+                            Empfohlen
+                          </span>
+                        )}
+                      </div>
+                      <div className="h-1 bg-slate-800 rounded-full mt-2 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${stationsInJourney.length > 0 ? (completedCount / stationsInJourney.length) * 100 : 0}%`,
+                            backgroundColor: color,
+                          }}
+                        />
+                      </div>
+                    </button>
+                  );
+                } else {
+                  const lr = item.lr!;
+                  const isSelected = selectedLernreise?.id === lr.id;
+                  const color = JOURNEY_COLORS[lr.journeyType] || '#94A3B8';
+                  const glowColor = JOURNEY_HEX_GLOW[lr.journeyType] || 'rgba(148,163,184,0.3)';
+
+                  return (
+                    <button
+                      key={`${copy}-lr-${lr.id}`}
+                      onClick={() => handleSelectLernreise(lr)}
+                      className={`shrink-0 w-56 glass rounded-2xl p-4 text-left transition-all hover:scale-[1.02] ${
+                        isSelected ? 'ring-2' : 'hover:ring-1 hover:ring-slate-600'
+                      }`}
+                      style={isSelected ? {
+                        boxShadow: `0 0 20px ${glowColor}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                        borderColor: color,
+                        outline: `2px solid ${color}`,
+                        outlineOffset: '-2px',
+                      } : undefined}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-2xl">{lr.icon}</span>
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-sm truncate" style={{ color }}>
+                            {lr.title}
+                          </h3>
+                          <p className="text-[10px] text-slate-500 truncate">{lr.subtitle}</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-400 line-clamp-2 mb-3">{lr.description}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-400">
+                          {lr.location}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                }
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Right arrow — outside the card panel */}
         <button
-          onClick={() => {
-            if (carouselRef.current) {
-              carouselRef.current.scrollBy({ left: 240, behavior: 'smooth' });
-            }
-          }}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-all shadow-lg backdrop-blur-sm"
-          aria-label="Scroll right"
+          onClick={handleCarouselRight}
+          className="shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-all shadow-lg backdrop-blur-sm"
+          aria-label="Weiter"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </button>
-
-        <div
-          ref={carouselRef}
-          className="flex gap-4 overflow-x-auto pb-2 px-10 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent"
-        >
-          {journeyList.map((journey) => {
-            const isSelected = selectedJourney === journey.type;
-            const isRecommended = journey.type === recommended;
-            const stationsInJourney = STATION_COORDINATES.filter((c) => c.journeyType === journey.type);
-            const completedCount = stationsInJourney.filter((c) => completedStations.includes(c.stationId)).length;
-            const color = JOURNEY_COLORS[journey.type] || '#94A3B8';
-            const glowColor = JOURNEY_HEX_GLOW[journey.type] || 'rgba(148,163,184,0.3)';
-
-            return (
-              <button
-                key={journey.type}
-                onClick={() => isSelected ? handleClearJourney() : handleSelectJourney(journey.type)}
-                className={`snap-start shrink-0 w-56 glass rounded-2xl p-4 text-left transition-all hover:scale-[1.02] ${
-                  isSelected ? 'ring-2' : 'hover:ring-1 hover:ring-slate-600'
-                }`}
-                style={isSelected ? {
-                  ringColor: color,
-                  boxShadow: `0 0 20px ${glowColor}, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                  borderColor: color,
-                  outline: `2px solid ${color}`,
-                  outlineOffset: '-2px',
-                } : undefined}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-2xl">{journey.icon}</span>
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-sm truncate" style={{ color }}>
-                      {journey.title}
-                    </h3>
-                    <p className="text-[10px] text-slate-500 truncate">{journey.subtitle}</p>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-400 line-clamp-2 mb-3">{journey.description}</p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-slate-500">
-                      {completedCount}/{stationsInJourney.length} Stationen
-                    </span>
-                  </div>
-                  {isRecommended && (
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">
-                      Empfohlen
-                    </span>
-                  )}
-                </div>
-                {/* Mini progress bar */}
-                <div className="h-1 bg-slate-800 rounded-full mt-2 overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${stationsInJourney.length > 0 ? (completedCount / stationsInJourney.length) * 100 : 0}%`,
-                      backgroundColor: color,
-                    }}
-                  />
-                </div>
-              </button>
-            );
-          })}
-
-          {/* Lernreise cards */}
-          {lernreisen.map((lr) => {
-            const isSelected = selectedLernreise?.id === lr.id;
-            const color = JOURNEY_COLORS[lr.journeyType] || '#94A3B8';
-            const glowColor = JOURNEY_HEX_GLOW[lr.journeyType] || 'rgba(148,163,184,0.3)';
-
-            return (
-              <button
-                key={lr.id}
-                onClick={() => handleSelectLernreise(lr)}
-                className={`snap-start shrink-0 w-56 glass rounded-2xl p-4 text-left transition-all hover:scale-[1.02] ${
-                  isSelected ? 'ring-2' : 'hover:ring-1 hover:ring-slate-600'
-                }`}
-                style={isSelected ? {
-                  boxShadow: `0 0 20px ${glowColor}, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                  borderColor: color,
-                  outline: `2px solid ${color}`,
-                  outlineOffset: '-2px',
-                } : undefined}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-2xl">{lr.icon}</span>
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-sm truncate" style={{ color }}>
-                      {lr.title}
-                    </h3>
-                    <p className="text-[10px] text-slate-500 truncate">{lr.subtitle}</p>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-400 line-clamp-2 mb-3">{lr.description}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-400">
-                    📍 {lr.location}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* Two-Level Label Filter */}
@@ -537,17 +575,6 @@ function GlobeInner({
         </div>
       )}
 
-      {/* Profile Button */}
-      {completedJourneys.length > 0 && (
-        <div className="text-center pt-2">
-          <button
-            onClick={onViewProfile}
-            className="glass px-6 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition-colors"
-          >
-            Mein Profil ansehen
-          </button>
-        </div>
-      )}
     </div>
   );
 }
@@ -677,16 +704,6 @@ function Globe2DFallback({
         })}
       </div>
 
-      {completedJourneys.length > 0 && (
-        <div className="text-center pt-4">
-          <button
-            onClick={onViewProfile}
-            className="glass px-6 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition-colors"
-          >
-            Mein Profil ansehen
-          </button>
-        </div>
-      )}
     </div>
   );
 }

@@ -128,12 +128,12 @@ func TestSerializeJourneyProgress_Empty(t *testing.T) {
 
 func TestSerializeReflection(t *testing.T) {
 	r := ReflectionRow{
-		ID:         "ref-1",
-		UserID:     "user-123",
-		QuestionID: "q-42",
-		Answer:     "Ich habe gelernt...",
-		Score:      0.92,
-		CreatedAt:  time.Date(2026, 2, 21, 14, 30, 0, 0, time.UTC),
+		ID:               "ref-1",
+		UserID:           "user-123",
+		QuestionID:       "q-42",
+		Response:         "Ich habe gelernt...",
+		CapabilityScores: []byte(`{"critical_thinking":0.92}`),
+		CreatedAt:        time.Date(2026, 2, 21, 14, 30, 0, 0, time.UTC),
 	}
 
 	turtle := SerializeReflection(r)
@@ -142,8 +142,8 @@ func TestSerializeReflection(t *testing.T) {
 		"<> a fs:Reflection",
 		`fs:reflectionId "ref-1"`,
 		`fs:questionId "q-42"`,
-		`fs:answer "Ich habe gelernt..."`,
-		`fs:score "0.92"^^xsd:decimal`,
+		`fs:response "Ich habe gelernt..."`,
+		`fs:capabilityScores`,
 		"2026-02-21",
 	}
 

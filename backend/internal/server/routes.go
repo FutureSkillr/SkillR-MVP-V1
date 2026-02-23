@@ -255,10 +255,10 @@ func RegisterRoutes(e *echo.Echo, deps *Dependencies) {
 
 	// Prompt logs
 	if deps.GatewayPromptLogs != nil {
-		// POST is authenticated (not necessarily admin)
+		// POST uses optional auth — intro flow calls this before user login (OBS-003)
 		var promptLogAuthMws []echo.MiddlewareFunc
-		if deps.FirebaseAuthMiddleware != nil {
-			promptLogAuthMws = append(promptLogAuthMws, deps.FirebaseAuthMiddleware)
+		if deps.OptionalFirebaseAuth != nil {
+			promptLogAuthMws = append(promptLogAuthMws, deps.OptionalFirebaseAuth)
 		}
 		e.POST("/api/prompt-logs", deps.GatewayPromptLogs.LogPrompt, promptLogAuthMws...)
 
@@ -300,6 +300,8 @@ func RegisterRoutes(e *echo.Echo, deps *Dependencies) {
 	if deps.GatewayBrand != nil {
 		// Public: get by slug
 		e.GET("/api/brand/:slug", deps.GatewayBrand.GetBySlug)
+		// Public: list active partners
+		e.GET("/api/v1/partners", deps.GatewayBrand.ListPublic)
 
 		// Admin endpoints
 		var brandAdminMws []echo.MiddlewareFunc
@@ -320,9 +322,35 @@ func RegisterRoutes(e *echo.Echo, deps *Dependencies) {
 		e.DELETE("/api/brand/:slug", deps.GatewayBrand.Deactivate, brandAdminMws...)
 	}
 
-	// Content Pack — public endpoint (FR-116)
+	// Content Pack — public endpoints (FR-116, FR-119)
 	if deps.GatewayContentPack != nil {
 		e.GET("/api/v1/content-pack", deps.GatewayContentPack.Get)
+		e.GET("/api/v1/content-pack/brand/:slug", deps.GatewayContentPack.GetByBrand)
+
+		// Brand content pack management — admin/sponsor_admin (FR-119)
+		var brandPackMws []echo.MiddlewareFunc
+		if deps.FirebaseAuthMiddleware != nil {
+			brandPackMws = append(brandPackMws, deps.FirebaseAuthMiddleware)
+		}
+		e.GET("/api/brand/:slug/content-packs", deps.GatewayContentPack.ListBrandPacks, brandPackMws...)
+		e.PUT("/api/brand/:slug/content-packs/:packId", deps.GatewayContentPack.ToggleBrandPack, brandPackMws...)
+
+		// Admin CRUD for content packs (FR-124)
+		var cpAdminMws []echo.MiddlewareFunc
+		if deps.FirebaseAuthMiddleware != nil {
+			cpAdminMws = append(cpAdminMws, deps.FirebaseAuthMiddleware)
+		}
+		cpAdminMws = append(cpAdminMws, middleware.RequireAdmin())
+		cpAdmin := e.Group("/api/admin/content-packs", cpAdminMws...)
+		cpAdmin.GET("", deps.GatewayContentPack.AdminListPacks)
+		cpAdmin.POST("", deps.GatewayContentPack.AdminCreatePack)
+		cpAdmin.PUT("/:id", deps.GatewayContentPack.AdminUpdatePack)
+		cpAdmin.DELETE("/:id", deps.GatewayContentPack.AdminDeletePack)
+		cpAdmin.GET("/:id/lernreisen", deps.GatewayContentPack.AdminListPackLernreisen)
+		cpAdmin.POST("/:id/lernreisen", deps.GatewayContentPack.AdminCreateLernreise)
+		cpAdmin.PUT("/:id/lernreisen/order", deps.GatewayContentPack.AdminReorderLernreisen)
+		cpAdmin.PUT("/:id/lernreisen/:lrId", deps.GatewayContentPack.AdminUpdateLernreise)
+		cpAdmin.DELETE("/:id/lernreisen/:lrId", deps.GatewayContentPack.AdminDeleteLernreise)
 	}
 }
 
@@ -501,6 +529,7 @@ type GatewayCapacityHandler interface {
 type GatewayBrandHandler interface {
 	GetBySlug(c echo.Context) error
 	List(c echo.Context) error
+	ListPublic(c echo.Context) error
 	Create(c echo.Context) error
 	Update(c echo.Context) error
 	Deactivate(c echo.Context) error
@@ -516,4 +545,17 @@ type GatewayCampaignHandler interface {
 
 type GatewayContentPackHandler interface {
 	Get(c echo.Context) error
+	GetByBrand(c echo.Context) error
+	ListBrandPacks(c echo.Context) error
+	ToggleBrandPack(c echo.Context) error
+	// Admin CRUD (FR-124)
+	AdminListPacks(c echo.Context) error
+	AdminCreatePack(c echo.Context) error
+	AdminUpdatePack(c echo.Context) error
+	AdminDeletePack(c echo.Context) error
+	AdminListPackLernreisen(c echo.Context) error
+	AdminCreateLernreise(c echo.Context) error
+	AdminUpdateLernreise(c echo.Context) error
+	AdminDeleteLernreise(c echo.Context) error
+	AdminReorderLernreisen(c echo.Context) error
 }

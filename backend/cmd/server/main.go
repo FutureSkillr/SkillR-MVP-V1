@@ -17,6 +17,7 @@ import (
 	"skillr-mvp-v1/backend/internal/ai"
 	"skillr-mvp-v1/backend/internal/config"
 	"skillr-mvp-v1/backend/internal/domain/lernreise"
+	"skillr-mvp-v1/backend/internal/domain/session"
 	"skillr-mvp-v1/backend/internal/firebase"
 	"skillr-mvp-v1/backend/internal/gateway"
 	"skillr-mvp-v1/backend/internal/honeycomb"
@@ -58,10 +59,15 @@ func run() error {
 	configH := server.NewConfigHandler(cfg)
 	authH := server.NewAuthHandler(nil)
 
+	// Session handler created early with nil repo (DB connected later via SetRepo)
+	sessionSvc := session.NewService(nil)
+	sessionH := session.NewHandler(sessionSvc)
+
 	deps := &server.Dependencies{
 		Health:  healthH,
 		ConfigH: configH,
 		Auth:    authH,
+		Session: sessionH,
 	}
 
 	// Initialize AI handler if GCP project is configured
@@ -202,6 +208,9 @@ func run() error {
 		if solidSvc != nil {
 			solidSvc.SetDB(pool)
 		}
+
+		// Inject DB into session service (created earlier with nil repo)
+		sessionSvc.SetRepo(postgres.NewSessionRepository(pool))
 
 		// Inject DB into gateway handlers (created earlier with nil DB)
 		gwAnalytics.SetDB(pool)

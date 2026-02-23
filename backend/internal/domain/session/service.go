@@ -16,6 +16,11 @@ func NewService(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 
+// SetRepo replaces the repository (used for lazy DB injection after startup).
+func (s *Service) SetRepo(repo Repository) {
+	s.repo = repo
+}
+
 func (s *Service) Create(ctx context.Context, userID uuid.UUID, req CreateSessionRequest) (*Session, error) {
 	sess := &Session{
 		ID:          uuid.New(),
