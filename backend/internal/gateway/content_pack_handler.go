@@ -333,6 +333,137 @@ func (h *ContentPackHandler) AdminReorderLernreisen(c echo.Context) error {
 	})
 }
 
+// --- Videoset Submissions (FR-131) ---
+
+// AdminListSubmissions handles GET /api/admin/content-packs/:id/submissions.
+func (h *ContentPackHandler) AdminListSubmissions(c echo.Context) error {
+	if !h.dbReady() {
+		return echo.NewHTTPError(http.StatusServiceUnavailable, "database not available")
+	}
+
+	packID := c.Param("id")
+	if packID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "pack id required")
+	}
+
+	subs, err := h.repo.ListSubmissions(c.Request().Context(), packID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to list submissions")
+	}
+	if subs == nil {
+		subs = []postgres.VideosetSubmission{}
+	}
+
+	return c.JSON(http.StatusOK, subs)
+}
+
+// AdminGetSubmission handles GET /api/admin/content-packs/:id/submissions/:subId.
+func (h *ContentPackHandler) AdminGetSubmission(c echo.Context) error {
+	if !h.dbReady() {
+		return echo.NewHTTPError(http.StatusServiceUnavailable, "database not available")
+	}
+
+	subID := c.Param("subId")
+	if subID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "submission id required")
+	}
+
+	sub, err := h.repo.GetSubmission(c.Request().Context(), subID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, "submission not found")
+	}
+
+	return c.JSON(http.StatusOK, sub)
+}
+
+// AdminCreateSubmission handles POST /api/admin/content-packs/:id/submissions.
+func (h *ContentPackHandler) AdminCreateSubmission(c echo.Context) error {
+	if !h.dbReady() {
+		return echo.NewHTTPError(http.StatusServiceUnavailable, "database not available")
+	}
+
+	packID := c.Param("id")
+	if packID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "pack id required")
+	}
+
+	var sub postgres.VideosetSubmission
+	if err := c.Bind(&sub); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+	sub.PackID = packID
+
+	if sub.Title == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "title is required")
+	}
+
+	// Set submitted_by from auth context
+	userInfo := middleware.GetUserInfo(c)
+	if userInfo != nil {
+		sub.SubmittedBy = userInfo.Email
+	}
+
+	created, err := h.repo.CreateSubmission(c.Request().Context(), sub)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create submission: "+err.Error())
+	}
+
+	return c.JSON(http.StatusCreated, created)
+}
+
+// AdminUpdateSubmission handles PUT /api/admin/content-packs/:id/submissions/:subId.
+func (h *ContentPackHandler) AdminUpdateSubmission(c echo.Context) error {
+	if !h.dbReady() {
+		return echo.NewHTTPError(http.StatusServiceUnavailable, "database not available")
+	}
+
+	subID := c.Param("subId")
+	if subID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "submission id required")
+	}
+
+	var sub postgres.VideosetSubmission
+	if err := c.Bind(&sub); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+
+	if err := h.repo.UpdateSubmission(c.Request().Context(), subID, sub); err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, "submission not found or not in draft status")
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"id":      subID,
+		"updated": true,
+	})
+}
+
+// AdminSubmitSubmission handles POST /api/admin/content-packs/:id/submissions/:subId/submit.
+func (h *ContentPackHandler) AdminSubmitSubmission(c echo.Context) error {
+	if !h.dbReady() {
+		return echo.NewHTTPError(http.StatusServiceUnavailable, "database not available")
+	}
+
+	subID := c.Param("subId")
+	if subID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "submission id required")
+	}
+
+	submittedBy := ""
+	userInfo := middleware.GetUserInfo(c)
+	if userInfo != nil {
+		submittedBy = userInfo.Email
+	}
+
+	if err := h.repo.SubmitSubmission(c.Request().Context(), subID, submittedBy); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "submission not found or not in draft status")
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"id":        subID,
+		"submitted": true,
+	})
+}
+
 // ToggleBrandPack handles PUT /api/brand/:slug/content-packs/:packId — admin/sponsor_admin.
 func (h *ContentPackHandler) ToggleBrandPack(c echo.Context) error {
 	if !h.dbReady() {

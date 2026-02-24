@@ -9,6 +9,27 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// VideosetSubmission represents a row in videoset_submissions.
+type VideosetSubmission struct {
+	ID              string          `json:"id"`
+	PackID          string          `json:"packId"`
+	Title           string          `json:"title"`
+	Status          string          `json:"status"`
+	VideoAType      string          `json:"videoAType"`
+	VideoAValue     string          `json:"videoAValue"`
+	VideoAEnvelope  json.RawMessage `json:"videoAEnvelope,omitempty"`
+	VideoBType      string          `json:"videoBType"`
+	VideoBValue     string          `json:"videoBValue"`
+	VideoBEnvelope  json.RawMessage `json:"videoBEnvelope,omitempty"`
+	DidacticsNotes  string          `json:"didacticsNotes"`
+	ResultingLrID   string          `json:"resultingLrId,omitempty"`
+	RejectionReason string          `json:"rejectionReason,omitempty"`
+	SubmittedBy     string          `json:"submittedBy,omitempty"`
+	SubmittedAt     *time.Time      `json:"submittedAt,omitempty"`
+	CreatedAt       time.Time       `json:"createdAt"`
+	UpdatedAt       time.Time       `json:"updatedAt"`
+}
+
 // Lernreise represents a row in content_pack_lernreisen.
 type Lernreise struct {
 	ID            string    `json:"id"`
@@ -379,6 +400,137 @@ func (r *ContentPackRepository) ToggleBrandPack(ctx context.Context, brandSlug, 
 	)
 	if err != nil {
 		return fmt.Errorf("toggle brand pack: %w", err)
+	}
+	return nil
+}
+
+// --- Videoset Submissions (FR-131) ---
+
+// ListSubmissions returns all submissions for a content pack.
+func (r *ContentPackRepository) ListSubmissions(ctx context.Context, packID string) ([]VideosetSubmission, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT id, pack_id, title, status,
+		        video_a_type, video_a_value, video_a_envelope,
+		        video_b_type, video_b_value, video_b_envelope,
+		        didactics_notes, COALESCE(resulting_lr_id, ''), COALESCE(rejection_reason, ''),
+		        COALESCE(submitted_by, ''), submitted_at, created_at, updated_at
+		 FROM videoset_submissions
+		 WHERE pack_id = $1
+		 ORDER BY created_at DESC`,
+		packID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list submissions: %w", err)
+	}
+	defer rows.Close()
+
+	var result []VideosetSubmission
+	for rows.Next() {
+		var s VideosetSubmission
+		if err := rows.Scan(
+			&s.ID, &s.PackID, &s.Title, &s.Status,
+			&s.VideoAType, &s.VideoAValue, &s.VideoAEnvelope,
+			&s.VideoBType, &s.VideoBValue, &s.VideoBEnvelope,
+			&s.DidacticsNotes, &s.ResultingLrID, &s.RejectionReason,
+			&s.SubmittedBy, &s.SubmittedAt, &s.CreatedAt, &s.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan submission row: %w", err)
+		}
+		result = append(result, s)
+	}
+	return result, rows.Err()
+}
+
+// GetSubmission returns a single submission by ID.
+func (r *ContentPackRepository) GetSubmission(ctx context.Context, id string) (*VideosetSubmission, error) {
+	var s VideosetSubmission
+	err := r.pool.QueryRow(ctx,
+		`SELECT id, pack_id, title, status,
+		        video_a_type, video_a_value, video_a_envelope,
+		        video_b_type, video_b_value, video_b_envelope,
+		        didactics_notes, COALESCE(resulting_lr_id, ''), COALESCE(rejection_reason, ''),
+		        COALESCE(submitted_by, ''), submitted_at, created_at, updated_at
+		 FROM videoset_submissions
+		 WHERE id = $1`,
+		id,
+	).Scan(
+		&s.ID, &s.PackID, &s.Title, &s.Status,
+		&s.VideoAType, &s.VideoAValue, &s.VideoAEnvelope,
+		&s.VideoBType, &s.VideoBValue, &s.VideoBEnvelope,
+		&s.DidacticsNotes, &s.ResultingLrID, &s.RejectionReason,
+		&s.SubmittedBy, &s.SubmittedAt, &s.CreatedAt, &s.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("get submission: %w", err)
+	}
+	return &s, nil
+}
+
+// CreateSubmission inserts a new videoset submission.
+func (r *ContentPackRepository) CreateSubmission(ctx context.Context, s VideosetSubmission) (*VideosetSubmission, error) {
+	var created VideosetSubmission
+	err := r.pool.QueryRow(ctx,
+		`INSERT INTO videoset_submissions
+		 (pack_id, title, status, video_a_type, video_a_value, video_a_envelope,
+		  video_b_type, video_b_value, video_b_envelope, didactics_notes, submitted_by)
+		 VALUES ($1, $2, 'draft', $3, $4, $5, $6, $7, $8, $9, $10)
+		 RETURNING id, pack_id, title, status,
+		           video_a_type, video_a_value, video_a_envelope,
+		           video_b_type, video_b_value, video_b_envelope,
+		           didactics_notes, COALESCE(resulting_lr_id, ''), COALESCE(rejection_reason, ''),
+		           COALESCE(submitted_by, ''), submitted_at, created_at, updated_at`,
+		s.PackID, s.Title,
+		s.VideoAType, s.VideoAValue, s.VideoAEnvelope,
+		s.VideoBType, s.VideoBValue, s.VideoBEnvelope,
+		s.DidacticsNotes, s.SubmittedBy,
+	).Scan(
+		&created.ID, &created.PackID, &created.Title, &created.Status,
+		&created.VideoAType, &created.VideoAValue, &created.VideoAEnvelope,
+		&created.VideoBType, &created.VideoBValue, &created.VideoBEnvelope,
+		&created.DidacticsNotes, &created.ResultingLrID, &created.RejectionReason,
+		&created.SubmittedBy, &created.SubmittedAt, &created.CreatedAt, &created.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create submission: %w", err)
+	}
+	return &created, nil
+}
+
+// UpdateSubmission updates a draft submission's fields.
+func (r *ContentPackRepository) UpdateSubmission(ctx context.Context, id string, s VideosetSubmission) error {
+	tag, err := r.pool.Exec(ctx,
+		`UPDATE videoset_submissions SET
+		 title = $1, video_a_type = $2, video_a_value = $3, video_a_envelope = $4,
+		 video_b_type = $5, video_b_value = $6, video_b_envelope = $7,
+		 didactics_notes = $8, updated_at = NOW()
+		 WHERE id = $9 AND status = 'draft'`,
+		s.Title,
+		s.VideoAType, s.VideoAValue, s.VideoAEnvelope,
+		s.VideoBType, s.VideoBValue, s.VideoBEnvelope,
+		s.DidacticsNotes, id,
+	)
+	if err != nil {
+		return fmt.Errorf("update submission: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("submission not found or not in draft status: %s", id)
+	}
+	return nil
+}
+
+// SubmitSubmission transitions a draft submission to 'submitted' status.
+func (r *ContentPackRepository) SubmitSubmission(ctx context.Context, id string, submittedBy string) error {
+	tag, err := r.pool.Exec(ctx,
+		`UPDATE videoset_submissions SET
+		 status = 'submitted', submitted_by = $1, submitted_at = NOW(), updated_at = NOW()
+		 WHERE id = $2 AND status = 'draft'`,
+		submittedBy, id,
+	)
+	if err != nil {
+		return fmt.Errorf("submit submission: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("submission not found or not in draft status: %s", id)
 	}
 	return nil
 }

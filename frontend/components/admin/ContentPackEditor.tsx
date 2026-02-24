@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { GeoSearchModal } from './GeoSearchModal';
+import { Field, TextArea, NumberField } from './FormFields';
+import { SubmissionForm, STATUS_BADGES, STATUS_LABELS } from './SubmissionForm';
 import {
   adminListPacks,
   adminCreatePack,
@@ -10,8 +12,10 @@ import {
   adminUpdateLernreise,
   adminDeleteLernreise,
   adminReorderLernreisen,
+  adminListSubmissions,
   type AdminContentPack,
   type AdminLernreise,
+  type VideosetSubmission,
 } from '../../services/contentPack';
 
 const JOURNEY_TYPES = ['vuca', 'entrepreneur', 'self-learning'] as const;
@@ -60,6 +64,11 @@ export const ContentPackEditor: React.FC = () => {
   const [editingLr, setEditingLr] = useState<Partial<AdminLernreise> | null>(null);
   const [isNewLr, setIsNewLr] = useState(false);
 
+  // Submissions (FR-131)
+  const [submissions, setSubmissions] = useState<VideosetSubmission[]>([]);
+  const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+  const [editingSubmission, setEditingSubmission] = useState<VideosetSubmission | undefined>(undefined);
+
   // Geo search modal
   const [geoModalOpen, setGeoModalOpen] = useState(false);
 
@@ -82,6 +91,11 @@ export const ContentPackEditor: React.FC = () => {
     setPackLernreisen(result);
   }
 
+  async function loadSubmissions(packId: string) {
+    const result = await adminListSubmissions(packId);
+    setSubmissions(result);
+  }
+
   // --- Pack CRUD ---
 
   function startCreatePack() {
@@ -97,9 +111,12 @@ export const ContentPackEditor: React.FC = () => {
     setEditingPack({ ...pack });
     setIsNewPack(false);
     setEditingLr(null);
+    setShowSubmissionForm(false);
+    setEditingSubmission(undefined);
     setError(null);
     setSuccess(null);
     loadLernreisen(pack.id);
+    loadSubmissions(pack.id);
   }
 
   async function handleSavePack() {
@@ -409,6 +426,18 @@ export const ContentPackEditor: React.FC = () => {
     );
   }
 
+  // --- Submission form (FR-131) ---
+  if (showSubmissionForm && editingPack?.id) {
+    return (
+      <SubmissionForm
+        packId={editingPack.id}
+        submission={editingSubmission}
+        onClose={() => { setShowSubmissionForm(false); setEditingSubmission(undefined); }}
+        onSaved={() => loadSubmissions(editingPack.id!)}
+      />
+    );
+  }
+
   // --- Level 2: Pack detail ---
   if (editingPack) {
     return (
@@ -577,6 +606,63 @@ export const ContentPackEditor: React.FC = () => {
             </button>
           </fieldset>
         )}
+
+        {/* Submissions section (FR-131, only for saved packs) */}
+        {!isNewPack && (
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-bold text-slate-300">
+              Einreichungen ({submissions.length})
+            </legend>
+
+            {submissions.length === 0 ? (
+              <p className="text-xs text-slate-500">
+                Noch keine Video-Einreichungen fuer dieses Pack.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {submissions.map((sub) => (
+                  <div
+                    key={sub.id}
+                    className="glass rounded-lg p-3 flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">{sub.title}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded border ${STATUS_BADGES[sub.status] ?? STATUS_BADGES.draft}`}>
+                          {STATUS_LABELS[sub.status] ?? sub.status}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        {sub.videoAType && `Video A: ${sub.videoAType}`}
+                        {sub.videoBType && ` | Video B: ${sub.videoBType}`}
+                        {sub.submittedBy && ` | von ${sub.submittedBy}`}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEditingSubmission(sub);
+                        setShowSubmissionForm(true);
+                      }}
+                      className="text-xs text-blue-400 hover:text-blue-300 min-h-[36px] px-2 transition-colors shrink-0"
+                    >
+                      Bearbeiten
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                setEditingSubmission(undefined);
+                setShowSubmissionForm(true);
+              }}
+              className="text-xs px-4 py-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 transition-colors font-medium min-h-[44px] flex items-center"
+            >
+              + Neue Lernreise einreichen
+            </button>
+          </fieldset>
+        )}
       </div>
     );
   }
@@ -656,69 +742,7 @@ export const ContentPackEditor: React.FC = () => {
   );
 };
 
-// --- Shared UI components ---
-
-const Field: React.FC<{
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  disabled?: boolean;
-  hint?: string;
-}> = ({ label, value, onChange, placeholder, disabled, hint }) => (
-  <div className="space-y-1">
-    <label className="text-xs text-slate-400 font-medium">{label}</label>
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      disabled={disabled}
-      className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 transition-colors disabled:opacity-50"
-    />
-    {hint && <p className="text-[10px] text-slate-600">{hint}</p>}
-  </div>
-);
-
-const TextArea: React.FC<{
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}> = ({ label, value, onChange, placeholder }) => (
-  <div className="space-y-1">
-    <label className="text-xs text-slate-400 font-medium">{label}</label>
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      rows={3}
-      className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 transition-colors resize-y"
-    />
-  </div>
-);
-
-const NumberField: React.FC<{
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
-  min?: number;
-  max?: number;
-  step?: number;
-}> = ({ label, value, onChange, min, max, step }) => (
-  <div className="space-y-1">
-    <label className="text-xs text-slate-400 font-medium">{label}</label>
-    <input
-      type="number"
-      value={value}
-      onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-      min={min}
-      max={max}
-      step={step}
-      className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-colors"
-    />
-  </div>
-);
+// Field, TextArea, NumberField imported from ./FormFields
 
 const LernreisePreviewCard: React.FC<{ lr: Partial<AdminLernreise> }> = ({ lr }) => (
   <div className="glass rounded-xl p-4 space-y-3">

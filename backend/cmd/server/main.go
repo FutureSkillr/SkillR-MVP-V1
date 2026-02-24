@@ -52,6 +52,12 @@ func run() error {
 	cfg.LogStatus()
 	log.Printf("starting Future SkillR backend on :%s", cfg.Port)
 
+	// Configure permanent admin emails
+	if len(cfg.AdminEmails) > 0 {
+		middleware.SetAdminEmails(cfg.AdminEmails)
+		log.Printf("permanent admin emails: %v", cfg.AdminEmails)
+	}
+
 	// Create server and register routes with nil deps first.
 	// Cloud Run needs the port open fast — connect to DB afterward.
 	srv := server.New(cfg)
@@ -166,6 +172,12 @@ func run() error {
 	deps.GatewayBrand = gwBrand
 	deps.GatewayCampaigns = gwCampaigns
 	deps.GatewayContentPack = gwContentPack
+
+	// LFS Proxy (FR-131)
+	if cfg.LFSProxyEnabled && cfg.LFSProxyURL != "" {
+		deps.GatewayLFSProxy = gateway.NewLFSProxyHandler(cfg.LFSProxyURL)
+		log.Printf("LFS Proxy initialized (url=%s)", cfg.LFSProxyURL)
+	}
 
 	server.RegisterRoutes(srv.Echo, deps)
 	server.RegisterStaticRoutes(srv.Echo, cfg.StaticDir)

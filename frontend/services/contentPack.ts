@@ -226,3 +226,113 @@ export async function adminReorderLernreisen(packId: string, orderedIds: string[
     return false;
   }
 }
+
+// --- Videoset Submissions (FR-131) ---
+
+export type VideoInputType = 'upload' | 'youtube' | 'text' | '';
+export type SubmissionStatus = 'draft' | 'submitted' | 'in_review' | 'completed' | 'rejected';
+
+export interface LfsEnvelope {
+  kfs_lfs: string;
+  bucket: string;
+  key: string;
+  size: number;
+  sha256: string;
+  content_type: string;
+}
+
+export interface VideosetSubmission {
+  id: string;
+  packId: string;
+  title: string;
+  status: SubmissionStatus;
+  videoAType: VideoInputType;
+  videoAValue: string;
+  videoAEnvelope?: LfsEnvelope | null;
+  videoBType: VideoInputType;
+  videoBValue: string;
+  videoBEnvelope?: LfsEnvelope | null;
+  didacticsNotes: string;
+  resultingLrId?: string;
+  rejectionReason?: string;
+  submittedBy?: string;
+  submittedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** List submissions for a content pack (admin). */
+export async function adminListSubmissions(packId: string): Promise<VideosetSubmission[]> {
+  try {
+    const res = await fetch(`/api/admin/content-packs/${encodeURIComponent(packId)}/submissions`, {
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) return await res.json();
+  } catch { /* ignore */ }
+  return [];
+}
+
+/** Create a new submission (admin). */
+export async function adminCreateSubmission(
+  packId: string,
+  sub: Partial<VideosetSubmission>,
+): Promise<VideosetSubmission | null> {
+  try {
+    const res = await fetch(`/api/admin/content-packs/${encodeURIComponent(packId)}/submissions`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(sub),
+    });
+    if (res.ok) return await res.json();
+  } catch { /* ignore */ }
+  return null;
+}
+
+/** Get a single submission (admin). */
+export async function adminGetSubmission(packId: string, subId: string): Promise<VideosetSubmission | null> {
+  try {
+    const res = await fetch(
+      `/api/admin/content-packs/${encodeURIComponent(packId)}/submissions/${encodeURIComponent(subId)}`,
+      { headers: getAuthHeaders() },
+    );
+    if (res.ok) return await res.json();
+  } catch { /* ignore */ }
+  return null;
+}
+
+/** Update a draft submission (admin). */
+export async function adminUpdateSubmission(
+  packId: string,
+  subId: string,
+  sub: Partial<VideosetSubmission>,
+): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `/api/admin/content-packs/${encodeURIComponent(packId)}/submissions/${encodeURIComponent(subId)}`,
+      {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(sub),
+      },
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Submit a draft submission for review (admin). */
+export async function adminSubmitSubmission(packId: string, subId: string): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `/api/admin/content-packs/${encodeURIComponent(packId)}/submissions/${encodeURIComponent(subId)}/submit`,
+      {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      },
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
+}

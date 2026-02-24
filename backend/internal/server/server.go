@@ -45,7 +45,17 @@ func New(cfg *config.Config) *Server {
 		AllowCredentials: allowCreds,
 		MaxAge:           3600,
 	}))
-	e.Use(echomw.BodyLimit("10M"))
+	// Conditional body limit: 500M for LFS uploads, 10M for everything else (FR-131)
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		lfsLimit := echomw.BodyLimit("500M")
+		defaultLimit := echomw.BodyLimit("10M")
+		return func(c echo.Context) error {
+			if c.Path() == "/api/lfs/produce" {
+				return lfsLimit(next)(c)
+			}
+			return defaultLimit(next)(c)
+		}
+	})
 
 	// Security headers (FR-059)
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {

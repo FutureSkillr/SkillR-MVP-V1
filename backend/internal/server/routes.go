@@ -24,6 +24,13 @@ func RegisterRoutes(e *echo.Echo, deps *Dependencies) {
 		e.DELETE("/api/auth/account", deps.Auth.DeleteAccount)
 	}
 
+	// Auth: /api/auth/me — returns effective role after middleware overrides
+	if deps.Auth != nil && deps.FirebaseAuthMiddleware != nil {
+		e.GET("/api/auth/me", deps.Auth.Me, deps.FirebaseAuthMiddleware)
+	} else if deps.Auth != nil {
+		e.GET("/api/auth/me", deps.Auth.Me)
+	}
+
 	// API v1 group — apply FirebaseAuth middleware if available (C1/H8)
 	var v1Middlewares []echo.MiddlewareFunc
 	if deps.FirebaseAuthMiddleware != nil {
@@ -385,6 +392,22 @@ func RegisterRoutes(e *echo.Echo, deps *Dependencies) {
 		cpAdmin.PUT("/:id/lernreisen/order", deps.GatewayContentPack.AdminReorderLernreisen)
 		cpAdmin.PUT("/:id/lernreisen/:lrId", deps.GatewayContentPack.AdminUpdateLernreise)
 		cpAdmin.DELETE("/:id/lernreisen/:lrId", deps.GatewayContentPack.AdminDeleteLernreise)
+		// Videoset Submissions (FR-131)
+		cpAdmin.GET("/:id/submissions", deps.GatewayContentPack.AdminListSubmissions)
+		cpAdmin.POST("/:id/submissions", deps.GatewayContentPack.AdminCreateSubmission)
+		cpAdmin.GET("/:id/submissions/:subId", deps.GatewayContentPack.AdminGetSubmission)
+		cpAdmin.PUT("/:id/submissions/:subId", deps.GatewayContentPack.AdminUpdateSubmission)
+		cpAdmin.POST("/:id/submissions/:subId/submit", deps.GatewayContentPack.AdminSubmitSubmission)
+	}
+
+	// LFS Proxy (FR-131) — admin auth required
+	if deps.GatewayLFSProxy != nil {
+		var lfsMws []echo.MiddlewareFunc
+		if deps.FirebaseAuthMiddleware != nil {
+			lfsMws = append(lfsMws, deps.FirebaseAuthMiddleware)
+		}
+		lfsMws = append(lfsMws, middleware.RequireAdmin())
+		e.POST("/api/lfs/produce", deps.GatewayLFSProxy.Produce, lfsMws...)
 	}
 }
 
@@ -420,6 +443,7 @@ type Dependencies struct {
 	GatewayBrand       GatewayBrandHandler
 	GatewayCampaigns   GatewayCampaignHandler
 	GatewayContentPack GatewayContentPackHandler
+	GatewayLFSProxy    GatewayLFSProxyHandler
 }
 
 // Handler interfaces — each domain package implements these
@@ -604,4 +628,15 @@ type GatewayContentPackHandler interface {
 	AdminUpdateLernreise(c echo.Context) error
 	AdminDeleteLernreise(c echo.Context) error
 	AdminReorderLernreisen(c echo.Context) error
+	// Videoset Submissions (FR-131)
+	AdminListSubmissions(c echo.Context) error
+	AdminCreateSubmission(c echo.Context) error
+	AdminGetSubmission(c echo.Context) error
+	AdminUpdateSubmission(c echo.Context) error
+	AdminSubmitSubmission(c echo.Context) error
+}
+
+// GatewayLFSProxyHandler is the interface for the LFS proxy handler (FR-131).
+type GatewayLFSProxyHandler interface {
+	Produce(c echo.Context) error
 }
