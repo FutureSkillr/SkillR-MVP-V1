@@ -73,6 +73,20 @@ const TABS: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
+    key: 'flow',
+    label: 'Flow',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="5" r="3" />
+        <line x1="12" y1="8" x2="12" y2="14" />
+        <circle cx="6" cy="19" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <line x1="12" y1="14" x2="6" y2="16" />
+        <line x1="12" y1="14" x2="18" y2="16" />
+      </svg>
+    ),
+  },
+  {
     key: 'dialogs',
     label: 'Dialoge',
     icon: (

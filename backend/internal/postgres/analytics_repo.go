@@ -262,7 +262,7 @@ func (r *AnalyticsRepository) GetOverview(ctx context.Context) (*AnalyticsOvervi
 		`SELECT event_data->>'from_view', event_data->>'to_view', COUNT(*)
 		 FROM user_events WHERE event_type = 'page_view'
 		 GROUP BY event_data->>'from_view', event_data->>'to_view'
-		 ORDER BY COUNT(*) DESC LIMIT 20`,
+		 ORDER BY COUNT(*) DESC LIMIT 50`,
 	)
 	if err == nil {
 		defer pRows.Close()

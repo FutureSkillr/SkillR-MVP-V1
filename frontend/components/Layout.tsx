@@ -11,6 +11,7 @@ import { CampaignDashboard } from './admin/CampaignDashboard';
 import { DialogTraceViewer } from './admin/DialogTraceViewer';
 import { ContentPackEditor } from './admin/ContentPackEditor';
 import { InfraDashboard } from './admin/InfraDashboard';
+import { PageFlowGraph } from './admin/PageFlowGraph';
 import { LegalFooter } from './legal/LegalFooter';
 import type { AuthUser } from '../types/auth';
 import type { AdminTab } from '../types/admin';
@@ -41,6 +42,7 @@ const ADMIN_LABELS: Record<AdminTab, string> = {
   'meta-kurs': 'Content Editor',
   'content-packs': 'Content Packs',
   analytics: 'Analytics',
+  flow: 'Page Flow',
   dialogs: 'Dialog-Trace',
   campaigns: 'Kampagnen',
   legal: 'Geschaeftsdaten',
@@ -232,6 +234,7 @@ export const Layout: React.FC<LayoutProps> = ({
               {adminTab === 'meta-kurs' && <MetaKursEditor />}
               {adminTab === 'content-packs' && <ContentPackEditor />}
               {adminTab === 'analytics' && <AnalyticsDashboard />}
+              {adminTab === 'flow' && <PageFlowGraph />}
               {adminTab === 'dialogs' && <DialogTraceViewer />}
               {adminTab === 'campaigns' && <CampaignDashboard />}
               {adminTab === 'legal' && <BusinessConfigTab />}
