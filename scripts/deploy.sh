@@ -129,7 +129,13 @@ else
   yaml_kv MEMORY_SERVICE_URL "${MEMORY_SERVICE_URL:-}"
   yaml_kv MEMORY_SERVICE_API_KEY "${MEMORY_SERVICE_API_KEY:-}"
   yaml_kv SOLID_POD_URL "${SOLID_POD_URL:-http://localhost:3000}"
-  yaml_kv SOLID_POD_ENABLED "${SOLID_POD_ENABLED:-false}"
+  # FR-127: CSS runs inside the container but needs persistent storage.
+  # On staging, disable by default to avoid startup delays.
+  if [ "$TARGET" = "staging" ]; then
+    yaml_kv SOLID_POD_ENABLED "${SOLID_POD_ENABLED_STAGING:-false}"
+  else
+    yaml_kv SOLID_POD_ENABLED "${SOLID_POD_ENABLED:-false}"
+  fi
   yaml_kv SOLID_POD_ADMIN_EMAIL "${SOLID_POD_ADMIN_EMAIL:-admin@skillr.local}"
   yaml_kv SOLID_POD_ADMIN_PASSWORD "${SOLID_POD_ADMIN_PASSWORD:-skillr}"
   yaml_kv RUN_MIGRATIONS "true"
@@ -191,6 +197,13 @@ if [ "$DEPLOY_STATUS" = "SUCCESS" ]; then
     --format 'value(status.latestReadyRevisionName)' 2>/dev/null || echo "")
 
   ok "Deployed: ${BOLD}$DEPLOY_URL${NC}"
+
+  # Post-deploy: add Cloud Run URL to Firebase authorized domains
+  if [[ -x "$SCRIPT_DIR/setup-oauth-domains.sh" ]]; then
+    info "Adding Cloud Run URL to Firebase authorized domains..."
+    "$SCRIPT_DIR/setup-oauth-domains.sh" "$DEPLOY_URL" || \
+      warn "OAuth domain setup failed (non-fatal). Run manually: make setup-oauth-domains"
+  fi
 else
   err "Deployment failed."
 fi

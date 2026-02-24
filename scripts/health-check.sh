@@ -163,6 +163,18 @@ if [[ -n "$DETAILED" && "$DETAILED_HTTP" == "200" ]]; then
 
   printf "${CYAN}║${NC}  AI Service:  $(status_dot "$AI_STATUS") %-43s ${CYAN}║${NC}\n" "$(echo "$AI_STATUS" | tr '[:lower:]' '[:upper:]')"
 
+  # Pod readiness composite (FR-127)
+  POD_READY_STATUS=$(echo "$DETAILED" | jq -r '.pod_ready.status // "?"')
+  POD_DB=$(echo "$DETAILED" | jq -r '.pod_ready.checks.database // "?"')
+  POD_MIG=$(echo "$DETAILED" | jq -r '.pod_ready.checks.migrations // "?"')
+  POD_CSS=$(echo "$DETAILED" | jq -r '.pod_ready.checks.solid_server // "?"')
+
+  printf "${CYAN}╠──────────────────────────────────────────────────────────────╣${NC}\n"
+  printf "${CYAN}║${NC}  ${BOLD}Pod Readiness${NC}  $(status_dot "$POD_READY_STATUS")%-44s ${CYAN}║${NC}\n" ""
+  printf "${CYAN}║${NC}    Database:     $(status_dot "$POD_DB") %-41s ${CYAN}║${NC}\n" "$(echo "$POD_DB" | tr '[:lower:]' '[:upper:]')"
+  printf "${CYAN}║${NC}    Migrations:   $(status_dot "$POD_MIG") %-41s ${CYAN}║${NC}\n" "$(echo "$POD_MIG" | tr '[:lower:]' '[:upper:]')"
+  printf "${CYAN}║${NC}    Solid Server: $(status_dot "$POD_CSS") %-41s ${CYAN}║${NC}\n" "$(echo "$POD_CSS" | tr '[:lower:]' '[:upper:]')"
+
   printf "${CYAN}╠──────────────────────────────────────────────────────────────╣${NC}\n"
   printf "${CYAN}║${NC}  Errors (1h): %-45s ${CYAN}║${NC}\n" "$ERROR_COUNT"
   if [[ "$LOCAL_MODE" == "false" ]]; then

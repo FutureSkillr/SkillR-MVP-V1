@@ -266,6 +266,32 @@ check-adc-tts: ## Test ADC credentials against Vertex AI TTS endpoint directly
 # ─── E2E / Integration Tests ────────────────────────────────────────
 API_BASE_URL ?= http://localhost:8080
 
+.PHONY: e2e-pod
+e2e-pod: ## E2E: Full Solid Pod flow (requires: make services-up)
+	@echo "── E2E: Solid Pod Full Flow ──"
+	@echo "  CSS:      $(SOLID_POD_URL)"
+	@echo "  Database: $(DATABASE_URL)"
+	@echo ""
+	@docker compose -f docker-compose.services.yml ps --status running 2>/dev/null | grep -q solid || { \
+		echo "ERROR: Solid Pod container is not running."; \
+		echo "       Start services first: make services-up"; \
+		exit 1; \
+	}
+	cd backend && SOLID_POD_URL=$${SOLID_POD_URL:-http://localhost:3003} \
+		DATABASE_URL=$${DATABASE_URL:-postgres://skillr:localdev@localhost:15432/skillr?sslmode=disable} \
+		go test -tags=integration -v -timeout=60s ./internal/solid/ -run TestIntegration
+
+.PHONY: e2e-pod-external
+e2e-pod-external: ## E2E: External Solid Pod operations (requires EXTERNAL_POD_URL + credentials)
+	@echo "── E2E: External Solid Pod ──"
+	@echo "  Pod URL:  $${EXTERNAL_POD_URL:?Set EXTERNAL_POD_URL, e.g. https://solid.redpencil.io/kamir-skillr}"
+	@echo "  Email:    $${EXTERNAL_POD_EMAIL:-<not set — write tests will be skipped>}"
+	@echo ""
+	cd backend && EXTERNAL_POD_URL=$(EXTERNAL_POD_URL) \
+		EXTERNAL_POD_EMAIL=$(EXTERNAL_POD_EMAIL) \
+		EXTERNAL_POD_PASSWORD=$(EXTERNAL_POD_PASSWORD) \
+		go test -tags=integration -v -timeout=60s ./internal/solid/ -run TestIntegration_ExternalPod
+
 .PHONY: e2e-TTS-VertexAI
 e2e-TTS-VertexAI: ## E2E: TTS for all 6 coach dialects via Vertex AI (requires running backend)
 	@echo "── E2E: TTS VertexAI (all 6 coaches) ──"
@@ -448,6 +474,10 @@ cloudrun-delete:
 .PHONY: setup-firebase
 setup-firebase:
 	./scripts/setup-firebase.sh
+
+.PHONY: setup-oauth-domains
+setup-oauth-domains: ## Add Cloud Run URL to Firebase authorized domains
+	./scripts/setup-oauth-domains.sh
 
 .PHONY: setup-secrets
 setup-secrets:
@@ -672,6 +702,8 @@ help:
 	@echo "  make check-adc-tts     Test ADC against Vertex AI TTS endpoint directly"
 	@echo ""
 	@echo "  E2E / Integration:"
+	@echo "  make e2e-pod           Full Solid Pod flow (requires: make services-up)"
+	@echo "  make e2e-pod-external  External Solid Pod operations (requires EXTERNAL_POD_URL)"
 	@echo "  make e2e-TTS-VertexAI  TTS for all 6 coach dialects (requires running backend)"
 	@echo ""
 	@echo "  K6 Tests:"
@@ -688,7 +720,8 @@ help:
 	@echo "  make k6-ci            CI-friendly smoke with pass/fail summary"
 	@echo ""
 	@echo "  Setup:"
-	@echo "  make setup-firebase   Set up Firebase Auth (APIs, web app, providers)"
-	@echo "  make setup-secrets    Store SA key in Secret Manager (one-time)"
-	@echo "  make api-gen          Run OpenAPI code generation"
-	@echo "  make set-admin        Manage Firebase Auth admin roles (interactive)"
+	@echo "  make setup-firebase       Set up Firebase Auth (APIs, web app, providers)"
+	@echo "  make setup-oauth-domains  Add Cloud Run URL to Firebase authorized domains"
+	@echo "  make setup-secrets        Store SA key in Secret Manager (one-time)"
+	@echo "  make api-gen              Run OpenAPI code generation"
+	@echo "  make set-admin            Manage Firebase Auth admin roles (interactive)"
