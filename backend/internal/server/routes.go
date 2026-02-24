@@ -400,14 +400,20 @@ func RegisterRoutes(e *echo.Echo, deps *Dependencies) {
 		cpAdmin.POST("/:id/submissions/:subId/submit", deps.GatewayContentPack.AdminSubmitSubmission)
 	}
 
-	// LFS Proxy (FR-131) — admin auth required
-	if deps.GatewayLFSProxy != nil {
+	// LFS Proxy (FR-131) — always register route, return error if not configured
+	{
 		var lfsMws []echo.MiddlewareFunc
 		if deps.FirebaseAuthMiddleware != nil {
 			lfsMws = append(lfsMws, deps.FirebaseAuthMiddleware)
 		}
 		lfsMws = append(lfsMws, middleware.RequireAdmin())
-		e.POST("/api/lfs/produce", deps.GatewayLFSProxy.Produce, lfsMws...)
+		if deps.GatewayLFSProxy != nil {
+			e.POST("/api/lfs/produce", deps.GatewayLFSProxy.Produce, lfsMws...)
+		} else {
+			e.POST("/api/lfs/produce", func(c echo.Context) error {
+				return echo.NewHTTPError(503, "LFS proxy not configured — set LFS_PROXY_URL and LFS_PROXY_ENABLED=true")
+			}, lfsMws...)
+		}
 	}
 }
 

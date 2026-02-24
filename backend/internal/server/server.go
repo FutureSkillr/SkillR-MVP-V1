@@ -41,7 +41,7 @@ func New(cfg *config.Config) *Server {
 	e.Use(echomw.CORSWithConfig(echomw.CORSConfig{
 		AllowOrigins:     corsOrigins,
 		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
-		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization, "X-Kafka-Topic", "X-Kafka-Key", "X-LFS-Size", "X-LFS-Mode"},
 		AllowCredentials: allowCreds,
 		MaxAge:           3600,
 	}))
