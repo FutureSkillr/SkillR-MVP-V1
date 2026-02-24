@@ -1,0 +1,2 @@
+DROP TRIGGER IF EXISTS set_learner_portfolio_entries_updated_at ON learner_portfolio_entries;
+DROP TABLE IF EXISTS learner_portfolio_entries;
