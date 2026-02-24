@@ -1,0 +1,2440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DPO Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,300&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2333;
+  --surface3: #21262d;
+  --border: #30363d;
+  --border2: #3d444d;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --text3: #6e7681;
+  --accent: #d4a017;
+  --accent2: #f0c040;
+  --accent-dim: rgba(212,160,23,0.12);
+  --blue: #388bfd;
+  --blue-dim: rgba(56,139,253,0.12);
+  --green: #3fb950;
+  --green-dim: rgba(63,185,80,0.12);
+  --red: #f85149;
+  --red-dim: rgba(248,81,73,0.12);
+  --orange: #e3b341;
+  --orange-dim: rgba(227,179,65,0.12);
+  --purple: #bc8cff;
+  --purple-dim: rgba(188,140,255,0.12);
+  --radius: 8px;
+  --radius-lg: 12px;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --nav-w: 240px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.6; overflow: hidden; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── LAYOUT ── */
+#app { display: flex; height: 100vh; }
+
+/* ── NAV ── */
+nav {
+  width: var(--nav-w); min-width: var(--nav-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.nav-header {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  font-family: var(--font-display);
+  font-size: 16px; font-weight: 600; color: var(--accent);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+.nav-sub { font-size: 10px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
+
+.nav-org {
+  margin: 12px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 11px; color: var(--text2);
+}
+.nav-org input {
+  background: none; border: none; color: var(--text); font-family: var(--font-body); font-size: 12px; width: 100%; outline: none;
+}
+.nav-org-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+
+nav ul { list-style: none; padding: 8px 0; flex: 1; overflow-y: auto; }
+nav li { }
+.nav-section-label {
+  font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 12px 16px 4px; font-weight: 500;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px; cursor: pointer;
+  color: var(--text2); font-size: 13px; font-weight: 400;
+  transition: all 0.15s; border-left: 2px solid transparent;
+  user-select: none;
+}
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active { color: var(--accent); background: var(--accent-dim); border-left-color: var(--accent); }
+.nav-item .nav-icon { width: 16px; text-align: center; font-size: 15px; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto; background: var(--red); color: white;
+  font-size: 10px; font-weight: 600; border-radius: 10px;
+  padding: 1px 6px; min-width: 18px; text-align: center;
+}
+.nav-badge.warn { background: var(--orange); }
+.nav-badge.info { background: var(--blue); }
+
+.nav-footer {
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  font-size: 11px; color: var(--text3);
+}
+.nav-footer .dpo-name { color: var(--text2); font-weight: 500; }
+
+/* ── MAIN ── */
+main {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.topbar {
+  height: 52px; display: flex; align-items: center;
+  padding: 0 24px; gap: 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.topbar-title {
+  font-family: var(--font-display);
+  font-size: 18px; font-weight: 600;
+  color: var(--text);
+}
+.topbar-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+.card-title { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--text); }
+.card-subtitle { font-size: 12px; color: var(--text2); margin-top: 1px; }
+.card-body { padding: 20px; }
+
+/* ── GRID ── */
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+/* ── STAT CARDS ── */
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+.stat-value { font-family: var(--font-display); font-size: 32px; font-weight: 700; line-height: 1; }
+.stat-sub { font-size: 12px; color: var(--text2); }
+.stat.green .stat-value { color: var(--green); }
+.stat.red .stat-value { color: var(--red); }
+.stat.orange .stat-value { color: var(--orange); }
+.stat.blue .stat-value { color: var(--blue); }
+.stat.accent .stat-value { color: var(--accent); }
+
+/* ── TABLES ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; padding: 10px 14px;
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+  white-space: nowrap;
+}
+td {
+  padding: 11px 14px; border-bottom: 1px solid var(--border);
+  font-size: 13px; color: var(--text);
+  vertical-align: top;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+.td-mono { font-family: var(--font-mono); font-size: 12px; color: var(--text2); }
+.td-dim { color: var(--text2); }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 20px;
+  font-size: 11px; font-weight: 500; white-space: nowrap;
+}
+.badge-green { background: var(--green-dim); color: var(--green); }
+.badge-red { background: var(--red-dim); color: var(--red); }
+.badge-orange { background: var(--orange-dim); color: var(--orange); }
+.badge-blue { background: var(--blue-dim); color: var(--blue); }
+.badge-purple { background: var(--purple-dim); color: var(--purple); }
+.badge-gray { background: var(--surface3); color: var(--text2); border: 1px solid var(--border); }
+.badge-accent { background: var(--accent-dim); color: var(--accent); }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: var(--radius);
+  font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  cursor: pointer; border: none; transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #0d1117; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+.btn-secondary:hover { background: var(--surface3); border-color: var(--border2); }
+.btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+.btn-danger:hover { background: var(--red); color: white; }
+.btn-ghost { background: transparent; color: var(--text2); }
+.btn-ghost:hover { color: var(--text); background: var(--surface2); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+.btn-green:hover { background: var(--green); color: #0d1117; }
+
+/* ── FORMS ── */
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--text2); }
+.form-label .req { color: var(--red); }
+.form-control {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--radius); color: var(--text);
+  font-family: var(--font-body); font-size: 13px;
+  padding: 9px 12px; outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+.form-control:focus { border-color: var(--accent); }
+textarea.form-control { resize: vertical; min-height: 80px; line-height: 1.5; }
+select.form-control { cursor: pointer; }
+.form-hint { font-size: 11px; color: var(--text3); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 20px;
+  backdrop-filter: blur(4px);
+}
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  width: 100%; max-width: 760px;
+  max-height: 90vh; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.modal-title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.modal-subtitle { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.modal-close { margin-left: auto; cursor: pointer; color: var(--text3); font-size: 18px; padding: 4px; }
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+
+/* ── ALERT BOXES ── */
+.alert {
+  padding: 12px 16px; border-radius: var(--radius);
+  font-size: 13px; display: flex; gap: 10px; align-items: flex-start;
+  margin-bottom: 16px;
+}
+.alert-icon { flex-shrink: 0; font-size: 16px; margin-top: 0px; }
+.alert-red { background: var(--red-dim); border: 1px solid rgba(248,81,73,0.3); color: var(--red); }
+.alert-orange { background: var(--orange-dim); border: 1px solid rgba(227,179,65,0.3); color: var(--orange); }
+.alert-green { background: var(--green-dim); border: 1px solid rgba(63,185,80,0.3); color: var(--green); }
+.alert-blue { background: var(--blue-dim); border: 1px solid rgba(56,139,253,0.3); color: var(--blue); }
+
+/* ── DEADLINE COUNTDOWN ── */
+.deadline-urgent { color: var(--red); font-weight: 600; }
+.deadline-warn { color: var(--orange); }
+.deadline-ok { color: var(--green); }
+
+/* ── PROGRESS ── */
+.progress-bar { background: var(--surface3); border-radius: 4px; height: 6px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.progress-green { background: var(--green); }
+.progress-orange { background: var(--orange); }
+.progress-red { background: var(--red); }
+.progress-blue { background: var(--blue); }
+.progress-accent { background: var(--accent); }
+
+/* ── SIGN-OFF PANEL ── */
+.signoff-panel {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-top: 16px;
+}
+.signoff-title { font-size: 12px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+
+/* ── TIMELINE ── */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.timeline-item { display: flex; gap: 14px; padding-bottom: 16px; position: relative; }
+.timeline-item:not(:last-child)::before {
+  content: ''; position: absolute; left: 15px; top: 28px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-dot {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--surface3); border: 2px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0; margin-top: 2px;
+}
+.timeline-dot.green { background: var(--green-dim); border-color: var(--green); }
+.timeline-dot.red { background: var(--red-dim); border-color: var(--red); }
+.timeline-dot.orange { background: var(--orange-dim); border-color: var(--orange); }
+.timeline-dot.blue { background: var(--blue-dim); border-color: var(--blue); }
+.timeline-content { flex: 1; }
+.timeline-ts { font-size: 11px; color: var(--text3); font-family: var(--font-mono); }
+.timeline-text { font-size: 13px; color: var(--text); margin-top: 2px; }
+
+/* ── SECTION HEADER ── */
+.section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.section-icon { font-size: 22px; }
+.section-title { font-family: var(--font-display); font-size: 22px; font-weight: 600; }
+.section-desc { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.section-actions { margin-left: auto; display: flex; gap: 8px; }
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center; padding: 48px 24px; color: var(--text3);
+}
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-title { font-size: 15px; color: var(--text2); margin-bottom: 6px; }
+.empty-sub { font-size: 13px; }
+
+/* ── CHECKLIST ITEMS ── */
+.check-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.check-item:last-child { border-bottom: none; }
+.check-box {
+  width: 18px; height: 18px; border-radius: 4px;
+  border: 2px solid var(--border2); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px; transition: all 0.15s;
+  font-size: 11px;
+}
+.check-box.checked { background: var(--green); border-color: var(--green); color: white; }
+.check-box.partial { background: var(--orange-dim); border-color: var(--orange); color: var(--orange); }
+.check-box.nc { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+.check-label { font-size: 13px; color: var(--text); flex: 1; }
+.check-art { font-size: 11px; color: var(--text3); font-family: var(--font-mono); }
+
+/* ── TABS ── */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.tab {
+  padding: 10px 18px; font-size: 13px; cursor: pointer;
+  color: var(--text2); border-bottom: 2px solid transparent;
+  transition: all 0.15s; font-weight: 400; margin-bottom: -1px;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+/* ── UTILITY ── */
+.mt-4 { margin-top: 4px; } .mt-8 { margin-top: 8px; } .mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; } .mt-20 { margin-top: 20px; } .mt-24 { margin-top: 24px; }
+.mb-16 { margin-bottom: 16px; } .mb-20 { margin-bottom: 20px; }
+.flex { display: flex; } .flex-1 { flex: 1; } .items-center { align-items: center; }
+.gap-8 { gap: 8px; } .gap-12 { gap: 12px; } .gap-16 { gap: 16px; }
+.text-sm { font-size: 12px; } .text-xs { font-size: 11px; }
+.text-dim { color: var(--text2); } .text-red { color: var(--red); }
+.text-green { color: var(--green); } .text-orange { color: var(--orange); }
+.text-accent { color: var(--accent); } .text-blue { color: var(--blue); }
+.font-mono { font-family: var(--font-mono); }
+.bold { font-weight: 600; }
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+.w-full { width: 100%; }
+.hidden { display: none !important; }
+
+/* ── PRINT / EXPORT ── */
+@media print {
+  nav, .topbar, .section-actions, .btn, .modal-overlay { display: none !important; }
+  main { overflow: visible; }
+  .content { padding: 0; overflow: visible; }
+  body { background: white; color: black; }
+}
+
+/* ── TIMER ── */
+.timer-72h {
+  font-family: var(--font-mono);
+  font-size: 28px; font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.timer-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); }
+
+/* ── RISK MATRIX ── */
+.risk-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 6px;
+  font-size: 12px; font-weight: 700;
+}
+.risk-low { background: var(--green-dim); color: var(--green); }
+.risk-med { background: var(--orange-dim); color: var(--orange); }
+.risk-high { background: var(--red-dim); color: var(--red); }
+.risk-crit { background: var(--red); color: white; }
+
+/* ── NOTIFICATION DOT ── */
+.notif-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--red); display: inline-block;
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <nav>
+    <div class="nav-header">
+      <div class="nav-logo">⚖ DPO Console</div>
+      <div class="nav-sub">GDPR Management System</div>
+    </div>
+    <div class="nav-org">
+      <div class="nav-org-label">Organisation</div>
+      <input id="orgName" placeholder="Enter organisation name…" />
+    </div>
+    <ul>
+      <li class="nav-section-label">Overview</li>
+      <li class="nav-item active" data-view="dashboard"><span class="nav-icon">◉</span> Dashboard</li>
+      <li class="nav-section-label">Core Registers</li>
+      <li class="nav-item" data-view="ropa"><span class="nav-icon">📋</span> RoPA Registry</li>
+      <li class="nav-item" data-view="dsr"><span class="nav-icon">👤</span> DSR Tracker</li>
+      <li class="nav-item" data-view="breach"><span class="nav-icon">🚨</span> Breach Register</li>
+      <li class="nav-item" data-view="dpia"><span class="nav-icon">🔍</span> DPIA Manager</li>
+      <li class="nav-section-label">Governance</li>
+      <li class="nav-item" data-view="processors"><span class="nav-icon">🤝</span> Processor Registry</li>
+      <li class="nav-item" data-view="checklist"><span class="nav-icon">✅</span> Compliance Checks</li>
+      <li class="nav-item" data-view="evidence"><span class="nav-icon">📁</span> Evidence Register</li>
+      <li class="nav-section-label">Reporting</li>
+      <li class="nav-item" data-view="audit"><span class="nav-icon">📊</span> Audit Report</li>
+      <li class="nav-item" data-view="auditlog"><span class="nav-icon">🕐</span> Audit Trail</li>
+    </ul>
+    <div class="nav-footer">
+      <div class="nav-org-label">DPO</div>
+      <div class="dpo-name"><input id="dpoName" style="background:none;border:none;color:var(--text2);font-family:var(--font-body);font-size:12px;width:100%;outline:none;" placeholder="DPO Name…" /></div>
+    </div>
+  </nav>
+  <main>
+    <div class="topbar">
+      <div class="topbar-title" id="viewTitle">Dashboard</div>
+      <div class="topbar-right" id="topbarActions"></div>
+    </div>
+    <div class="content" id="mainContent"></div>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal" id="modalBox">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-subtitle" id="modalSub"></div>
+      </div>
+      <span class="modal-close" id="modalClose">✕</span>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// STATE & PERSISTENCE
+// ═══════════════════════════════════════════════════════════════
+const STORE_KEY = 'dpo_system_v3';
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return getDefaultState();
+}
+
+function getDefaultState() {
+  return {
+    org: '',
+    dpo: '',
+    ropa: [],
+    dsr: [],
+    breaches: [],
+    dpia: [],
+    processors: [],
+    checklist: {},
+    evidence: [],
+    auditLog: [],
+  };
+}
+
+function saveState() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(STATE));
+}
+
+let STATE = loadState();
+
+function logAudit(action, module, details, user) {
+  STATE.auditLog.unshift({
+    id: uid(),
+    ts: new Date().toISOString(),
+    action,
+    module,
+    details,
+    user: user || (STATE.dpo || 'DPO'),
+  });
+  if (STATE.auditLog.length > 500) STATE.auditLog = STATE.auditLog.slice(0, 500);
+  saveState();
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6).toUpperCase();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ROUTING & RENDER
+// ═══════════════════════════════════════════════════════════════
+let currentView = 'dashboard';
+
+function navigate(view) {
+  currentView = view;
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.view === view);
+  });
+  updateBadges();
+  render();
+}
+
+function render() {
+  const titles = {
+    dashboard: 'Dashboard',
+    ropa: 'Record of Processing Activities',
+    dsr: 'Data Subject Rights Tracker',
+    breach: 'Personal Data Breach Register',
+    dpia: 'Data Protection Impact Assessments',
+    processors: 'Processor & Third-Party Registry',
+    checklist: 'Compliance Checklist',
+    evidence: 'Document & Evidence Register',
+    audit: 'Audit Report Generator',
+    auditlog: 'Audit Trail',
+  };
+  document.getElementById('viewTitle').textContent = titles[currentView] || currentView;
+  document.getElementById('topbarActions').innerHTML = '';
+  const views = { dashboard, ropa, dsr, breach, dpia, processors, checklist, evidence, audit, auditlog };
+  if (views[currentView]) views[currentView]();
+}
+
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => navigate(el.dataset.view));
+});
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+function el(id) { return document.getElementById(id); }
+function fmtDate(iso) { if (!iso) return '—'; return new Date(iso).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}); }
+function fmtDateTime(iso) { if (!iso) return '—'; return new Date(iso).toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function daysUntil(iso) { if (!iso) return null; return Math.ceil((new Date(iso) - Date.now()) / 86400000); }
+function hoursUntil(iso) { if (!iso) return null; return Math.ceil((new Date(iso) - Date.now()) / 3600000); }
+function isoNow() { return new Date().toISOString(); }
+function isoDate(d) { return (d||new Date()).toISOString().slice(0,10); }
+function addDays(iso, n) { const d = new Date(iso); d.setDate(d.getDate()+n); return d.toISOString(); }
+function addHours(iso, h) { return new Date(new Date(iso).getTime() + h*3600000).toISOString(); }
+
+function deadlineBadge(iso, suffix) {
+  if (!iso) return '<span class="badge badge-gray">No deadline</span>';
+  const d = daysUntil(iso);
+  if (d < 0) return `<span class="badge badge-red">⚠ Overdue ${Math.abs(d)}d</span>`;
+  if (d === 0) return `<span class="badge badge-red">🔴 Today!</span>`;
+  if (d <= 3) return `<span class="badge badge-red">⚡ ${d}d ${suffix||'left'}</span>`;
+  if (d <= 10) return `<span class="badge badge-orange">⏱ ${d}d ${suffix||'left'}</span>`;
+  return `<span class="badge badge-green">✓ ${d}d ${suffix||'left'}</span>`;
+}
+
+function legalBasisBadge(lb) {
+  const map = {
+    'Art. 6(1)(a) Consent': 'blue',
+    'Art. 6(1)(b) Contract': 'green',
+    'Art. 6(1)(c) Legal obligation': 'accent',
+    'Art. 6(1)(d) Vital interests': 'purple',
+    'Art. 6(1)(e) Public task': 'orange',
+    'Art. 6(1)(f) Legitimate interests': 'gray',
+  };
+  const c = map[lb] || 'gray';
+  return `<span class="badge badge-${c}">${lb||'—'}</span>`;
+}
+
+function setContent(html) { el('mainContent').innerHTML = html; }
+
+// ═══════════════════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════════════════
+function openModal(title, sub, bodyHTML, footerHTML) {
+  el('modalTitle').textContent = title;
+  el('modalSub').textContent = sub || '';
+  el('modalBody').innerHTML = bodyHTML;
+  el('modalFooter').innerHTML = footerHTML || '<button class="btn btn-secondary" onclick="closeModal()">Close</button>';
+  el('modalOverlay').classList.remove('hidden');
+}
+function closeModal() { el('modalOverlay').classList.add('hidden'); }
+el('modalClose').addEventListener('click', closeModal);
+el('modalOverlay').addEventListener('click', e => { if (e.target === el('modalOverlay')) closeModal(); });
+
+// ═══════════════════════════════════════════════════════════════
+// ORG / DPO SETTINGS
+// ═══════════════════════════════════════════════════════════════
+el('orgName').value = STATE.org || '';
+el('dpoName').value = STATE.dpo || '';
+el('orgName').addEventListener('input', () => { STATE.org = el('orgName').value; saveState(); });
+el('dpoName').addEventListener('input', () => { STATE.dpo = el('dpoName').value; saveState(); });
+
+// ═══════════════════════════════════════════════════════════════
+// BADGES
+// ═══════════════════════════════════════════════════════════════
+function updateBadges() {
+  // DSR overdue
+  const dsrOver = STATE.dsr.filter(d => d.status !== 'Closed' && d.deadline && daysUntil(d.deadline) < 0).length;
+  const dsrWarn = STATE.dsr.filter(d => d.status !== 'Closed' && d.deadline && daysUntil(d.deadline) <= 5 && daysUntil(d.deadline) >= 0).length;
+  setNavBadge('dsr', dsrOver || dsrWarn, dsrOver ? 'red' : 'warn');
+
+  // Breaches open
+  const breachOpen = STATE.breaches.filter(b => b.status !== 'Closed').length;
+  setNavBadge('breach', breachOpen, 'red');
+
+  // DPIA pending DPO
+  const dpiaWait = STATE.dpia.filter(d => d.status === 'Awaiting DPO Sign-off').length;
+  setNavBadge('dpia', dpiaWait, 'info');
+
+  // Processors missing DPA
+  const procNoDpa = STATE.processors.filter(p => p.dpaStatus !== 'Signed').length;
+  setNavBadge('processors', procNoDpa, 'warn');
+}
+
+function setNavBadge(view, count, type) {
+  const item = document.querySelector(`[data-view="${view}"]`);
+  if (!item) return;
+  const existing = item.querySelector('.nav-badge');
+  if (existing) existing.remove();
+  if (count > 0) {
+    const b = document.createElement('span');
+    b.className = `nav-badge ${type}`;
+    b.textContent = count;
+    item.appendChild(b);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+function dashboard() {
+  const now = Date.now();
+  // Compute KPIs
+  const ropaReviewed = STATE.ropa.filter(r => r.lastReview && daysUntil(r.nextReview) > 0).length;
+  const dsrOpen = STATE.dsr.filter(d => d.status !== 'Closed').length;
+  const dsrOverdue = STATE.dsr.filter(d => d.status !== 'Closed' && d.deadline && daysUntil(d.deadline) < 0).length;
+  const breachOpen = STATE.breaches.filter(b => b.status !== 'Closed').length;
+  const dpiaWait = STATE.dpia.filter(d => d.status === 'Awaiting DPO Sign-off').length;
+  const procNoDpa = STATE.processors.filter(p => p.dpaStatus !== 'Signed').length;
+  const evidenceOk = STATE.evidence.filter(e => e.verified).length;
+
+  // Compliance score
+  const checkItems = Object.values(STATE.checklist);
+  const compliant = checkItems.filter(v => v === 'compliant').length;
+  const total = Object.keys(CHECKLIST_ITEMS).reduce((s, k) => s + CHECKLIST_ITEMS[k].items.length, 0);
+  const score = total > 0 ? Math.round((compliant / total) * 100) : 0;
+
+  // Upcoming deadlines
+  const allDeadlines = [
+    ...STATE.ropa.filter(r => r.nextReview).map(r => ({label:`RoPA Review: ${r.name}`, date: r.nextReview, type:'info'})),
+    ...STATE.dsr.filter(d => d.status !== 'Closed' && d.deadline).map(d => ({label:`DSR (${d.type}): ${d.name}`, date: d.deadline, type: daysUntil(d.deadline) < 3 ? 'red' : 'orange'})),
+    ...STATE.processors.filter(p => p.dpaExpiry).map(p => ({label:`DPA Renewal: ${p.name}`, date: p.dpaExpiry, type:'info'})),
+    ...STATE.dpia.filter(d => d.reviewDate).map(d => ({label:`DPIA Review: ${d.name}`, date: d.reviewDate, type:'info'})),
+  ].filter(x => daysUntil(x.date) !== null && daysUntil(x.date) <= 60)
+   .sort((a, b) => new Date(a.date) - new Date(b.date))
+   .slice(0, 8);
+
+  const scoreColor = score >= 80 ? 'green' : score >= 50 ? 'orange' : 'red';
+  const scoreProg = score >= 80 ? 'progress-green' : score >= 50 ? 'progress-orange' : 'progress-red';
+
+  setContent(`
+    <div class="section-header">
+      <div>
+        <div class="section-title">${STATE.org ? STATE.org + ' — ' : ''}GDPR Compliance Overview</div>
+        <div class="section-desc">Last updated: ${fmtDateTime(new Date().toISOString())} · DPO: ${STATE.dpo || 'Not set'}</div>
+      </div>
+    </div>
+
+    ${dsrOverdue > 0 ? `<div class="alert alert-red mb-16"><span class="alert-icon">🚨</span><div><strong>Action required:</strong> ${dsrOverdue} DSR(s) past their response deadline. Respond immediately to avoid regulatory exposure.</div></div>` : ''}
+    ${breachOpen > 0 ? `<div class="alert alert-orange mb-16"><span class="alert-icon">⚠</span><div><strong>${breachOpen} open breach(es)</strong> require active management. Check the Breach Register for 72h notification deadlines.</div></div>` : ''}
+    ${dpiaWait > 0 ? `<div class="alert alert-blue mb-16"><span class="alert-icon">✍</span><div><strong>${dpiaWait} DPIA(s)</strong> are awaiting your DPO sign-off.</div></div>` : ''}
+
+    <div class="grid grid-4 mb-20">
+      <div class="stat ${scoreColor}">
+        <div class="stat-label">Compliance Score</div>
+        <div class="stat-value">${score}%</div>
+        <div class="progress-bar mt-8"><div class="progress-fill ${scoreProg}" style="width:${score}%"></div></div>
+        <div class="stat-sub">${compliant} / ${total} checks passed</div>
+      </div>
+      <div class="stat accent">
+        <div class="stat-label">Processing Activities</div>
+        <div class="stat-value">${STATE.ropa.length}</div>
+        <div class="stat-sub">${ropaReviewed} reviewed & current</div>
+      </div>
+      <div class="stat ${dsrOverdue > 0 ? 'red' : dsrOpen > 0 ? 'orange' : 'green'}">
+        <div class="stat-label">Open DSRs</div>
+        <div class="stat-value">${dsrOpen}</div>
+        <div class="stat-sub">${dsrOverdue} overdue · ${STATE.dsr.filter(d=>d.status==='Closed').length} closed</div>
+      </div>
+      <div class="stat ${breachOpen > 0 ? 'red' : 'green'}">
+        <div class="stat-label">Active Breaches</div>
+        <div class="stat-value">${breachOpen}</div>
+        <div class="stat-sub">${STATE.breaches.length} total recorded</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2 gap-16">
+      <div>
+        <div class="grid grid-2 gap-16 mb-16">
+          <div class="stat ${dpiaWait > 0 ? 'orange' : 'blue'}">
+            <div class="stat-label">DPIAs</div>
+            <div class="stat-value">${STATE.dpia.length}</div>
+            <div class="stat-sub">${dpiaWait} awaiting sign-off</div>
+          </div>
+          <div class="stat ${procNoDpa > 0 ? 'orange' : 'green'}">
+            <div class="stat-label">Processors</div>
+            <div class="stat-value">${STATE.processors.length}</div>
+            <div class="stat-sub">${procNoDpa} without signed DPA</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">📅 Upcoming Deadlines</div><div class="card-subtitle">Next 60 days</div></div>
+          <div class="card-body">
+            ${allDeadlines.length === 0 ? '<div class="empty"><div class="empty-icon">🎉</div><div class="empty-title">No upcoming deadlines</div></div>' :
+              '<div class="timeline">' + allDeadlines.map(d => `
+                <div class="timeline-item">
+                  <div class="timeline-dot ${d.type === 'red' ? 'red' : d.type === 'orange' ? 'orange' : 'blue'}">📌</div>
+                  <div class="timeline-content">
+                    <div class="timeline-ts">${fmtDate(d.date)} · ${daysUntil(d.date)} days</div>
+                    <div class="timeline-text">${d.label}</div>
+                  </div>
+                </div>`).join('') + '</div>'
+            }
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header"><div class="card-title">📊 Compliance by Domain</div></div>
+          <div class="card-body">
+            ${Object.keys(CHECKLIST_ITEMS).map(k => {
+              const section = CHECKLIST_ITEMS[k];
+              const sTotal = section.items.length;
+              const sCompliant = section.items.filter((_, i) => STATE.checklist[`${k}_${i}`] === 'compliant').length;
+              const pct = sTotal > 0 ? Math.round((sCompliant / sTotal) * 100) : 0;
+              const pc = pct >= 80 ? 'progress-green' : pct >= 50 ? 'progress-orange' : 'progress-red';
+              return `<div style="margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                  <span style="font-size:12px">${section.title}</span>
+                  <span style="font-size:11px;color:var(--text2)">${sCompliant}/${sTotal}</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill ${pc}" style="width:${pct}%"></div></div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">🕐 Recent Activity</div></div>
+          <div class="card-body">
+            ${STATE.auditLog.length === 0 ? '<div class="text-dim text-sm">No activity recorded yet.</div>' :
+              STATE.auditLog.slice(0,6).map(l => `
+                <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+                  <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);white-space:nowrap;margin-top:1px">${fmtDateTime(l.ts)}</div>
+                  <div style="font-size:12px;color:var(--text2)"><span style="color:var(--text)">${l.action}</span> · ${l.module} · ${l.details}</div>
+                </div>`).join('')
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ROPA
+// ═══════════════════════════════════════════════════════════════
+function ropa() {
+  const ab = el('topbarActions');
+  ab.innerHTML = `<button class="btn btn-primary" onclick="openRopaForm()">+ New Processing Activity</button>`;
+
+  const rows = STATE.ropa.map((r, i) => `
+    <tr>
+      <td><span class="font-mono text-xs text-dim">${r.id}</span></td>
+      <td><strong>${r.name}</strong><br><span class="text-xs text-dim">${r.purpose ? r.purpose.slice(0,60)+'…' : ''}</span></td>
+      <td>${legalBasisBadge(r.legalBasis)}</td>
+      <td><span class="text-sm text-dim">${r.owner||'—'}</span></td>
+      <td>${r.specialCategory ? '<span class="badge badge-red">Art. 9</span>' : '<span class="badge badge-gray">No</span>'}</td>
+      <td>${r.transfersOutsideEEA ? '<span class="badge badge-orange">Yes</span>' : '<span class="badge badge-gray">No</span>'}</td>
+      <td>${r.dpoSignoff ? `<span class="badge badge-green">✓ ${fmtDate(r.dpoSignoffDate)}</span>` : '<span class="badge badge-orange">Pending</span>'}</td>
+      <td>${deadlineBadge(r.nextReview, 'to review')}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="viewRopa(${i})">View</button>
+        <button class="btn btn-ghost btn-sm" onclick="editRopa(${i})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteRopa(${i})">Del</button>
+      </td>
+    </tr>
+  `).join('');
+
+  setContent(`
+    <div class="section-header">
+      <div>
+        <div class="section-title">📋 Record of Processing Activities</div>
+        <div class="section-desc">Art. 30 GDPR — Mandatory register of all personal data processing activities</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">${STATE.ropa.length} Processing Activities</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <span class="badge badge-green">${STATE.ropa.filter(r=>r.dpoSignoff).length} DPO signed</span>
+          <span class="badge badge-orange">${STATE.ropa.filter(r=>!r.dpoSignoff).length} pending sign-off</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        ${STATE.ropa.length === 0 ? `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No processing activities yet</div><div class="empty-sub">Add your first processing activity to begin building your RoPA</div></div>` : `
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Activity / Purpose</th><th>Legal Basis</th><th>Owner</th>
+            <th>Art.9</th><th>Int'l Transfer</th><th>DPO Sign-off</th><th>Next Review</th><th>Actions</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`}
+      </div>
+    </div>
+  `);
+}
+
+function ropaFormHTML(r) {
+  r = r || {};
+  return `
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Activity Name <span class="req">*</span></label>
+        <input class="form-control" id="f_name" value="${r.name||''}" placeholder="e.g. Employee Payroll Processing" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Activity ID</label>
+        <input class="form-control" id="f_id" value="${r.id||''}" placeholder="e.g. PA-HR-001" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Processing Purpose <span class="req">*</span></label>
+      <textarea class="form-control" id="f_purpose" placeholder="Specific purpose — not generic. WHY is this data processed?">${r.purpose||''}</textarea>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Legal Basis (Art. 6) <span class="req">*</span></label>
+        <select class="form-control" id="f_legalBasis">
+          ${['Art. 6(1)(a) Consent','Art. 6(1)(b) Contract','Art. 6(1)(c) Legal obligation','Art. 6(1)(d) Vital interests','Art. 6(1)(e) Public task','Art. 6(1)(f) Legitimate interests'].map(v=>`<option ${r.legalBasis===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Business Owner</label>
+        <input class="form-control" id="f_owner" value="${r.owner||''}" placeholder="Name, Role, Department" />
+      </div>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Categories of Data Subjects</label>
+        <input class="form-control" id="f_subjects" value="${r.subjects||''}" placeholder="e.g. Employees, customers, website visitors" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categories of Personal Data</label>
+        <input class="form-control" id="f_dataCategories" value="${r.dataCategories||''}" placeholder="e.g. Name, email, IBAN, health data" />
+      </div>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Special Category Data (Art. 9)?</label>
+        <select class="form-control" id="f_specialCategory">
+          <option value="">No</option>
+          <option value="health" ${r.specialCategory==='health'?'selected':''}>Health data</option>
+          <option value="biometric" ${r.specialCategory==='biometric'?'selected':''}>Biometric data</option>
+          <option value="racial" ${r.specialCategory==='racial'?'selected':''}>Racial/ethnic origin</option>
+          <option value="religion" ${r.specialCategory==='religion'?'selected':''}>Religious beliefs</option>
+          <option value="political" ${r.specialCategory==='political'?'selected':''}>Political opinions</option>
+          <option value="union" ${r.specialCategory==='union'?'selected':''}>Trade union membership</option>
+          <option value="genetic" ${r.specialCategory==='genetic'?'selected':''}>Genetic data</option>
+          <option value="sexual" ${r.specialCategory==='sexual'?'selected':''}>Sexual orientation</option>
+          <option value="criminal" ${r.specialCategory==='criminal'?'selected':''}>Criminal convictions</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Art. 9 Legal Basis (if applicable)</label>
+        <input class="form-control" id="f_art9basis" value="${r.art9basis||''}" placeholder="e.g. Art. 9(2)(b) employment law" />
+      </div>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Internal Recipients</label>
+        <input class="form-control" id="f_internalRecipients" value="${r.internalRecipients||''}" placeholder="Departments/roles with access" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">External Recipients</label>
+        <input class="form-control" id="f_externalRecipients" value="${r.externalRecipients||''}" placeholder="Third-party names and roles" />
+      </div>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">International Transfers?</label>
+        <select class="form-control" id="f_transfersOutsideEEA">
+          <option value="">No transfer outside EEA</option>
+          <option value="yes" ${r.transfersOutsideEEA?'selected':''}>Yes — see details</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Transfer Mechanism (if applicable)</label>
+        <select class="form-control" id="f_transferMechanism">
+          ${['—','EU SCCs (2021)','Adequacy decision','BCRs','Art. 49 derogation'].map(v=>`<option ${r.transferMechanism===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Retention Period</label>
+        <input class="form-control" id="f_retention" value="${r.retention||''}" placeholder="e.g. 10 years — per § 147 AO" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Systems Used</label>
+        <input class="form-control" id="f_systems" value="${r.systems||''}" placeholder="e.g. SAP HCM, DATEV" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Technical & Organisational Measures (TOMs)</label>
+      <textarea class="form-control" id="f_toms" placeholder="Encryption standard, access controls, training, audit rights…">${r.toms||''}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">DPIA Conducted?</label>
+      <select class="form-control" id="f_dpiaRequired">
+        <option value="">No DPIA required (screening completed)</option>
+        <option value="yes" ${r.dpiaRequired?'selected':''}>Yes — DPIA reference:</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">DPIA / Screening Reference</label>
+      <input class="form-control" id="f_dpiaRef" value="${r.dpiaRef||''}" placeholder="e.g. DPIA-2024-003 or Screening-PA-HR-001" />
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Date Created</label>
+        <input class="form-control" type="date" id="f_dateCreated" value="${r.dateCreated||isoDate()}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last Reviewed</label>
+        <input class="form-control" type="date" id="f_lastReview" value="${r.lastReview||''}" />
+      </div>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Next Review Date</label>
+        <input class="form-control" type="date" id="f_nextReview" value="${r.nextReview||isoDate(new Date(Date.now()+365*86400000))}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Change Log / Notes</label>
+        <input class="form-control" id="f_notes" value="${r.notes||''}" placeholder="Summary of changes or open issues" />
+      </div>
+    </div>
+    <div class="signoff-panel">
+      <div class="signoff-title">⚖ DPO Sign-off</div>
+      <div class="grid grid-2 gap-16">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Status</label>
+          <select class="form-control" id="f_dpoSignoff">
+            <option value="">Pending DPO review</option>
+            <option value="yes" ${r.dpoSignoff?'selected':''}>✓ DPO Approved</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Sign-off Date</label>
+          <input class="form-control" type="date" id="f_dpoSignoffDate" value="${r.dpoSignoffDate||''}" />
+        </div>
+      </div>
+      <div class="form-group mt-8" style="margin-bottom:0">
+        <label class="form-label">DPO Comments</label>
+        <textarea class="form-control" id="f_dpoComments" placeholder="DPO review notes / conditions…" style="min-height:60px">${r.dpoComments||''}</textarea>
+      </div>
+    </div>
+  `;
+}
+
+function collectRopaForm() {
+  return {
+    id: el('f_id').value || 'PA-' + uid(),
+    name: el('f_name').value,
+    purpose: el('f_purpose').value,
+    legalBasis: el('f_legalBasis').value,
+    owner: el('f_owner').value,
+    subjects: el('f_subjects').value,
+    dataCategories: el('f_dataCategories').value,
+    specialCategory: el('f_specialCategory').value,
+    art9basis: el('f_art9basis').value,
+    internalRecipients: el('f_internalRecipients').value,
+    externalRecipients: el('f_externalRecipients').value,
+    transfersOutsideEEA: el('f_transfersOutsideEEA').value === 'yes',
+    transferMechanism: el('f_transferMechanism').value,
+    retention: el('f_retention').value,
+    systems: el('f_systems').value,
+    toms: el('f_toms').value,
+    dpiaRequired: el('f_dpiaRequired').value === 'yes',
+    dpiaRef: el('f_dpiaRef').value,
+    dateCreated: el('f_dateCreated').value,
+    lastReview: el('f_lastReview').value,
+    nextReview: el('f_nextReview').value,
+    notes: el('f_notes').value,
+    dpoSignoff: el('f_dpoSignoff').value === 'yes',
+    dpoSignoffDate: el('f_dpoSignoffDate').value,
+    dpoComments: el('f_dpoComments').value,
+  };
+}
+
+function openRopaForm() {
+  openModal('New Processing Activity', 'Art. 30 GDPR — Complete all mandatory fields', ropaFormHTML(),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-primary" onclick="saveRopa()">Save Activity</button>`);
+}
+
+function saveRopa() {
+  const r = collectRopaForm();
+  if (!r.name) { alert('Activity name is required'); return; }
+  STATE.ropa.push(r);
+  logAudit('Created', 'RoPA', r.name);
+  saveState(); closeModal(); ropa();
+}
+
+function editRopa(i) {
+  openModal('Edit Processing Activity', STATE.ropa[i].name, ropaFormHTML(STATE.ropa[i]),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-primary" onclick="updateRopa(${i})">Update</button>`);
+}
+
+function updateRopa(i) {
+  const r = collectRopaForm();
+  if (!r.name) { alert('Name required'); return; }
+  STATE.ropa[i] = r;
+  logAudit('Updated', 'RoPA', r.name);
+  saveState(); closeModal(); ropa();
+}
+
+function deleteRopa(i) {
+  if (!confirm('Delete this processing activity?')) return;
+  logAudit('Deleted', 'RoPA', STATE.ropa[i].name);
+  STATE.ropa.splice(i, 1);
+  saveState(); ropa();
+}
+
+function viewRopa(i) {
+  const r = STATE.ropa[i];
+  openModal(r.name, `Processing Activity · ${r.id}`, `
+    <div class="grid grid-2 gap-16">
+      ${ropaField('ID', r.id)} ${ropaField('Owner', r.owner)}
+      ${ropaField('Legal Basis', legalBasisBadge(r.legalBasis), true)}
+      ${ropaField('Special Category', r.specialCategory ? `<span class="badge badge-red">${r.specialCategory}</span>` : '<span class="badge badge-gray">No</span>', true)}
+      ${ropaField('Data Subjects', r.subjects)} ${ropaField('Data Categories', r.dataCategories)}
+      ${ropaField('Int\'l Transfer', r.transfersOutsideEEA ? `<span class="badge badge-orange">Yes — ${r.transferMechanism}</span>` : '<span class="badge badge-gray">No</span>', true)}
+      ${ropaField('Retention', r.retention)} ${ropaField('Systems', r.systems)}
+      ${ropaField('Next Review', fmtDate(r.nextReview))}
+      ${ropaField('DPO Sign-off', r.dpoSignoff ? `<span class="badge badge-green">✓ ${fmtDate(r.dpoSignoffDate)} — ${STATE.dpo}</span>` : '<span class="badge badge-orange">Pending</span>', true)}
+    </div>
+    <div class="divider"></div>
+    <div class="form-group"><label class="form-label">Purpose</label><div style="font-size:13px">${r.purpose||'—'}</div></div>
+    <div class="form-group"><label class="form-label">TOMs</label><div style="font-size:13px">${r.toms||'—'}</div></div>
+    ${r.dpoComments ? `<div class="signoff-panel"><div class="signoff-title">DPO Notes</div><div style="font-size:13px">${r.dpoComments}</div></div>` : ''}
+  `);
+}
+
+function ropaField(label, val, raw) {
+  return `<div><div class="form-label">${label}</div><div style="font-size:13px;margin-top:2px">${raw ? val : (val||'—')}</div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DSR TRACKER
+// ═══════════════════════════════════════════════════════════════
+const DSR_TYPES = ['Access (Art. 15)','Rectification (Art. 16)','Erasure (Art. 17)','Restriction (Art. 18)','Portability (Art. 20)','Objection (Art. 21)','Other'];
+const DSR_STATUSES = ['Received','Identity Verification','In Progress','Awaiting Info','Response Sent','Closed'];
+
+function dsr() {
+  el('topbarActions').innerHTML = `<button class="btn btn-primary" onclick="openDsrForm()">+ New DSR</button>`;
+
+  const rows = STATE.dsr.map((d, i) => {
+    const days = d.deadline ? daysUntil(d.deadline) : null;
+    const urgent = d.status !== 'Closed' && days !== null && days < 0;
+    return `<tr${urgent ? ' style="background:var(--red-dim)"' : ''}>
+      <td><span class="font-mono text-xs">${d.id}</span></td>
+      <td>${d.name}<br><span class="text-xs text-dim">${d.email||''}</span></td>
+      <td><span class="badge badge-blue">${d.type}</span></td>
+      <td>${dsrStatusBadge(d.status)}</td>
+      <td>${fmtDate(d.received)}</td>
+      <td>${deadlineBadge(d.deadline)}</td>
+      <td>${d.idVerified ? '<span class="badge badge-green">✓ Verified</span>' : '<span class="badge badge-orange">Pending</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="editDsr(${i})">Manage</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDsr(${i})">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  setContent(`
+    <div class="section-header">
+      <div>
+        <div class="section-title">👤 Data Subject Rights Tracker</div>
+        <div class="section-desc">Art. 12–22 GDPR — Respond within 1 month (extendable by 2 months for complex cases)</div>
+      </div>
+    </div>
+    <div class="grid grid-4 mb-16">
+      ${['Received','In Progress','Response Sent','Closed'].map(s => {
+        const n = STATE.dsr.filter(d=>d.status===s).length;
+        return `<div class="stat"><div class="stat-label">${s}</div><div class="stat-value" style="font-size:24px;color:var(--text)">${n}</div></div>`;
+      }).join('')}
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        ${STATE.dsr.length === 0 ? `<div class="empty"><div class="empty-icon">👤</div><div class="empty-title">No DSRs logged</div><div class="empty-sub">Data subject requests will appear here</div></div>` : `
+        <table>
+          <thead><tr><th>ID</th><th>Data Subject</th><th>Request Type</th><th>Status</th><th>Received</th><th>Deadline</th><th>ID Verified</th><th>Actions</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`}
+      </div>
+    </div>
+  `);
+}
+
+function dsrStatusBadge(s) {
+  const map = {'Received':'orange','Identity Verification':'orange','In Progress':'blue','Awaiting Info':'orange','Response Sent':'accent','Closed':'green'};
+  return `<span class="badge badge-${map[s]||'gray'}">${s}</span>`;
+}
+
+function dsrFormHTML(d) {
+  d = d || {};
+  const receivedDate = d.received ? d.received.slice(0,10) : isoDate();
+  const deadline = d.deadline ? d.deadline.slice(0,10) : isoDate(new Date(Date.now() + 30*86400000));
+  return `
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Data Subject Name <span class="req">*</span></label>
+        <input class="form-control" id="f_name" value="${d.name||''}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email / Contact</label>
+        <input class="form-control" id="f_email" value="${d.email||''}" />
+      </div>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Request Type <span class="req">*</span></label>
+        <select class="form-control" id="f_type">
+          ${DSR_TYPES.map(t=>`<option ${d.type===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-control" id="f_status">
+          ${DSR_STATUSES.map(s=>`<option ${d.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Date Received <span class="req">*</span></label>
+        <input class="form-control" type="date" id="f_received" value="${receivedDate}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Response Deadline (max 1 month)</label>
+        <input class="form-control" type="date" id="f_deadline" value="${deadline}" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Request Description</label>
+      <textarea class="form-control" id="f_description" placeholder="Describe what the data subject is requesting…">${d.description||''}</textarea>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Identity Verified?</label>
+        <select class="form-control" id="f_idVerified">
+          <option value="">Pending verification</option>
+          <option value="yes" ${d.idVerified?'selected':''}>✓ Identity verified</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Verification Method</label>
+        <input class="form-control" id="f_idMethod" value="${d.idMethod||''}" placeholder="e.g. Government ID via secure upload" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Extension Granted? (Art. 12(3) — notify subject within 1 month of receipt)</label>
+      <select class="form-control" id="f_extension">
+        <option value="">No extension</option>
+        <option value="yes" ${d.extension?'selected':''}>Yes — 2-month extension granted</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Response Notes / Actions Taken</label>
+      <textarea class="form-control" id="f_notes" placeholder="Document actions taken, data found, decisions made…">${d.notes||''}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Response Date</label>
+      <input class="form-control" type="date" id="f_responseDate" value="${d.responseDate||''}" />
+    </div>
+    <div class="signoff-panel">
+      <div class="signoff-title">⚖ DPO Sign-off</div>
+      <div class="grid grid-2 gap-16">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">DPO Reviewed</label>
+          <select class="form-control" id="f_dpoReviewed">
+            <option value="">Not yet reviewed</option>
+            <option value="yes" ${d.dpoReviewed?'selected':''}>✓ DPO Reviewed & Approved</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">DPO Review Date</label>
+          <input class="form-control" type="date" id="f_dpoReviewDate" value="${d.dpoReviewDate||''}" />
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openDsrForm() {
+  openModal('New Data Subject Request', 'Log and track a DSR from receipt to closure', dsrFormHTML(),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-primary" onclick="saveDsr()">Save DSR</button>`);
+}
+
+function saveDsr() {
+  const d = collectDsrForm();
+  if (!d.name) { alert('Name required'); return; }
+  d.id = 'DSR-' + uid();
+  STATE.dsr.push(d);
+  logAudit('Logged', 'DSR', `${d.type} from ${d.name}`);
+  saveState(); closeModal(); dsr();
+}
+
+function editDsr(i) {
+  openModal('Manage DSR', STATE.dsr[i].id, dsrFormHTML(STATE.dsr[i]),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-primary" onclick="updateDsr(${i})">Update</button>`);
+}
+
+function updateDsr(i) {
+  const d = collectDsrForm();
+  d.id = STATE.dsr[i].id;
+  STATE.dsr[i] = d;
+  logAudit('Updated', 'DSR', `${d.type} — ${d.name} — ${d.status}`);
+  saveState(); closeModal(); dsr();
+}
+
+function deleteDsr(i) {
+  if (!confirm('Delete this DSR?')) return;
+  logAudit('Deleted', 'DSR', STATE.dsr[i].id);
+  STATE.dsr.splice(i, 1);
+  saveState(); dsr();
+}
+
+function collectDsrForm() {
+  return {
+    name: el('f_name').value,
+    email: el('f_email').value,
+    type: el('f_type').value,
+    status: el('f_status').value,
+    received: el('f_received').value,
+    deadline: el('f_deadline').value,
+    description: el('f_description').value,
+    idVerified: el('f_idVerified').value === 'yes',
+    idMethod: el('f_idMethod').value,
+    extension: el('f_extension').value === 'yes',
+    notes: el('f_notes').value,
+    responseDate: el('f_responseDate').value,
+    dpoReviewed: el('f_dpoReviewed').value === 'yes',
+    dpoReviewDate: el('f_dpoReviewDate').value,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BREACH REGISTER
+// ═══════════════════════════════════════════════════════════════
+function breach() {
+  el('topbarActions').innerHTML = `<button class="btn btn-primary" onclick="openBreachForm()">+ Log Breach</button>`;
+
+  const rows = STATE.breaches.map((b, i) => {
+    const h = b.discoveredAt ? hoursUntil(addHours(b.discoveredAt, 72)) : null;
+    const timerBadge = b.notifiedSA ? '<span class="badge badge-green">✓ SA Notified</span>'
+      : b.status === 'Closed' ? '<span class="badge badge-gray">Closed</span>'
+      : h !== null ? (h <= 0 ? '<span class="badge badge-red">⚠ 72h PASSED</span>' : h <= 12 ? `<span class="badge badge-red">⚡ ${h}h left</span>` : `<span class="badge badge-orange">⏱ ${h}h left</span>`)
+      : '—';
+    return `<tr>
+      <td><span class="font-mono text-xs">${b.id}</span></td>
+      <td>${b.name}<br><span class="text-xs text-dim">${fmtDate(b.discoveredAt)}</span></td>
+      <td>${breachRiskBadge(b.riskLevel)}</td>
+      <td>${breachStatusBadge(b.status)}</td>
+      <td>${timerBadge}</td>
+      <td>${b.notifiedSubjects ? '<span class="badge badge-green">✓</span>' : b.subjectNotifRequired ? '<span class="badge badge-red">Required</span>' : '<span class="badge badge-gray">N/A</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="editBreach(${i})">Manage</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteBreach(${i})">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  setContent(`
+    <div class="section-header">
+      <div>
+        <div class="section-title">🚨 Personal Data Breach Register</div>
+        <div class="section-desc">Art. 33–34 GDPR — Notify supervisory authority within 72 hours of awareness. ALL breaches must be logged.</div>
+      </div>
+    </div>
+    ${STATE.breaches.some(b => b.status !== 'Closed' && !b.notifiedSA && b.discoveredAt && hoursUntil(addHours(b.discoveredAt,72)) <= 12 && hoursUntil(addHours(b.discoveredAt,72)) > 0) ?
+      '<div class="alert alert-red mb-16"><span class="alert-icon">🔴</span><strong>72-hour notification deadline approaching!</strong> Check active breaches immediately.</div>' : ''}
+    <div class="card">
+      <div class="table-wrap">
+        ${STATE.breaches.length === 0 ? `<div class="empty"><div class="empty-icon">🛡</div><div class="empty-title">No breaches recorded</div><div class="empty-sub">ALL breaches must be logged, even those not requiring SA notification.</div></div>` : `
+        <table>
+          <thead><tr><th>ID</th><th>Breach / Discovered</th><th>Risk</th><th>Status</th><th>SA 72h Notification</th><th>Subject Notification</th><th>Actions</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`}
+      </div>
+    </div>
+  `);
+}
+
+function breachRiskBadge(r) {
+  const m = {'Low':'green','Medium':'orange','High':'red','Critical':'red'};
+  return `<span class="badge badge-${m[r]||'gray'}">${r||'—'}</span>`;
+}
+
+function breachStatusBadge(s) {
+  const m = {'Under Investigation':'orange','Contained':'blue','Remediated':'green','Closed':'gray'};
+  return `<span class="badge badge-${m[s]||'gray'}">${s||'—'}</span>`;
+}
+
+function breachFormHTML(b) {
+  b = b || {};
+  return `
+    <div class="alert alert-orange"><span class="alert-icon">⏱</span><strong>72-hour clock starts when the controller becomes AWARE</strong> of a breach — not when a processor reports it. The clock is running.</div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Breach Name / Reference <span class="req">*</span></label>
+        <input class="form-control" id="f_name" value="${b.name||''}" placeholder="Short descriptive name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date & Time Discovered (controller awareness) <span class="req">*</span></label>
+        <input class="form-control" type="datetime-local" id="f_discoveredAt" value="${b.discoveredAt ? b.discoveredAt.slice(0,16) : ''}" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description of the Breach</label>
+      <textarea class="form-control" id="f_description" placeholder="Nature of the breach, what happened, how discovered…">${b.description||''}</textarea>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Type of Breach</label>
+        <select class="form-control" id="f_breachType">
+          ${['Confidentiality breach','Integrity breach','Availability breach','Multiple'].map(v=>`<option ${b.breachType===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Risk Level</label>
+        <select class="form-control" id="f_riskLevel">
+          ${['Low','Medium','High','Critical'].map(v=>`<option ${b.riskLevel===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Personal Data Affected</label>
+        <input class="form-control" id="f_dataAffected" value="${b.dataAffected||''}" placeholder="Categories and approximate volume" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Approx. Number of Data Subjects Affected</label>
+        <input class="form-control" id="f_subjectsAffected" value="${b.subjectsAffected||''}" placeholder="e.g. ~500" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Likely Consequences</label>
+      <textarea class="form-control" id="f_consequences" placeholder="What harm could result for data subjects?" style="min-height:60px">${b.consequences||''}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Containment Measures Taken</label>
+      <textarea class="form-control" id="f_containment" placeholder="Immediate actions taken to contain the breach…" style="min-height:60px">${b.containment||''}</textarea>
+    </div>
+    <div class="divider"></div>
+    <div class="form-group">
+      <label class="form-label" style="color:var(--accent)">SA Notification (Art. 33) — Required if breach meets threshold</label>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">SA Notification Required?</label>
+        <select class="form-control" id="f_saNotifRequired">
+          <option value="" ${!b.saNotifRequired?'selected':''}>Assessing / No</option>
+          <option value="yes" ${b.saNotifRequired?'selected':''}>Yes — SA must be notified</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">If no notification — reason</label>
+        <input class="form-control" id="f_saNoNotifReason" value="${b.saNoNotifReason||''}" placeholder="e.g. Low risk, data was encrypted" />
+      </div>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">SA Notified?</label>
+        <select class="form-control" id="f_notifiedSA">
+          <option value="" ${!b.notifiedSA?'selected':''}>Not yet</option>
+          <option value="yes" ${b.notifiedSA?'selected':''}>✓ SA Notified</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">SA Notification Date/Time</label>
+        <input class="form-control" type="datetime-local" id="f_saNotifDate" value="${b.saNotifDate ? b.saNotifDate.slice(0,16) : ''}" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">SA Reference Number</label>
+      <input class="form-control" id="f_saReference" value="${b.saReference||''}" placeholder="Reference from supervisory authority" />
+    </div>
+    <div class="divider"></div>
+    <div class="form-group">
+      <label class="form-label" style="color:var(--accent)">Subject Notification (Art. 34) — Required if high risk to data subjects</label>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Subject Notification Required?</label>
+        <select class="form-control" id="f_subjectNotifRequired">
+          <option value="" ${!b.subjectNotifRequired?'selected':''}>No / Assessing</option>
+          <option value="yes" ${b.subjectNotifRequired?'selected':''}>Yes — high risk to subjects</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subjects Notified?</label>
+        <select class="form-control" id="f_notifiedSubjects">
+          <option value="" ${!b.notifiedSubjects?'selected':''}>Not yet</option>
+          <option value="yes" ${b.notifiedSubjects?'selected':''}>✓ Subjects Notified</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Post-Breach Root Cause Analysis</label>
+      <textarea class="form-control" id="f_rca" placeholder="Root cause identified, remediation measures, systemic changes…" style="min-height:80px">${b.rca||''}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select class="form-control" id="f_status">
+        ${['Under Investigation','Contained','Remediated','Closed'].map(v=>`<option ${b.status===v?'selected':''}>${v}</option>`).join('')}
+      </select>
+    </div>
+    <div class="signoff-panel">
+      <div class="signoff-title">⚖ DPO Sign-off</div>
+      <div class="grid grid-2 gap-16">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">DPO Reviewed</label>
+          <select class="form-control" id="f_dpoReviewed">
+            <option value="">Pending</option>
+            <option value="yes" ${b.dpoReviewed?'selected':''}>✓ Reviewed</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">DPO Review Date</label>
+          <input class="form-control" type="date" id="f_dpoReviewDate" value="${b.dpoReviewDate||''}" />
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openBreachForm() {
+  openModal('Log Personal Data Breach', 'Art. 33 GDPR — All breaches must be recorded', breachFormHTML(),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-primary" onclick="saveBreach()">Log Breach</button>`);
+}
+
+function collectBreachForm() {
+  return {
+    name: el('f_name').value,
+    discoveredAt: el('f_discoveredAt').value ? new Date(el('f_discoveredAt').value).toISOString() : '',
+    description: el('f_description').value,
+    breachType: el('f_breachType').value,
+    riskLevel: el('f_riskLevel').value,
+    dataAffected: el('f_dataAffected').value,
+    subjectsAffected: el('f_subjectsAffected').value,
+    consequences: el('f_consequences').value,
+    containment: el('f_containment').value,
+    saNotifRequired: el('f_saNotifRequired').value === 'yes',
+    saNoNotifReason: el('f_saNoNotifReason').value,
+    notifiedSA: el('f_notifiedSA').value === 'yes',
+    saNotifDate: el('f_saNotifDate').value ? new Date(el('f_saNotifDate').value).toISOString() : '',
+    saReference: el('f_saReference').value,
+    subjectNotifRequired: el('f_subjectNotifRequired').value === 'yes',
+    notifiedSubjects: el('f_notifiedSubjects').value === 'yes',
+    rca: el('f_rca').value,
+    status: el('f_status').value,
+    dpoReviewed: el('f_dpoReviewed').value === 'yes',
+    dpoReviewDate: el('f_dpoReviewDate').value,
+  };
+}
+
+function saveBreach() {
+  const b = collectBreachForm();
+  if (!b.name) { alert('Name required'); return; }
+  b.id = 'BR-' + uid();
+  STATE.breaches.push(b);
+  logAudit('Logged', 'Breach', b.name + ' — Risk: ' + b.riskLevel);
+  saveState(); closeModal(); breach();
+}
+
+function editBreach(i) {
+  openModal('Manage Breach', STATE.breaches[i].id, breachFormHTML(STATE.breaches[i]),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-primary" onclick="updateBreach(${i})">Update</button>`);
+}
+
+function updateBreach(i) {
+  const b = collectBreachForm();
+  b.id = STATE.breaches[i].id;
+  STATE.breaches[i] = b;
+  logAudit('Updated', 'Breach', b.name + ' → ' + b.status);
+  saveState(); closeModal(); breach();
+}
+
+function deleteBreach(i) {
+  if (!confirm('Delete breach record?')) return;
+  logAudit('Deleted', 'Breach', STATE.breaches[i].id);
+  STATE.breaches.splice(i, 1);
+  saveState(); breach();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DPIA MANAGER
+// ═══════════════════════════════════════════════════════════════
+function dpia() {
+  el('topbarActions').innerHTML = `<button class="btn btn-primary" onclick="openDpiaForm()">+ New DPIA / Screening</button>`;
+
+  const rows = STATE.dpia.map((d, i) => `<tr>
+    <td><span class="font-mono text-xs">${d.id}</span></td>
+    <td>${d.name}</td>
+    <td><span class="badge badge-${d.type==='Full DPIA'?'red':'blue'}">${d.type}</span></td>
+    <td>${dpiaStatusBadge(d.status)}</td>
+    <td>${d.residualRisk ? `<span class="badge badge-${d.residualRisk==='Low'?'green':d.residualRisk==='Medium'?'orange':'red'}">${d.residualRisk}</span>` : '—'}</td>
+    <td>${d.dpoSignoff ? `<span class="badge badge-green">✓ ${fmtDate(d.dpoSignoffDate)}</span>` : '<span class="badge badge-orange">Pending</span>'}</td>
+    <td>${fmtDate(d.reviewDate)}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" onclick="editDpia(${i})">Manage</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteDpia(${i})">Del</button>
+    </td>
+  </tr>`).join('');
+
+  setContent(`
+    <div class="section-header">
+      <div>
+        <div class="section-title">🔍 DPIA Manager</div>
+        <div class="section-desc">Art. 35–36 GDPR — Screening required for all new processing; full DPIA mandatory for high-risk activities</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        ${STATE.dpia.length === 0 ? `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">No DPIAs recorded</div><div class="empty-sub">Complete a screening checklist for every new or significantly changed processing activity</div></div>` : `
+        <table>
+          <thead><tr><th>ID</th><th>Activity</th><th>Type</th><th>Status</th><th>Residual Risk</th><th>DPO Sign-off</th><th>Next Review</th><th>Actions</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`}
+      </div>
+    </div>
+  `);
+}
+
+function dpiaStatusBadge(s) {
+  const m = {'Screening':'blue','Full DPIA In Progress':'orange','Awaiting DPO Sign-off':'accent','Approved':'green','Requires SA Consultation':'red'};
+  return `<span class="badge badge-${m[s]||'gray'}">${s||'—'}</span>`;
+}
+
+function dpiaFormHTML(d) {
+  d = d || {};
+  const TRIGGERS = ['Systematic profiling of individuals','Large-scale processing of special category data','Large-scale public area monitoring (CCTV)','Automated decision-making with legal effect','New technology with uncertain privacy impact','Systematic monitoring of employees','Processing of children\'s data at scale','Data matching / combining datasets'];
+  return `
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Processing Activity Name <span class="req">*</span></label>
+        <input class="form-control" id="f_name" value="${d.name||''}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">DPIA Type</label>
+        <select class="form-control" id="f_type">
+          <option ${d.type==='Screening'?'selected':''}>Screening</option>
+          <option ${d.type==='Full DPIA'?'selected':''}>Full DPIA</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">DPIA Trigger(s) — Select all that apply</label>
+      ${TRIGGERS.map((t, i) => `<label style="display:flex;gap:8px;align-items:center;padding:4px 0;font-size:13px;cursor:pointer">
+        <input type="checkbox" ${(d.triggers||[]).includes(t)?'checked':''} onchange="toggleTrigger('${t}')" style="accent-color:var(--accent)"> ${t}
+      </label>`).join('')}
+      <input type="hidden" id="f_triggers" value="${(d.triggers||[]).join('|')}" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Processing Description</label>
+      <textarea class="form-control" id="f_description" placeholder="What processing is being assessed?">${d.description||''}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Necessity & Proportionality Assessment</label>
+      <textarea class="form-control" id="f_necessity" placeholder="Is the processing necessary? Is there a less privacy-invasive alternative?" style="min-height:80px">${d.necessity||''}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Risks Identified</label>
+      <textarea class="form-control" id="f_risks" placeholder="Specific risks to data subjects identified in the assessment…" style="min-height:80px">${d.risks||''}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Risk Mitigation Measures</label>
+      <textarea class="form-control" id="f_mitigations" placeholder="Measures implemented to reduce identified risks…" style="min-height:80px">${d.mitigations||''}</textarea>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Residual Risk Level</label>
+        <select class="form-control" id="f_residualRisk">
+          ${['Low','Medium','High','Critical'].map(v=>`<option ${d.residualRisk===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">SA Prior Consultation Required? (Art. 36 — if residual risk remains high)</label>
+        <select class="form-control" id="f_saConsultation">
+          <option value="">No</option>
+          <option value="yes" ${d.saConsultation?'selected':''}>Yes — high residual risk</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select class="form-control" id="f_status">
+        ${['Screening','Full DPIA In Progress','Awaiting DPO Sign-off','Approved','Requires SA Consultation'].map(v=>`<option ${d.status===v?'selected':''}>${v}</option>`).join('')}
+      </select>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Assessment Date</label>
+        <input class="form-control" type="date" id="f_assessmentDate" value="${d.assessmentDate||isoDate()}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Next Review Date</label>
+        <input class="form-control" type="date" id="f_reviewDate" value="${d.reviewDate||''}" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">RoPA Reference</label>
+      <input class="form-control" id="f_ropaRef" value="${d.ropaRef||''}" placeholder="e.g. PA-HR-001" />
+    </div>
+    <div class="signoff-panel">
+      <div class="signoff-title">⚖ DPO Opinion (mandatory for full DPIA)</div>
+      <div class="form-group">
+        <label class="form-label">DPO Opinion</label>
+        <textarea class="form-control" id="f_dpoOpinion" placeholder="DPO opinion on the DPIA and recommended measures…" style="min-height:80px">${d.dpoOpinion||''}</textarea>
+      </div>
+      <div class="grid grid-2 gap-16">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">DPO Sign-off</label>
+          <select class="form-control" id="f_dpoSignoff">
+            <option value="">Pending</option>
+            <option value="yes" ${d.dpoSignoff?'selected':''}>✓ DPO Approved</option>
+            <option value="no" ${d.dpoSignoff===false?'selected':''}>✗ DPO Objects</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Sign-off Date</label>
+          <input class="form-control" type="date" id="f_dpoSignoffDate" value="${d.dpoSignoffDate||''}" />
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+window.toggleTrigger = function(t) {
+  const inp = el('f_triggers');
+  let triggers = inp.value ? inp.value.split('|') : [];
+  if (triggers.includes(t)) triggers = triggers.filter(x => x !== t);
+  else triggers.push(t);
+  inp.value = triggers.join('|');
+};
+
+function collectDpiaForm() {
+  return {
+    name: el('f_name').value,
+    type: el('f_type').value,
+    triggers: el('f_triggers').value ? el('f_triggers').value.split('|').filter(Boolean) : [],
+    description: el('f_description').value,
+    necessity: el('f_necessity').value,
+    risks: el('f_risks').value,
+    mitigations: el('f_mitigations').value,
+    residualRisk: el('f_residualRisk').value,
+    saConsultation: el('f_saConsultation').value === 'yes',
+    status: el('f_status').value,
+    assessmentDate: el('f_assessmentDate').value,
+    reviewDate: el('f_reviewDate').value,
+    ropaRef: el('f_ropaRef').value,
+    dpoOpinion: el('f_dpoOpinion').value,
+    dpoSignoff: el('f_dpoSignoff').value === 'yes' ? true : el('f_dpoSignoff').value === 'no' ? false : null,
+    dpoSignoffDate: el('f_dpoSignoffDate').value,
+  };
+}
+
+function openDpiaForm() {
+  openModal('New DPIA / Screening', 'Art. 35 GDPR — Complete before commencing high-risk processing', dpiaFormHTML(),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-primary" onclick="saveDpia()">Save</button>`);
+}
+
+function saveDpia() {
+  const d = collectDpiaForm();
+  if (!d.name) { alert('Name required'); return; }
+  d.id = 'DPIA-' + uid();
+  STATE.dpia.push(d);
+  logAudit('Created', 'DPIA', d.name + ' (' + d.type + ')');
+  saveState(); closeModal(); dpia();
+}
+
+function editDpia(i) {
+  openModal('Manage DPIA', STATE.dpia[i].id, dpiaFormHTML(STATE.dpia[i]),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-primary" onclick="updateDpia(${i})">Update</button>`);
+}
+
+function updateDpia(i) {
+  const d = collectDpiaForm();
+  d.id = STATE.dpia[i].id;
+  STATE.dpia[i] = d;
+  logAudit('Updated', 'DPIA', d.name + ' → ' + d.status);
+  saveState(); closeModal(); dpia();
+}
+
+function deleteDpia(i) {
+  if (!confirm('Delete DPIA?')) return;
+  logAudit('Deleted', 'DPIA', STATE.dpia[i].id);
+  STATE.dpia.splice(i, 1);
+  saveState(); dpia();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROCESSOR REGISTRY
+// ═══════════════════════════════════════════════════════════════
+function processors() {
+  el('topbarActions').innerHTML = `<button class="btn btn-primary" onclick="openProcessorForm()">+ Add Processor</button>`;
+
+  const rows = STATE.processors.map((p, i) => `<tr>
+    <td>${p.name}</td>
+    <td><span class="text-xs text-dim">${p.country||'—'}</span></td>
+    <td><span class="text-xs">${p.service||'—'}</span></td>
+    <td>${p.dpaStatus === 'Signed' ? '<span class="badge badge-green">✓ Signed</span>' : '<span class="badge badge-red">⚠ Missing</span>'}</td>
+    <td>${p.dpaRef ? `<span class="font-mono text-xs">${p.dpaRef}</span>` : '—'}</td>
+    <td>${p.dpaExpiry ? deadlineBadge(p.dpaExpiry, 'to expiry') : '—'}</td>
+    <td>${p.transferMechanism ? `<span class="badge badge-orange">${p.transferMechanism}</span>` : '<span class="badge badge-gray">EEA</span>'}</td>
+    <td>${p.dueDiligenceDone ? '<span class="badge badge-green">✓</span>' : '<span class="badge badge-orange">Pending</span>'}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" onclick="editProcessor(${i})">Edit</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteProcessor(${i})">Del</button>
+    </td>
+  </tr>`).join('');
+
+  setContent(`
+    <div class="section-header">
+      <div>
+        <div class="section-title">🤝 Processor & Third-Party Registry</div>
+        <div class="section-desc">Art. 28 GDPR — DPA required for every processor before data sharing. No exceptions.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        ${STATE.processors.length === 0 ? `<div class="empty"><div class="empty-icon">🤝</div><div class="empty-title">No processors registered</div><div class="empty-sub">Add all third parties processing personal data on your behalf</div></div>` : `
+        <table>
+          <thead><tr><th>Processor Name</th><th>Country</th><th>Service / Role</th><th>DPA Status</th><th>DPA Reference</th><th>DPA Expiry</th><th>Transfer Mechanism</th><th>Due Diligence</th><th>Actions</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`}
+      </div>
+    </div>
+  `);
+}
+
+function processorFormHTML(p) {
+  p = p || {};
+  return `
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Processor Name <span class="req">*</span></label>
+        <input class="form-control" id="f_name" value="${p.name||''}" placeholder="Legal entity name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Country</label>
+        <input class="form-control" id="f_country" value="${p.country||''}" placeholder="e.g. Germany, USA" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Service / Processing Role</label>
+      <input class="form-control" id="f_service" value="${p.service||''}" placeholder="e.g. Cloud hosting, payroll bureau, email marketing" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Personal Data Shared</label>
+      <input class="form-control" id="f_dataShared" value="${p.dataShared||''}" placeholder="Categories of data transmitted to this processor" />
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">DPA Status</label>
+        <select class="form-control" id="f_dpaStatus">
+          ${['Not started','Draft sent','Under negotiation','Signed','Expired'].map(v=>`<option ${p.dpaStatus===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">DPA Reference</label>
+        <input class="form-control" id="f_dpaRef" value="${p.dpaRef||''}" placeholder="e.g. DPA-AWS-2024-001" />
+      </div>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">DPA Date Signed</label>
+        <input class="form-control" type="date" id="f_dpaDate" value="${p.dpaDate||''}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">DPA Expiry / Review Date</label>
+        <input class="form-control" type="date" id="f_dpaExpiry" value="${p.dpaExpiry||''}" />
+      </div>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Transfer Outside EEA?</label>
+        <select class="form-control" id="f_transferOutsideEEA">
+          <option value="">No / Within EEA</option>
+          <option value="yes" ${p.transferOutsideEEA?'selected':''}>Yes</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Transfer Mechanism</label>
+        <select class="form-control" id="f_transferMechanism">
+          ${['—','EU SCCs (2021)','Adequacy decision','BCRs','Art. 49'].map(v=>`<option ${p.transferMechanism===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Known Sub-processors</label>
+      <input class="form-control" id="f_subProcessors" value="${p.subProcessors||''}" placeholder="List key sub-processors or reference to processor's sub-processor list" />
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Due Diligence Completed?</label>
+        <select class="form-control" id="f_dueDiligenceDone">
+          <option value="">Pending</option>
+          <option value="yes" ${p.dueDiligenceDone?'selected':''}>✓ Completed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Security Certification</label>
+        <input class="form-control" id="f_certification" value="${p.certification||''}" placeholder="e.g. ISO 27001, SOC 2 Type II" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Audit Rights Clause in DPA?</label>
+      <select class="form-control" id="f_auditRights">
+        <option value="">Not confirmed</option>
+        <option value="yes" ${p.auditRights?'selected':''}>Yes — audit rights included</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea class="form-control" id="f_notes" style="min-height:60px">${p.notes||''}</textarea>
+    </div>
+  `;
+}
+
+function collectProcessorForm() {
+  return {
+    name: el('f_name').value,
+    country: el('f_country').value,
+    service: el('f_service').value,
+    dataShared: el('f_dataShared').value,
+    dpaStatus: el('f_dpaStatus').value,
+    dpaRef: el('f_dpaRef').value,
+    dpaDate: el('f_dpaDate').value,
+    dpaExpiry: el('f_dpaExpiry').value,
+    transferOutsideEEA: el('f_transferOutsideEEA').value === 'yes',
+    transferMechanism: el('f_transferMechanism').value,
+    subProcessors: el('f_subProcessors').value,
+    dueDiligenceDone: el('f_dueDiligenceDone').value === 'yes',
+    certification: el('f_certification').value,
+    auditRights: el('f_auditRights').value === 'yes',
+    notes: el('f_notes').value,
+  };
+}
+
+function openProcessorForm() {
+  openModal('Add Processor', 'Art. 28 GDPR — Register all third-party processors', processorFormHTML(),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-primary" onclick="saveProcessor()">Save</button>`);
+}
+
+function saveProcessor() {
+  const p = collectProcessorForm();
+  if (!p.name) { alert('Name required'); return; }
+  STATE.processors.push(p);
+  logAudit('Added', 'Processors', p.name + ' — DPA: ' + p.dpaStatus);
+  saveState(); closeModal(); processors();
+}
+
+function editProcessor(i) {
+  openModal('Edit Processor', STATE.processors[i].name, processorFormHTML(STATE.processors[i]),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-primary" onclick="updateProcessor(${i})">Update</button>`);
+}
+
+function updateProcessor(i) {
+  const p = collectProcessorForm();
+  STATE.processors[i] = p;
+  logAudit('Updated', 'Processors', p.name + ' — DPA: ' + p.dpaStatus);
+  saveState(); closeModal(); processors();
+}
+
+function deleteProcessor(i) {
+  if (!confirm('Delete processor?')) return;
+  STATE.processors.splice(i, 1);
+  saveState(); processors();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPLIANCE CHECKLIST
+// ═══════════════════════════════════════════════════════════════
+const CHECKLIST_ITEMS = {
+  legal: { title: 'Legal Basis', items: [
+    {text:'Legal basis documented for each processing activity (Art. 6)',art:'Art. 6'},
+    {text:'Consent: freely given, specific, informed, unambiguous; withdrawal possible',art:'Art. 7'},
+    {text:'Legitimate Interest Assessment (LIA) completed where Art. 6(1)(f) relied upon',art:'Art. 6(1)(f)'},
+    {text:'Special category data: Art. 9(2) basis identified and documented',art:'Art. 9'},
+    {text:'Legal basis assessed BEFORE processing commenced',art:'Art. 5'},
+  ]},
+  transparency: { title: 'Transparency', items: [
+    {text:'Privacy Notice provided at point of collection (Art. 13) or within 1 month (Art. 14)',art:'Art. 13/14'},
+    {text:'Privacy Notice covers all mandatory Art. 13/14 elements',art:'Art. 13'},
+    {text:'Written in plain, clear language accessible to intended audience',art:'Art. 12'},
+    {text:'Specific retention periods stated (not "as long as necessary")',art:'Art. 13(2)'},
+    {text:'All data subject rights explained with how to exercise them',art:'Art. 13(2)'},
+    {text:'Right to withdraw consent and right to lodge complaint included',art:'Art. 13(2)'},
+  ]},
+  dsr: { title: 'Data Subject Rights', items: [
+    {text:'DSR procedure in place with defined intake channel and timelines',art:'Art. 12'},
+    {text:'DSR register maintained (tracking receipt, type, status, response)',art:'Art. 12'},
+    {text:'Identity verification step in place before responding',art:'Art. 12'},
+    {text:'Access (Art. 15): ability to compile all data per subject',art:'Art. 15'},
+    {text:'Erasure (Art. 17): includes backup deletion and third-party notification',art:'Art. 17'},
+    {text:'Portability (Art. 20): machine-readable export available',art:'Art. 20'},
+    {text:'Marketing objection (Art. 21): absolute right — immediate suppression',art:'Art. 21'},
+  ]},
+  security: { title: 'Security (TOMs)', items: [
+    {text:'Encryption at rest and in transit implemented',art:'Art. 32'},
+    {text:'Access controls with principle of least privilege applied',art:'Art. 32'},
+    {text:'MFA in place for privileged access',art:'Art. 32'},
+    {text:'Regular penetration testing / vulnerability scanning',art:'Art. 32'},
+    {text:'Annual access review records maintained',art:'Art. 32'},
+    {text:'BC/DR plan tested; RTO/RPO defined',art:'Art. 32'},
+    {text:'All relevant staff completed data protection training',art:'Art. 39'},
+  ]},
+  accountability: { title: 'Accountability', items: [
+    {text:'Data protection policies in place and reviewed annually',art:'Art. 24'},
+    {text:'Privacy-by-Design and Privacy-by-Default implemented in projects',art:'Art. 25'},
+    {text:'Compliance documentation available for SA inspection (Art. 5(2))',art:'Art. 5(2)'},
+    {text:'DPO appointed (if required) and contact published',art:'Art. 37'},
+    {text:'Internal audit / compliance review conducted',art:'Art. 24'},
+    {text:'Procurement process includes DP assessment for new vendors',art:'Art. 28'},
+  ]},
+};
+
+function checklist() {
+  el('topbarActions').innerHTML = `
+    <select class="form-control" id="checkSection" style="width:200px" onchange="renderChecklist()">
+      ${Object.keys(CHECKLIST_ITEMS).map(k=>`<option value="${k}">${CHECKLIST_ITEMS[k].title}</option>`).join('')}
+    </select>`;
+
+  setContent(`
+    <div class="section-header">
+      <div>
+        <div class="section-title">✅ Compliance Checklist</div>
+        <div class="section-desc">Operational compliance verification — mark each item with evidence references</div>
+      </div>
+    </div>
+    <div class="grid grid-4 mb-20">
+      ${Object.keys(CHECKLIST_ITEMS).map(k => {
+        const s = CHECKLIST_ITEMS[k];
+        const n = s.items.length;
+        const c = s.items.filter((_,i) => STATE.checklist[`${k}_${i}`] === 'compliant').length;
+        const pct = Math.round(c/n*100);
+        const pc = pct>=80?'progress-green':pct>=50?'progress-orange':'progress-red';
+        return `<div class="stat"><div class="stat-label">${s.title}</div><div class="stat-value" style="font-size:22px;color:var(--text)">${pct}%</div><div class="progress-bar mt-8"><div class="progress-fill ${pc}" style="width:${pct}%"></div></div><div class="stat-sub">${c}/${n}</div></div>`;
+      }).join('')}
+    </div>
+    <div id="checklistBody"></div>
+  `);
+  renderChecklist();
+}
+
+function renderChecklist() {
+  const k = el('checkSection')?.value || Object.keys(CHECKLIST_ITEMS)[0];
+  const section = CHECKLIST_ITEMS[k];
+  if (!section) return;
+
+  const html = section.items.map((item, i) => {
+    const key = `${k}_${i}`;
+    const val = STATE.checklist[key] || '';
+    const evKey = `${k}_${i}_ev`;
+    const evVal = STATE.checklist[evKey] || '';
+    return `
+      <div class="check-item" style="flex-direction:column;gap:8px">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <div style="display:flex;gap:6px;flex-shrink:0;margin-top:2px">
+            <button class="check-box ${val==='compliant'?'checked':''}" onclick="setCheck('${key}','compliant',${i},'${k}')" title="Compliant">✓</button>
+            <button class="check-box ${val==='partial'?'partial':''}" onclick="setCheck('${key}','partial',${i},'${k}')" title="Partial">~</button>
+            <button class="check-box ${val==='nc'?'nc':''}" onclick="setCheck('${key}','nc',${i},'${k}')" title="Non-compliant">✗</button>
+            <button class="check-box ${val===''?'':''}${!val?'':' checked'}" onclick="setCheck('${key}','na',${i},'${k}')" title="Not applicable" style="${val==='na'?'background:var(--surface3);border-color:var(--text3);color:var(--text2)':''}">N/A</button>
+          </div>
+          <div class="flex-1">
+            <div style="font-size:13px;${val==='compliant'?'text-decoration:line-through;color:var(--text2)':''}">${item.text}</div>
+            <div class="check-art">${item.art}</div>
+          </div>
+          <span class="badge badge-${val==='compliant'?'green':val==='partial'?'orange':val==='nc'?'red':val==='na'?'gray':'gray'}">${val||'Not assessed'}</span>
+        </div>
+        <div style="padding-left:78px">
+          <input class="form-control" style="font-size:12px;padding:6px 10px" placeholder="Evidence reference / document link…" value="${evVal}" onchange="setEvidence('${evKey}', this.value)" />
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const body = el('checklistBody');
+  if (body) body.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">${section.title}</div>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <span class="badge badge-green">${section.items.filter((_,i)=>STATE.checklist[`${k}_${i}`]==='compliant').length} compliant</span>
+          <span class="badge badge-red">${section.items.filter((_,i)=>STATE.checklist[`${k}_${i}`]==='nc').length} non-compliant</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="margin-bottom:12px;font-size:12px;color:var(--text2)">
+          For each item: click ✓ Compliant | ~ Partial | ✗ Non-Compliant | N/A. Enter evidence reference below each item.
+        </div>
+        ${html}
+      </div>
+    </div>
+  `;
+}
+
+function setCheck(key, val, idx, section) {
+  STATE.checklist[key] = STATE.checklist[key] === val ? '' : val;
+  logAudit('Check updated', 'Checklist', `${key} → ${STATE.checklist[key]}`);
+  saveState();
+  renderChecklist();
+  updateBadges();
+}
+
+function setEvidence(key, val) {
+  STATE.checklist[key] = val;
+  saveState();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVIDENCE REGISTER
+// ═══════════════════════════════════════════════════════════════
+function evidence() {
+  el('topbarActions').innerHTML = `<button class="btn btn-primary" onclick="openEvidenceForm()">+ Add Evidence</button>`;
+
+  const rows = STATE.evidence.map((e, i) => `<tr>
+    <td><span class="font-mono text-xs">${e.id}</span></td>
+    <td><strong>${e.title}</strong></td>
+    <td><span class="badge badge-blue">${e.category}</span></td>
+    <td><span class="text-xs text-dim">${e.gdprRef||'—'}</span></td>
+    <td>${fmtDate(e.date)}</td>
+    <td>${fmtDate(e.reviewDate)}</td>
+    <td>${e.verified ? `<span class="badge badge-green">✓ ${fmtDate(e.verifiedDate)}</span>` : '<span class="badge badge-orange">Pending</span>'}</td>
+    <td>${e.location ? `<a href="${e.location}" target="_blank" style="color:var(--blue);font-size:12px">🔗 Link</a>` : '—'}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" onclick="editEvidence(${i})">Edit</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteEvidence(${i})">Del</button>
+    </td>
+  </tr>`).join('');
+
+  setContent(`
+    <div class="section-header">
+      <div>
+        <div class="section-title">📁 Document & Evidence Register</div>
+        <div class="section-desc">Art. 5(2) GDPR — Maintain retrievable evidence for every compliance requirement</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        ${STATE.evidence.length === 0 ? `<div class="empty"><div class="empty-icon">📁</div><div class="empty-title">No evidence registered</div><div class="empty-sub">Link all compliance documents to their GDPR requirements here</div></div>` : `
+        <table>
+          <thead><tr><th>ID</th><th>Document Title</th><th>Category</th><th>GDPR Article</th><th>Dated</th><th>Review Due</th><th>Verified</th><th>Location</th><th>Actions</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`}
+      </div>
+    </div>
+  `);
+}
+
+const EVIDENCE_CATS = ['RoPA','Privacy Notice','DSR Procedure','Breach Procedure','DPIA','DPA / Processor Contract','LIA','Consent Record','Security / ISMS','Training Record','Policy','Audit Report','Other'];
+
+function evidenceFormHTML(e) {
+  e = e || {};
+  return `
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Document Title <span class="req">*</span></label>
+        <input class="form-control" id="f_title" value="${e.title||''}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-control" id="f_category">
+          ${EVIDENCE_CATS.map(c=>`<option ${e.category===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea class="form-control" id="f_description" style="min-height:60px">${e.description||''}</textarea>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">GDPR Article Reference</label>
+        <input class="form-control" id="f_gdprRef" value="${e.gdprRef||''}" placeholder="e.g. Art. 30, Art. 28, Art. 13" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Document Version</label>
+        <input class="form-control" id="f_version" value="${e.version||''}" placeholder="e.g. v2.1" />
+      </div>
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">Document Date</label>
+        <input class="form-control" type="date" id="f_date" value="${e.date||isoDate()}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Next Review Date</label>
+        <input class="form-control" type="date" id="f_reviewDate" value="${e.reviewDate||''}" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Document Location / URL (DMS path or web link)</label>
+      <input class="form-control" id="f_location" value="${e.location||''}" placeholder="https://… or \\\\server\\share\\documents\\…" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Document Owner</label>
+      <input class="form-control" id="f_owner" value="${e.owner||''}" />
+    </div>
+    <div class="grid grid-2 gap-16">
+      <div class="form-group">
+        <label class="form-label">DPO Verified?</label>
+        <select class="form-control" id="f_verified">
+          <option value="">Not verified</option>
+          <option value="yes" ${e.verified?'selected':''}>✓ Verified by DPO</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Verification Date</label>
+        <input class="form-control" type="date" id="f_verifiedDate" value="${e.verifiedDate||''}" />
+      </div>
+    </div>
+  `;
+}
+
+function collectEvidenceForm() {
+  return {
+    title: el('f_title').value,
+    category: el('f_category').value,
+    description: el('f_description').value,
+    gdprRef: el('f_gdprRef').value,
+    version: el('f_version').value,
+    date: el('f_date').value,
+    reviewDate: el('f_reviewDate').value,
+    location: el('f_location').value,
+    owner: el('f_owner').value,
+    verified: el('f_verified').value === 'yes',
+    verifiedDate: el('f_verifiedDate').value,
+  };
+}
+
+function openEvidenceForm() {
+  openModal('Add Evidence / Document', 'Link compliance documents to GDPR requirements', evidenceFormHTML(),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-primary" onclick="saveEvidence()">Save</button>`);
+}
+
+function saveEvidence() {
+  const e = collectEvidenceForm();
+  if (!e.title) { alert('Title required'); return; }
+  e.id = 'DOC-' + uid();
+  STATE.evidence.push(e);
+  logAudit('Added', 'Evidence', e.title);
+  saveState(); closeModal(); evidence();
+}
+
+function editEvidence(i) {
+  openModal('Edit Evidence', STATE.evidence[i].id, evidenceFormHTML(STATE.evidence[i]),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-primary" onclick="updateEvidence(${i})">Update</button>`);
+}
+
+function updateEvidence(i) {
+  const e = collectEvidenceForm();
+  e.id = STATE.evidence[i].id;
+  STATE.evidence[i] = e;
+  logAudit('Updated', 'Evidence', e.title);
+  saveState(); closeModal(); evidence();
+}
+
+function deleteEvidence(i) {
+  if (!confirm('Delete evidence record?')) return;
+  STATE.evidence.splice(i, 1);
+  saveState(); evidence();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUDIT REPORT
+// ═══════════════════════════════════════════════════════════════
+function audit() {
+  el('topbarActions').innerHTML = `<button class="btn btn-primary" onclick="printAuditReport()">🖨 Print / Export PDF</button>`;
+
+  const now = new Date();
+  const total = Object.keys(CHECKLIST_ITEMS).reduce((s, k) => s + CHECKLIST_ITEMS[k].items.length, 0);
+  const compliant = Object.values(STATE.checklist).filter(v => v === 'compliant').length;
+  const nc = Object.values(STATE.checklist).filter(v => v === 'nc').length;
+  const partial = Object.values(STATE.checklist).filter(v => v === 'partial').length;
+  const assessed = compliant + nc + partial + Object.values(STATE.checklist).filter(v => v === 'na').length;
+  const score = total > 0 ? Math.round(compliant / total * 100) : 0;
+
+  setContent(`
+    <div id="auditReport">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;margin-bottom:20px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px">
+        <div>
+          <div style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--text)">GDPR Compliance Audit Report</div>
+          <div style="font-size:14px;color:var(--text2);margin-top:4px">Independent Third-Party Verification Document</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:12px;color:var(--text3)">Generated</div>
+          <div style="font-size:13px;color:var(--text);font-family:var(--font-mono)">${fmtDateTime(now.toISOString())}</div>
+        </div>
+      </div>
+      <div class="grid grid-2 gap-16" style="margin-bottom:20px">
+        ${reportField('Organisation', STATE.org || '[Not set]')}
+        ${reportField('DPO', STATE.dpo || '[Not set]')}
+        ${reportField('Regulation', 'Regulation (EU) 2016/679 (GDPR)')}
+        ${reportField('Report Type', 'GDPR Compliance Status Report')}
+      </div>
+      <div style="background:var(--surface2);border-radius:var(--radius);padding:20px;display:flex;gap:32px;align-items:center">
+        <div>
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Overall Compliance Score</div>
+          <div style="font-family:var(--font-display);font-size:52px;font-weight:700;color:${score>=80?'var(--green)':score>=50?'var(--orange)':'var(--red)'};">${score}%</div>
+          <div style="font-size:13px;color:var(--text2)">${compliant} of ${total} checks passed · ${assessed} of ${total} assessed</div>
+        </div>
+        <div style="flex:1">
+          <div style="margin-bottom:8px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Compliant</div><div class="progress-bar"><div class="progress-fill progress-green" style="width:${total>0?Math.round(compliant/total*100):0}%"></div></div></div>
+          <div style="margin-bottom:8px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Partial</div><div class="progress-bar"><div class="progress-fill progress-orange" style="width:${total>0?Math.round(partial/total*100):0}%"></div></div></div>
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Non-Compliant</div><div class="progress-bar"><div class="progress-fill progress-red" style="width:${total>0?Math.round(nc/total*100):0}%"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODULE SUMMARY -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header"><div class="card-title">Module Status Summary</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Module</th><th>Total Items</th><th>Compliant</th><th>Partial</th><th>Non-Compliant</th><th>Not Assessed</th><th>Score</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>RoPA Registry</td><td>${STATE.ropa.length}</td><td>${STATE.ropa.filter(r=>r.dpoSignoff).length}</td><td>—</td><td>—</td><td>${STATE.ropa.filter(r=>!r.dpoSignoff).length}</td><td>${STATE.ropa.length>0?Math.round(STATE.ropa.filter(r=>r.dpoSignoff).length/STATE.ropa.length*100):0}%</td><td>${STATE.ropa.length===0?'<span class="badge badge-gray">Empty</span>':STATE.ropa.every(r=>r.dpoSignoff)?'<span class="badge badge-green">Complete</span>':'<span class="badge badge-orange">Partial</span>'}</td></tr>
+            <tr><td>DSR Tracker</td><td>${STATE.dsr.length}</td><td>${STATE.dsr.filter(d=>d.status==='Closed').length}</td><td>${STATE.dsr.filter(d=>d.status==='Response Sent').length}</td><td>${STATE.dsr.filter(d=>d.status!=='Closed'&&d.deadline&&daysUntil(d.deadline)<0).length} overdue</td><td>${STATE.dsr.filter(d=>['Received','Identity Verification'].includes(d.status)).length}</td><td>—</td><td>${STATE.dsr.filter(d=>d.status!=='Closed'&&d.deadline&&daysUntil(d.deadline)<0).length>0?'<span class="badge badge-red">Overdue DSRs</span>':'<span class="badge badge-green">On track</span>'}</td></tr>
+            <tr><td>Breach Register</td><td>${STATE.breaches.length}</td><td>${STATE.breaches.filter(b=>b.status==='Closed').length}</td><td>${STATE.breaches.filter(b=>b.status==='Remediated').length}</td><td>${STATE.breaches.filter(b=>b.status!=='Closed'&&!b.notifiedSA&&b.saNotifRequired).length} pending SA</td><td>${STATE.breaches.filter(b=>b.status==='Under Investigation').length}</td><td>—</td><td>${STATE.breaches.filter(b=>b.status!=='Closed').length>0?'<span class="badge badge-orange">Open breaches</span>':'<span class="badge badge-green">No open breaches</span>'}</td></tr>
+            <tr><td>DPIA Manager</td><td>${STATE.dpia.length}</td><td>${STATE.dpia.filter(d=>d.dpoSignoff===true).length}</td><td>${STATE.dpia.filter(d=>d.status==='Awaiting DPO Sign-off').length}</td><td>—</td><td>${STATE.dpia.filter(d=>!d.dpoSignoff).length}</td><td>—</td><td>${STATE.dpia.filter(d=>d.status==='Awaiting DPO Sign-off').length>0?'<span class="badge badge-orange">Pending sign-off</span>':'<span class="badge badge-green">Current</span>'}</td></tr>
+            <tr><td>Processor Registry</td><td>${STATE.processors.length}</td><td>${STATE.processors.filter(p=>p.dpaStatus==='Signed').length}</td><td>${STATE.processors.filter(p=>p.dpaStatus==='Under negotiation').length}</td><td>${STATE.processors.filter(p=>!['Signed'].includes(p.dpaStatus)).length}</td><td>—</td><td>${STATE.processors.length>0?Math.round(STATE.processors.filter(p=>p.dpaStatus==='Signed').length/STATE.processors.length*100):0}%</td><td>${STATE.processors.filter(p=>p.dpaStatus!=='Signed').length>0?'<span class="badge badge-red">Missing DPAs</span>':'<span class="badge badge-green">All DPAs signed</span>'}</td></tr>
+            ${Object.keys(CHECKLIST_ITEMS).map(k=>{
+              const s=CHECKLIST_ITEMS[k];
+              const c=s.items.filter((_,i)=>STATE.checklist[`${k}_${i}`]==='compliant').length;
+              const p=s.items.filter((_,i)=>STATE.checklist[`${k}_${i}`]==='partial').length;
+              const n=s.items.filter((_,i)=>STATE.checklist[`${k}_${i}`]==='nc').length;
+              const pct=s.items.length>0?Math.round(c/s.items.length*100):0;
+              return `<tr><td>${s.title}</td><td>${s.items.length}</td><td>${c}</td><td>${p}</td><td>${n}</td><td>${s.items.length-c-p-n}</td><td>${pct}%</td><td>${pct>=80?'<span class="badge badge-green">Good</span>':pct>=50?'<span class="badge badge-orange">Partial</span>':'<span class="badge badge-red">Needs work</span>'}</td></tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- NON-COMPLIANT ITEMS -->
+    ${nc > 0 ? `
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header" style="background:var(--red-dim);border-color:rgba(248,81,73,0.3)"><div class="card-title" style="color:var(--red)">⚠ Non-Compliant Items Requiring Remediation</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Domain</th><th>Requirement</th><th>Article</th><th>Evidence Reference</th></tr></thead>
+          <tbody>
+            ${Object.keys(CHECKLIST_ITEMS).map(k => CHECKLIST_ITEMS[k].items.map((item, i) => {
+              if (STATE.checklist[`${k}_${i}`] !== 'nc') return '';
+              return `<tr><td>${CHECKLIST_ITEMS[k].title}</td><td>${item.text}</td><td class="td-mono">${item.art}</td><td class="td-dim">${STATE.checklist[`${k}_${i}_ev`]||'No evidence'}</td></tr>`;
+            }).join('')).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : ''}
+
+    <!-- EVIDENCE REGISTER SUMMARY -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header"><div class="card-title">📁 Evidence Register Summary</div><div class="card-subtitle">${STATE.evidence.filter(e=>e.verified).length} of ${STATE.evidence.length} documents DPO-verified</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Document</th><th>Category</th><th>GDPR Ref</th><th>Version</th><th>Dated</th><th>Review Due</th><th>DPO Verified</th><th>Location</th></tr></thead>
+          <tbody>
+            ${STATE.evidence.length === 0 ? '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">No evidence registered</td></tr>' :
+              STATE.evidence.map(e => `<tr>
+                <td class="td-mono">${e.id}</td>
+                <td>${e.title}</td>
+                <td><span class="badge badge-blue">${e.category}</span></td>
+                <td class="td-mono">${e.gdprRef||'—'}</td>
+                <td class="td-dim">${e.version||'—'}</td>
+                <td>${fmtDate(e.date)}</td>
+                <td>${fmtDate(e.reviewDate)}</td>
+                <td>${e.verified ? `<span class="badge badge-green">✓ ${fmtDate(e.verifiedDate)}</span>` : '<span class="badge badge-orange">Pending</span>'}</td>
+                <td>${e.location ? `<span style="font-size:11px;color:var(--blue)">${e.location.slice(0,30)}…</span>` : '—'}</td>
+              </tr>`).join('')
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SIGN-OFF BLOCK -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">⚖ Independent Audit Sign-off</div></div>
+      <div class="card-body">
+        <div class="grid grid-2 gap-16 mb-16">
+          ${reportField('Report Generated', fmtDateTime(now.toISOString()))}
+          ${reportField('Organisation', STATE.org || '___________________')}
+          ${reportField('DPO Name', STATE.dpo || '___________________')}
+          ${reportField('DPO Signature', '___________________')}
+          ${reportField('DPO Sign-off Date', '___________________')}
+          ${reportField('Next Review Date', '___________________')}
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:16px">
+          <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px">Third-Party Reviewer / Independent Auditor</div>
+          <div class="grid grid-2 gap-16">
+            ${reportField('Auditor Name', '___________________')}
+            ${reportField('Organisation', '___________________')}
+            ${reportField('Audit Date', '___________________')}
+            ${reportField('Audit Scope', '___________________')}
+            ${reportField('Auditor Signature', '___________________')}
+            ${reportField('Overall Finding', '☐ Compliant  ☐ Non-Compliant  ☐ Partial')}
+          </div>
+        </div>
+        <div class="alert alert-blue mt-16" style="margin-bottom:0">
+          <span class="alert-icon">ℹ</span>
+          <div style="font-size:12px">This report was generated from the DPO Management System. All evidence referenced must be independently verified by the auditor. Documents in the Evidence Register must be accessible without assistance from the auditee. Retain this report for a minimum of 5 years.</div>
+        </div>
+      </div>
+    </div>
+    </div>
+  `);
+}
+
+function reportField(label, val) {
+  return `<div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px">${label}</div><div style="font-size:13px;color:var(--text)">${val}</div></div>`;
+}
+
+function printAuditReport() {
+  window.print();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUDIT LOG
+// ═══════════════════════════════════════════════════════════════
+function auditlog() {
+  el('topbarActions').innerHTML = `<button class="btn btn-secondary" onclick="if(confirm('Clear audit trail?')){STATE.auditLog=[];saveState();auditlog();}">Clear Trail</button>`;
+
+  setContent(`
+    <div class="section-header">
+      <div>
+        <div class="section-title">🕐 Audit Trail</div>
+        <div class="section-desc">Immutable change log — every action in the system is recorded with timestamp and user</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">${STATE.auditLog.length} Events Recorded</div></div>
+      <div class="table-wrap">
+        ${STATE.auditLog.length === 0 ? `<div class="empty"><div class="empty-icon">🕐</div><div class="empty-title">No events yet</div><div class="empty-sub">All actions will be logged here automatically</div></div>` : `
+        <table>
+          <thead><tr><th>Timestamp</th><th>User</th><th>Module</th><th>Action</th><th>Details</th></tr></thead>
+          <tbody>
+            ${STATE.auditLog.map(l => `<tr>
+              <td class="td-mono">${fmtDateTime(l.ts)}</td>
+              <td><span class="badge badge-gray">${l.user||'System'}</span></td>
+              <td><span class="badge badge-blue">${l.module}</span></td>
+              <td>${l.action}</td>
+              <td class="td-dim">${l.details}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    </div>
+  `);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+updateBadges();
+render();
+</script>
+</body>
+</html>
