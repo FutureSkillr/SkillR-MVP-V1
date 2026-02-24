@@ -126,9 +126,9 @@ func Load() (*Config, error) {
 		AdminSeedPassword: getEnv("ADMIN_SEED_PASSWORD", "Admin1local"),
 		// Permanent admin emails — always elevated to admin role
 		AdminEmails: splitAndTrim(getEnv("ADMIN_EMAILS", "mirko.kaempf@gmail.com"), ","),
-		// LFS Proxy (FR-131)
-		LFSProxyURL:     os.Getenv("LFS_PROXY_URL"),
-		LFSProxyEnabled: getEnvBool("LFS_PROXY_ENABLED", false),
+		// LFS Proxy (FR-131) — defaults to localhost:8080 in dev mode
+		LFSProxyURL:     getEnv("LFS_PROXY_URL", "http://localhost:8080"),
+		LFSProxyEnabled: getEnvBool("LFS_PROXY_ENABLED", true),
 	}
 	// M12: Warn about ALLOWED_ORIGINS in production
 	if os.Getenv("ALLOWED_ORIGINS") == "" {
