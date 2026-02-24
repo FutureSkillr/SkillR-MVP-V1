@@ -17,6 +17,7 @@ import (
 	"skillr-mvp-v1/backend/internal/ai"
 	"skillr-mvp-v1/backend/internal/config"
 	"skillr-mvp-v1/backend/internal/domain/lernreise"
+	"skillr-mvp-v1/backend/internal/domain/portfolio"
 	"skillr-mvp-v1/backend/internal/domain/session"
 	"skillr-mvp-v1/backend/internal/firebase"
 	"skillr-mvp-v1/backend/internal/gateway"
@@ -56,6 +57,7 @@ func run() error {
 	srv := server.New(cfg)
 
 	healthH := server.NewHealthHandler(nil, nil, version, cfg.HealthCheckToken)
+	healthH.SetConfig(cfg)
 	configH := server.NewConfigHandler(cfg)
 	authH := server.NewAuthHandler(nil)
 
@@ -63,11 +65,16 @@ func run() error {
 	sessionSvc := session.NewService(nil)
 	sessionH := session.NewHandler(sessionSvc)
 
+	// Portfolio handler created early with nil repo (DB connected later via SetRepo)
+	portfolioSvc := portfolio.NewService(nil)
+	portfolioH := portfolio.NewHandler(portfolioSvc)
+
 	deps := &server.Dependencies{
-		Health:  healthH,
-		ConfigH: configH,
-		Auth:    authH,
-		Session: sessionH,
+		Health:           healthH,
+		ConfigH:          configH,
+		Auth:             authH,
+		Session:          sessionH,
+		PortfolioEntries: portfolioH,
 	}
 
 	// Initialize AI handler if GCP project is configured
@@ -96,6 +103,7 @@ func run() error {
 		lrSvc := lernreise.NewService(nil, hcClient, memClient)
 		deps.Lernreise = lernreise.NewHandler(lrSvc)
 		healthH.SetHoneycomb(true)
+		healthH.SetMemoryService(true)
 		log.Printf("Honeycomb integration initialized (url=%s)", cfg.HoneycombURL)
 	} else {
 		log.Println("warning: HONEYCOMB_URL or MEMORY_SERVICE_URL not set — Lernreise routes disabled")
@@ -105,8 +113,10 @@ func run() error {
 	var solidSvc *solid.Service
 	if cfg.SolidPodEnabled && cfg.SolidPodURL != "" {
 		solidClient := solid.NewHTTPClient(cfg.SolidPodURL)
-		solidSvc = solid.NewService(solidClient, nil) // DB connected later
+		solidSvc = solid.NewService(solidClient, nil, cfg.SolidPodURL) // DB connected later
 		deps.Pod = solid.NewHandler(solidSvc)
+		healthH.SetSolidPod(true, true)
+		healthH.SetSolidService(solidSvc)
 		log.Printf("Solid Pod integration initialized (url=%s)", cfg.SolidPodURL)
 	} else {
 		log.Println("warning: SOLID_POD_ENABLED not set or SOLID_POD_URL empty — Pod routes disabled")
@@ -121,6 +131,7 @@ func run() error {
 			defer fbClient.Close()
 			deps.FirebaseAuthMiddleware = middleware.FirebaseAuth(fbClient)
 			deps.OptionalFirebaseAuth = middleware.OptionalFirebaseAuth(fbClient)
+			healthH.SetFirebase(true)
 			log.Printf("Firebase auth initialized (project=%s)", cfg.FirebaseProject)
 		}
 	}
@@ -207,10 +218,15 @@ func run() error {
 		authH.SetDB(pool)
 		if solidSvc != nil {
 			solidSvc.SetDB(pool)
+			healthH.SetSolidPod(true, cfg.SolidPodEnabled)
 		}
 
 		// Inject DB into session service (created earlier with nil repo)
 		sessionSvc.SetRepo(postgres.NewSessionRepository(pool))
+
+		// Inject DB into portfolio service (created earlier with nil repo)
+		portfolioSvc.SetRepo(postgres.NewPortfolioRepository(pool))
+		portfolioSvc.SetDB(pool)
 
 		// Inject DB into gateway handlers (created earlier with nil DB)
 		gwAnalytics.SetDB(pool)

@@ -42,6 +42,10 @@ type PodConnection struct {
 type ConnectRequest struct {
 	Provider PodProvider `json:"provider"`
 	PodURL   string      `json:"podUrl,omitempty"` // required for external provider
+	// CSS authentication for external pods (email/password login).
+	// Credentials are used to authenticate but NOT stored in the database.
+	Email    string `json:"email,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 // Validate checks the connect request for valid provider and URL format.

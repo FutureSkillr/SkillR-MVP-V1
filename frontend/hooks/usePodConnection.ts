@@ -8,6 +8,7 @@ import type {
 } from '../types/pod';
 import { DEFAULT_POD_PERMISSIONS } from '../types/pod';
 import {
+  checkPodReadiness,
   getPodStatus,
   connectPod,
   disconnectPod,
@@ -20,6 +21,12 @@ export interface UsePodConnectionOptions {
 }
 
 export interface UsePodConnectionResult {
+  /** Whether Pod infrastructure is available. */
+  available: boolean;
+  /** Whether the managed (local CSS) provider is available (TC-036). */
+  managedAvailable: boolean;
+  /** Base URL of the managed CSS instance (e.g. "http://localhost:3003"). */
+  managedPodUrl: string | null;
   /** Current Pod connection state (null = loading). */
   podState: PodConnectionState | null;
   /** Whether the connect modal is open. */
@@ -43,7 +50,7 @@ export interface UsePodConnectionResult {
   /** Toggle a permission. */
   togglePermission: (category: string) => void;
   /** Initiate Pod connection. */
-  connect: (provider: PodProvider, podUrl?: string) => Promise<void>;
+  connect: (provider: PodProvider, podUrl?: string, email?: string, password?: string) => Promise<void>;
   /** Disconnect the Pod. */
   disconnect: () => Promise<void>;
   /** Trigger manual sync. */
@@ -52,7 +59,20 @@ export interface UsePodConnectionResult {
   refresh: () => Promise<void>;
 }
 
+const POD_READY_KEY = 'skillr:pod_ready';
+const POD_MANAGED_KEY = 'skillr:pod_managed_ready';
+const POD_MANAGED_URL_KEY = 'skillr:pod_managed_url';
+
 export function usePodConnection({ enabled }: UsePodConnectionOptions): UsePodConnectionResult {
+  const [available, setAvailable] = useState(() => {
+    try { return sessionStorage.getItem(POD_READY_KEY) === '1'; } catch { return false; }
+  });
+  const [managedAvailable, setManagedAvailable] = useState(() => {
+    try { return sessionStorage.getItem(POD_MANAGED_KEY) === '1'; } catch { return false; }
+  });
+  const [managedPodUrl, setManagedPodUrl] = useState<string | null>(() => {
+    try { return sessionStorage.getItem(POD_MANAGED_URL_KEY); } catch { return null; }
+  });
   const [podState, setPodState] = useState<PodConnectionState | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalStep, setModalStep] = useState<PodModalStep>('explain');
@@ -64,13 +84,47 @@ export function usePodConnection({ enabled }: UsePodConnectionOptions): UsePodCo
   const refresh = useCallback(async () => {
     if (!enabled) return;
     const status = await getPodStatus();
-    if (status) setPodState(status);
+    if (status) {
+      console.debug('[Pod] refresh: connected=%s', status.connected);
+      setPodState(status);
+    }
   }, [enabled]);
 
-  // Load status on mount
+  // Check readiness on mount, then load status if available (FR-127, TC-036)
+  // Result is cached in sessionStorage — one check per browser session.
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (!enabled) return;
+    // If already resolved from sessionStorage, just refresh pod status
+    const cachedReady = sessionStorage.getItem(POD_READY_KEY);
+    if (cachedReady !== null) {
+      const ready = cachedReady === '1';
+      const managed = sessionStorage.getItem(POD_MANAGED_KEY) === '1';
+      const cachedUrl = sessionStorage.getItem(POD_MANAGED_URL_KEY);
+      console.debug('[Pod] readiness (cached): available=%s managedAvailable=%s url=%s', ready, managed, cachedUrl);
+      setAvailable(ready);
+      setManagedAvailable(managed);
+      setManagedPodUrl(cachedUrl);
+      if (ready) refresh();
+      return;
+    }
+    let cancelled = false;
+    checkPodReadiness().then((result) => {
+      if (cancelled) return;
+      console.debug('[Pod] readiness: available=%s managedAvailable=%s url=%s', result.available, result.managedAvailable, result.managedPodUrl);
+      try {
+        sessionStorage.setItem(POD_READY_KEY, result.available ? '1' : '0');
+        sessionStorage.setItem(POD_MANAGED_KEY, result.managedAvailable ? '1' : '0');
+        if (result.managedPodUrl) {
+          sessionStorage.setItem(POD_MANAGED_URL_KEY, result.managedPodUrl);
+        }
+      } catch {}
+      setAvailable(result.available);
+      setManagedAvailable(result.managedAvailable);
+      setManagedPodUrl(result.managedPodUrl || null);
+      if (result.available) refresh();
+    });
+    return () => { cancelled = true; };
+  }, [enabled, refresh]);
 
   const openModal = useCallback(() => {
     setModalOpen(true);
@@ -92,11 +146,13 @@ export function usePodConnection({ enabled }: UsePodConnectionOptions): UsePodCo
     );
   }, []);
 
-  const connect = useCallback(async (provider: PodProvider, podUrl?: string) => {
+  const connect = useCallback(async (provider: PodProvider, podUrl?: string, email?: string, password?: string) => {
+    console.debug('[Pod] connect: provider=%s url=%s', provider, podUrl);
     setLoading(true);
     setError(null);
     try {
-      const conn = await connectPod({ provider, podUrl });
+      const conn = await connectPod({ provider, podUrl, email, password });
+      console.debug('[Pod] connect: ok');
       setPodState({
         connected: true,
         podUrl: conn.podUrl || podUrl || '',
@@ -108,17 +164,21 @@ export function usePodConnection({ enabled }: UsePodConnectionOptions): UsePodCo
       });
       setModalStep('permissions');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verbindung fehlgeschlagen');
+      const msg = err instanceof Error ? err.message : 'Verbindung fehlgeschlagen';
+      console.error('[Pod] connect: FAILED %s', msg);
+      setError(msg);
     } finally {
       setLoading(false);
     }
   }, []);
 
   const disconnect = useCallback(async () => {
+    console.debug('[Pod] disconnect');
     setLoading(true);
     setError(null);
     try {
       await disconnectPod();
+      console.debug('[Pod] disconnect: ok');
       setPodState({
         connected: false,
         podUrl: '',
@@ -129,28 +189,37 @@ export function usePodConnection({ enabled }: UsePodConnectionOptions): UsePodCo
         syncStatus: 'none',
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Trennung fehlgeschlagen');
+      const msg = err instanceof Error ? err.message : 'Trennung fehlgeschlagen';
+      console.error('[Pod] disconnect: FAILED %s', msg);
+      setError(msg);
     } finally {
       setLoading(false);
     }
   }, []);
 
   const sync = useCallback(async (data: PodSyncRequest) => {
+    console.debug('[Pod] sync');
     setLoading(true);
     setError(null);
     setSyncResult(null);
     try {
       const result = await syncPod(data);
+      console.debug('[Pod] sync: ok synced=%d', result.syncedEntities);
       setSyncResult(result);
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Synchronisierung fehlgeschlagen');
+      const msg = err instanceof Error ? err.message : 'Synchronisierung fehlgeschlagen';
+      console.error('[Pod] sync: FAILED %s', msg);
+      setError(msg);
     } finally {
       setLoading(false);
     }
   }, [refresh]);
 
   return {
+    available,
+    managedAvailable,
+    managedPodUrl,
     podState,
     modalOpen,
     modalStep,

@@ -77,16 +77,24 @@ const PodExplainStep: React.FC<{
 );
 
 const PodProviderStep: React.FC<{
-  onSelect: (provider: PodProvider, url: string) => void;
+  managedAvailable: boolean;
+  managedPodUrl: string | null;
+  onSelect: (provider: PodProvider, url: string, email?: string, password?: string) => void;
   onBack: () => void;
-}> = ({ onSelect, onBack }) => {
+}> = ({ managedAvailable, managedPodUrl, onSelect, onBack }) => {
   const [customUrl, setCustomUrl] = useState('');
-  const [selected, setSelected] = useState<'local' | 'custom'>('local');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  // TC-036: Default to 'custom' when managed CSS is not available (cloud mode)
+  const [selected, setSelected] = useState<'local' | 'custom'>(
+    managedAvailable ? 'local' : 'custom'
+  );
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-white text-center">Pod-Anbieter waehlen</h2>
       <div className="space-y-3">
+        {managedAvailable && (
         <button
           onClick={() => setSelected('local')}
           className={`w-full p-4 rounded-xl border text-left transition-all ${
@@ -101,10 +109,11 @@ const PodProviderStep: React.FC<{
             }`} />
             <div>
               <p className="text-white font-medium">Lokaler Dev-Server</p>
-              <p className="text-slate-500 text-xs">http://localhost:3000</p>
+              <p className="text-slate-500 text-xs">{managedPodUrl || 'http://localhost:3003'}</p>
             </div>
           </div>
         </button>
+        )}
         <button
           onClick={() => setSelected('custom')}
           className={`w-full p-4 rounded-xl border text-left transition-all ${
@@ -119,18 +128,37 @@ const PodProviderStep: React.FC<{
             }`} />
             <div>
               <p className="text-white font-medium">Eigener Pod-Server</p>
-              <p className="text-slate-500 text-xs">Eigene URL eingeben</p>
+              <p className="text-slate-500 text-xs">Solid Pod URL + Zugangsdaten</p>
             </div>
           </div>
         </button>
         {selected === 'custom' && (
-          <input
-            type="url"
-            value={customUrl}
-            onChange={(e) => setCustomUrl(e.target.value)}
-            placeholder="https://my-pod.example.com"
-            className="w-full mt-2 px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-          />
+          <div className="space-y-2 pt-1">
+            <input
+              type="url"
+              value={customUrl}
+              onChange={(e) => setCustomUrl(e.target.value)}
+              placeholder="https://solid.example.com/mein-pod"
+              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="E-Mail (Pod-Konto)"
+              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Passwort"
+              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            />
+            <p className="text-slate-600 text-[10px] px-1">
+              Zugangsdaten werden nur fuer die Verbindung genutzt und nicht gespeichert.
+            </p>
+          </div>
         )}
       </div>
       <div className="flex gap-3">
@@ -142,9 +170,11 @@ const PodProviderStep: React.FC<{
         </button>
         <button
           onClick={() => {
-            const url = selected === 'local' ? 'http://localhost:3000' : customUrl;
-            const provider: PodProvider = selected === 'local' ? 'managed' : 'external';
-            onSelect(provider, url);
+            if (selected === 'local') {
+              onSelect('managed', managedPodUrl || 'http://localhost:3003');
+            } else {
+              onSelect('external', customUrl, email || undefined, password || undefined);
+            }
           }}
           disabled={selected === 'custom' && !customUrl}
           className="flex-1 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-400 hover:to-blue-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -311,10 +341,12 @@ interface PodConnectModalProps {
   loading: boolean;
   syncResult: PodSyncResult | null;
   error: string | null;
+  managedAvailable: boolean;
+  managedPodUrl: string | null;
   onClose: () => void;
   onSetStep: (step: PodModalStep) => void;
   onTogglePermission: (category: string) => void;
-  onConnect: (provider: PodProvider, url: string) => void;
+  onConnect: (provider: PodProvider, url: string, email?: string, password?: string) => void;
   onSync: (data: PodSyncRequest) => void;
 }
 
@@ -325,6 +357,8 @@ export const PodConnectModal: React.FC<PodConnectModalProps> = ({
   loading,
   syncResult,
   error,
+  managedAvailable,
+  managedPodUrl,
   onClose,
   onSetStep,
   onTogglePermission,
@@ -333,10 +367,10 @@ export const PodConnectModal: React.FC<PodConnectModalProps> = ({
 }) => {
   const [providerUrl, setProviderUrl] = useState('');
 
-  const handleProviderSelect = useCallback((provider: PodProvider, url: string) => {
+  const handleProviderSelect = useCallback((provider: PodProvider, url: string, email?: string, password?: string) => {
     setProviderUrl(url);
     onSetStep('auth');
-    onConnect(provider, url);
+    onConnect(provider, url, email, password);
   }, [onConnect, onSetStep]);
 
   const handleSyncStart = useCallback(() => {
@@ -371,6 +405,8 @@ export const PodConnectModal: React.FC<PodConnectModalProps> = ({
         )}
         {step === 'provider' && (
           <PodProviderStep
+            managedAvailable={managedAvailable}
+            managedPodUrl={managedPodUrl}
             onSelect={handleProviderSelect}
             onBack={() => onSetStep('explain')}
           />

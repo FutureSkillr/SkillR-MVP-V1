@@ -38,6 +38,10 @@ export interface PodSyncResult {
 export interface PodConnectRequest {
   provider: PodProvider;
   podUrl?: string;
+  /** CSS account email (external pods only). */
+  email?: string;
+  /** CSS account password (external pods only, not stored). */
+  password?: string;
 }
 
 /** Request payload for syncing data. */

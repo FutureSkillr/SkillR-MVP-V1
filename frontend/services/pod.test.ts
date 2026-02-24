@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getPodStatus, connectPod, disconnectPod, syncPod, getPodData } from './pod';
+import { checkPodReadiness, getPodStatus, connectPod, disconnectPod, syncPod, getPodData } from './pod';
 
 // Mock fetch
 const mockFetch = vi.fn();
@@ -7,6 +7,46 @@ vi.stubGlobal('fetch', mockFetch);
 
 beforeEach(() => {
   mockFetch.mockReset();
+});
+
+describe('checkPodReadiness', () => {
+  it('returns available, managedAvailable, and managedPodUrl when both true', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ available: true, managedAvailable: true, managedPodUrl: 'http://localhost:3003' }),
+    });
+
+    const result = await checkPodReadiness();
+    expect(result).toEqual({ available: true, managedAvailable: true, managedPodUrl: 'http://localhost:3003' });
+    expect(mockFetch).toHaveBeenCalledWith('/api/v1/pod/readiness');
+  });
+
+  it('returns managedAvailable false when CSS unreachable (TC-036)', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ available: false, managedAvailable: false, reason: 'pod_server_unreachable' }),
+    });
+
+    const result = await checkPodReadiness();
+    expect(result).toEqual({ available: false, managedAvailable: false, managedPodUrl: undefined });
+  });
+
+  it('returns both false when DB down', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ available: false, managedAvailable: false, reason: 'database_not_configured' }),
+    });
+
+    const result = await checkPodReadiness();
+    expect(result).toEqual({ available: false, managedAvailable: false, managedPodUrl: undefined });
+  });
+
+  it('returns both false on network error', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('network error'));
+
+    const result = await checkPodReadiness();
+    expect(result).toEqual({ available: false, managedAvailable: false });
+  });
 });
 
 describe('getPodStatus', () => {

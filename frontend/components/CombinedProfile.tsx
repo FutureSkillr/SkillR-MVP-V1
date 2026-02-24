@@ -14,6 +14,7 @@ import { CoachCard } from './intro/CoachCard';
 import { PodManagementCard } from './pod/PodManagementCard';
 import { PodConnectModal } from './pod/PodConnectModal';
 import { PodDataViewerModal } from './pod/PodDataViewerModal';
+import { PortfolioPanel } from './portfolio/PortfolioPanel';
 import { usePodConnection } from '../hooks/usePodConnection';
 import type { UserProfile } from '../types/user';
 import type { CoachId } from '../types/intro';
@@ -115,6 +116,11 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
   // FR-076/077/078: Solid Pod connection
   const pod = usePodConnection({ enabled: true });
   const [podDataOpen, setPodDataOpen] = useState(false);
+
+  // FR-127: Log Pod availability state for debugging
+  useEffect(() => {
+    console.debug('[Pod] CombinedProfile: available=%s managedAvailable=%s connected=%s', pod.available, pod.managedAvailable, pod.podState?.connected);
+  }, [pod.available, pod.podState?.connected]);
 
   // FR-070 AC8: 3-tier responsive radar chart sizing
   const [radarSize, setRadarSize] = useState(() =>
@@ -295,6 +301,9 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
         </div>
       </div>
 
+      {/* Portfolio */}
+      <PortfolioPanel />
+
       {/* Activity History */}
       {(() => {
         const events = buildActivityTimeline(profile, stationResults);
@@ -357,20 +366,22 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
         );
       })()}
 
-      {/* Solid Pod — FR-076/077/078 */}
-      <PodManagementCard
-        podState={pod.podState}
-        loading={pod.loading}
-        syncResult={pod.syncResult}
-        error={pod.error}
-        onConnect={pod.openModal}
-        onDisconnect={pod.disconnect}
-        onSync={() => pod.sync({
-          engagement: { totalXP: 0, level: 1, streak: 0, title: 'Entdecker' },
-          journeyProgress: {},
-        })}
-        onViewData={() => setPodDataOpen(true)}
-      />
+      {/* Solid Pod — FR-076/077/078, conditional on readiness FR-127 */}
+      {pod.available && (
+        <PodManagementCard
+          podState={pod.podState}
+          loading={pod.loading}
+          syncResult={pod.syncResult}
+          error={pod.error}
+          onConnect={pod.openModal}
+          onDisconnect={pod.disconnect}
+          onSync={() => pod.sync({
+            engagement: { totalXP: 0, level: 1, streak: 0, title: 'Entdecker' },
+            journeyProgress: {},
+          })}
+          onViewData={() => setPodDataOpen(true)}
+        />
+      )}
 
       {/* Actions */}
       <div className="flex gap-4 justify-center pt-4">
@@ -389,10 +400,12 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
       </div>
 
       {/* Pod Data Viewer Modal */}
-      <PodDataViewerModal open={podDataOpen} onClose={() => setPodDataOpen(false)} />
+      {pod.available && (
+        <PodDataViewerModal open={podDataOpen} onClose={() => setPodDataOpen(false)} />
+      )}
 
       {/* Pod Connect Modal — FR-076 */}
-      {pod.modalOpen && (
+      {pod.available && pod.modalOpen && (
         <PodConnectModal
           open={pod.modalOpen}
           step={pod.modalStep}
@@ -400,6 +413,8 @@ export const CombinedProfile: React.FC<CombinedProfileProps> = ({
           loading={pod.loading}
           syncResult={pod.syncResult}
           error={pod.error}
+          managedAvailable={pod.managedAvailable}
+          managedPodUrl={pod.managedPodUrl}
           onClose={pod.closeModal}
           onSetStep={pod.setStep}
           onTogglePermission={pod.togglePermission}
