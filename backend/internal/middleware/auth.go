@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -15,6 +16,27 @@ import (
 type contextKey string
 
 const UserInfoKey contextKey = "userInfo"
+
+// adminEmails holds emails that are always elevated to admin role.
+var adminEmails []string
+
+// SetAdminEmails configures the list of emails that always receive admin role.
+func SetAdminEmails(emails []string) {
+	adminEmails = emails
+}
+
+// applyAdminOverride promotes users whose email is in the admin list.
+func applyAdminOverride(info *firebase.UserInfo) {
+	if info == nil || info.Email == "" {
+		return
+	}
+	for _, e := range adminEmails {
+		if strings.EqualFold(e, info.Email) {
+			info.Role = "admin"
+			return
+		}
+	}
+}
 
 func FirebaseAuth(fbClient *firebase.Client) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -41,6 +63,9 @@ func FirebaseAuth(fbClient *firebase.Client) echo.MiddlewareFunc {
 				}
 			}
 
+			// Override role for permanent admin emails
+			applyAdminOverride(userInfo)
+
 			// Store user info in context
 			ctx := context.WithValue(c.Request().Context(), UserInfoKey, userInfo)
 			c.SetRequest(c.Request().WithContext(ctx))
@@ -51,13 +76,15 @@ func FirebaseAuth(fbClient *firebase.Client) echo.MiddlewareFunc {
 }
 
 func RequireAdmin() echo.MiddlewareFunc {
+	devMode := os.Getenv("K_SERVICE") == "" && os.Getenv("CLOUD_RUN") == ""
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			userInfo := GetUserInfo(c)
 			if userInfo == nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "authentication required")
 			}
-			if userInfo.Role != "admin" {
+			// In dev mode (local/Docker), allow any authenticated user
+			if !devMode && userInfo.Role != "admin" {
 				return echo.NewHTTPError(http.StatusForbidden, "admin role required")
 			}
 			return next(c)
@@ -83,6 +110,7 @@ func OptionalFirebaseAuth(fbClient *firebase.Client) echo.MiddlewareFunc {
 			if err != nil {
 				return next(c)
 			}
+			applyAdminOverride(userInfo)
 			ctx := context.WithValue(c.Request().Context(), UserInfoKey, userInfo)
 			c.SetRequest(c.Request().WithContext(ctx))
 			return next(c)
@@ -141,6 +169,7 @@ func LocalSessionAuth() echo.MiddlewareFunc {
 			if info == nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid session token")
 			}
+			applyAdminOverride(info)
 
 			ctx := context.WithValue(c.Request().Context(), UserInfoKey, info)
 			c.SetRequest(c.Request().WithContext(ctx))

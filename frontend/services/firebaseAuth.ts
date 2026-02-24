@@ -14,6 +14,7 @@ import {
   getFacebookProvider,
 } from './firebase';
 import { getFirebaseErrorMessage } from './firebaseErrors';
+import { syncEffectiveRole } from './auth';
 import type { AuthUser, AuthProvider, UserRole } from '../types/auth';
 
 const SESSION_KEY = 'skillr-session';
@@ -63,9 +64,11 @@ export async function firebaseLoginWithProvider(provider: AuthProvider): Promise
     const auth = getFirebaseAuth();
     const providerInstance = getProviderInstance(provider);
     const result = await signInWithPopup(auth, providerInstance);
-    const authUser = await firebaseUserToAuthUser(result.user, provider);
+    let authUser = await firebaseUserToAuthUser(result.user, provider);
     await storeFirebaseToken(result.user);
     localStorage.setItem(SESSION_KEY, JSON.stringify(authUser));
+    // Sync effective role from backend (admin email override)
+    authUser = await syncEffectiveRole(authUser);
     return authUser;
   } catch (error) {
     throw new Error(getFirebaseErrorMessage(error));
@@ -82,11 +85,12 @@ export async function firebaseRegister(
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(result.user, { displayName });
     // Re-fetch user to pick up the updated displayName
-    const authUser = await firebaseUserToAuthUser(result.user, 'email');
+    let authUser = await firebaseUserToAuthUser(result.user, 'email');
     // Override displayName since the token may not reflect it yet
     authUser.displayName = displayName;
     await storeFirebaseToken(result.user);
     localStorage.setItem(SESSION_KEY, JSON.stringify(authUser));
+    authUser = await syncEffectiveRole(authUser);
     return authUser;
   } catch (error) {
     throw new Error(getFirebaseErrorMessage(error));
@@ -97,9 +101,10 @@ export async function firebaseLogin(email: string, password: string): Promise<Au
   try {
     const auth = getFirebaseAuth();
     const result = await signInWithEmailAndPassword(auth, email, password);
-    const authUser = await firebaseUserToAuthUser(result.user, 'email');
+    let authUser = await firebaseUserToAuthUser(result.user, 'email');
     await storeFirebaseToken(result.user);
     localStorage.setItem(SESSION_KEY, JSON.stringify(authUser));
+    authUser = await syncEffectiveRole(authUser);
     return authUser;
   } catch (error) {
     throw new Error(getFirebaseErrorMessage(error));
@@ -144,7 +149,7 @@ export async function refreshAuthUser(): Promise<AuthUser | null> {
       // ignore
     }
 
-    const authUser: AuthUser = {
+    let authUser: AuthUser = {
       id: fbUser.uid,
       email: fbUser.email || '',
       displayName: fbUser.displayName || 'Nutzer',
@@ -155,6 +160,7 @@ export async function refreshAuthUser(): Promise<AuthUser | null> {
     };
 
     localStorage.setItem(SESSION_KEY, JSON.stringify(authUser));
+    authUser = await syncEffectiveRole(authUser);
     return authUser;
   } catch {
     return null;

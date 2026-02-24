@@ -17,6 +17,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
+
+	"skillr-mvp-v1/backend/internal/middleware"
 )
 
 var emailRegexp = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
@@ -459,6 +461,22 @@ func (h *AuthHandler) SeedAdmin(ctx context.Context, email, password string) {
 	}
 
 	log.Printf("seeded default admin user — email: %s  password: %s", email, password)
+}
+
+// Me handles GET /api/auth/me — returns the effective role after middleware
+// overrides (e.g. permanent admin email list). The frontend calls this after
+// login to sync the displayed role with the backend's view.
+func (h *AuthHandler) Me(c echo.Context) error {
+	userInfo := middleware.GetUserInfo(c)
+	if userInfo == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "not authenticated")
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"id":          userInfo.UID,
+		"email":       userInfo.Email,
+		"displayName": userInfo.DisplayName,
+		"role":        userInfo.Role,
+	})
 }
 
 func mapProvider(p string) string {

@@ -26,6 +26,7 @@ func (c *Config) LogStatus() {
 	log.Printf("  CORS Origins:   %v", c.AllowedOrigins)
 	log.Printf("  Admin Email:    %s", c.AdminSeedEmail)
 	log.Printf("  Admin Password: %s", c.AdminSeedPassword)
+	log.Printf("  LFS Proxy:      %s (enabled=%v)", configured(c.LFSProxyURL), c.LFSProxyEnabled)
 	log.Println("============================")
 }
 
@@ -78,6 +79,11 @@ type Config struct {
 	// Admin seed credentials (FR-115)
 	AdminSeedEmail    string
 	AdminSeedPassword string
+	// Permanent admin emails — these users always get admin role regardless of DB/claims
+	AdminEmails []string
+	// LFS Proxy integration (FR-131)
+	LFSProxyURL     string
+	LFSProxyEnabled bool
 }
 
 func Load() (*Config, error) {
@@ -118,6 +124,11 @@ func Load() (*Config, error) {
 		// Admin seed (FR-115) — defaults for local dev
 		AdminSeedEmail:    getEnv("ADMIN_SEED_EMAIL", "admin@skillr.local"),
 		AdminSeedPassword: getEnv("ADMIN_SEED_PASSWORD", "Admin1local"),
+		// Permanent admin emails — always elevated to admin role
+		AdminEmails: splitAndTrim(getEnv("ADMIN_EMAILS", "mirko.kaempf@gmail.com"), ","),
+		// LFS Proxy (FR-131)
+		LFSProxyURL:     os.Getenv("LFS_PROXY_URL"),
+		LFSProxyEnabled: getEnvBool("LFS_PROXY_ENABLED", false),
 	}
 	// M12: Warn about ALLOWED_ORIGINS in production
 	if os.Getenv("ALLOWED_ORIGINS") == "" {

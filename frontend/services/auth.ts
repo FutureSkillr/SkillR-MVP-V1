@@ -125,6 +125,27 @@ export async function updateUserRole(userId: string, newRole: UserRole): Promise
   }
 }
 
+/**
+ * Sync the effective role from the backend.
+ * The backend applies admin email overrides that Firebase token claims don't have.
+ * Call after login to ensure the frontend role matches the backend's view.
+ */
+export async function syncEffectiveRole(authUser: AuthUser): Promise<AuthUser> {
+  try {
+    const res = await fetch('/api/auth/me', { headers: getAuthHeaders() });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.role && data.role !== authUser.role) {
+        authUser = { ...authUser, role: data.role };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(authUser));
+      }
+    }
+  } catch {
+    // Non-critical — keep the role from the token
+  }
+  return authUser;
+}
+
 export async function deleteUser(userId: string): Promise<void> {
   const res = await fetch(`/api/users/${userId}`, { method: 'DELETE', headers: getAuthHeaders() });
 
