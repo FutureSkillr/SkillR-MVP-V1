@@ -182,6 +182,7 @@ Each feature, concept, and architecture decision is classified into one of three
 | FR-120 | Partner Content Pack Admin | `[CORE]` | specified | Admin `?partner-admin=slug` page for managing partner content |
 | FR-121 | Space Service International Example Partner | `[CORE]` | specified | SSI seed data, brand config, fallback constants |
 | FR-126 | Infrastructure Health LED | `[CORE]` | draft | KafScale + LFS-Proxy status LED in Content Pack Editor; disables submission when unavailable |
+| FR-131 | Video Upload via LFS-Proxy | `[CORE]` | specified | Browser-native video upload in Content Pack Editor using E72 LFS SDK; 2-video model (Video A + Video B) per Lernreise |
 
 ### V2.0 — SkillR-Specific Features (SELECT)
 

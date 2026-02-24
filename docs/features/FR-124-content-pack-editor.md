@@ -40,6 +40,8 @@ Add a "Content Packs" tab to the Management Console with full CRUD for packs and
 
 ### Raw Video Submission (Partner-facing)
 
+> **Implementation:** The upload mechanism is specified in **FR-131 (Video Upload via LFS-Proxy)**. FR-131 covers the E72 Browser LFS SDK integration, the `LfsUploader` service, and the `VideoSlotInput` component. This section describes the data model and workflow; FR-131 describes the upload protocol.
+
 Content partners can submit raw material for a new Lernreise directly from the Content Pack Editor. The submission feeds into the didactics team's review pipeline (IFR-002). Partners do not build the Lernreise themselves — they provide the raw ingredients; our content agents and expert didactics team handle the rest.
 
 #### Video Set Model
@@ -170,6 +172,7 @@ Video A and Video B can each use a different input option (e.g., Video A as YouT
 - FR-123 (Hard-coded Brand Onboarding) — migration-based seeding (replaced by this FR)
 - IFR-001 (Lerning-Data-Room Integration) — KafScale Broker for video set events
 - IFR-002 (Video CDN Stage) — LFS-Proxy for raw video uploads and the didactics review pipeline
+- FR-131 (Video Upload via LFS-Proxy) — E72 SDK integration for browser-native video uploads in the Lernreise editor
 
 ## Notes
 

@@ -159,6 +159,8 @@ This workflow ensures sponsors can contribute content without needing video prod
 - FR-071 (Terraform Infrastructure) — S3 bucket and CDN provisioning
 - FR-079 (Sponsor Showrooms) — sponsor video content on custom URLs
 - FR-086 (Partner Branding) — partner video content delivery
+- FR-124 (Content Pack Editor) — admin/partner UI for video set submissions
+- FR-131 (Video Upload via LFS-Proxy) — browser-native upload integration using E72 SDK
 
 ## Notes
 
@@ -166,3 +168,4 @@ This workflow ensures sponsors can contribute content without needing video prod
 - S3 is chosen for storage interoperability — works with GCS (S3-compatible API), AWS S3, or MinIO for local development.
 - Transcoding can be deferred to a background worker (Cloud Run Job, GKE Job, or external service). The LFS-Proxy only needs to trigger it and track status.
 - User-generated video (reflection recordings) is a future capability. The infrastructure should support it, but the upload UI is out of scope for V1.
+- The browser upload frontend uses the E72 Browser LFS SDK pattern (see `frontend/integration-modules/E72_browser-lfs-sdk-demo/`). FR-131 extracts this into a typed TypeScript service for the Content Pack Editor.
