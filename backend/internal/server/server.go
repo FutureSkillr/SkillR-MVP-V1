@@ -50,7 +50,7 @@ func New(cfg *config.Config) *Server {
 		lfsLimit := echomw.BodyLimit("500M")
 		defaultLimit := echomw.BodyLimit("10M")
 		return func(c echo.Context) error {
-			if c.Path() == "/api/lfs/produce" {
+			if c.Request().URL.Path == "/api/lfs/produce" {
 				return lfsLimit(next)(c)
 			}
 			return defaultLimit(next)(c)
@@ -66,6 +66,7 @@ func New(cfg *config.Config) *Server {
 			h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
 			h.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 			h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+			h.Set("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
 			h.Set("Content-Security-Policy", "default-src 'self'; script-src 'self' blob: https://cdn.tailwindcss.com https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://unpkg.com; frame-src https://accounts.google.com https://apis.google.com https://*.firebaseapp.com; worker-src 'self' blob:; frame-ancestors 'none'")
 			return next(c)
 		}
