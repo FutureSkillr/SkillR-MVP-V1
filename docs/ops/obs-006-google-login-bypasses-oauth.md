@@ -2,7 +2,7 @@
 
 **Beobachtet:** 2026-02-23
 **Severity:** medium
-**Status:** open
+**Status:** fixed (runtime config bootstrap in `index.tsx` + `make setup-firebase`)
 
 ---
 
@@ -44,21 +44,45 @@ const user = useFirebase
 
 Firebase ist in der lokalen Entwicklungsumgebung nicht konfiguriert. Ohne Firebase-Konfiguration (`FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, etc.) faellt `isFirebaseConfigured()` auf `false` zurueck, und alle Social-Logins verwenden den Stub.
 
-## Loesungsvorschlag
+## Analyse: Code ist bereits vorhanden
 
-### Option A: Firebase konfigurieren (empfohlen fuer Staging/Produktion)
-- Firebase-Umgebungsvariablen in `.env.local` / docker-compose setzen
-- Google als Auth-Provider in der Firebase Console aktivieren
-- Dann wird der echte OAuth-Pfad (`firebaseLoginWithProvider`) verwendet
+Vergleich mit der Referenz-Implementierung (mvp72) zeigt: **Der gesamte OAuth-Code ist bereits in SkillR-MVP-V1 kopiert und sogar erweitert:**
 
-### Option B: Stub-Hinweis im UI (fuer Dev-Modus)
-- Wenn `isFirebaseConfigured() === false`, Social-Login-Buttons als "(Dev-Modus)" kennzeichnen
-- Oder Social-Login-Buttons ausblenden wenn Firebase nicht konfiguriert
+| Komponente | Status |
+|------------|--------|
+| `frontend/services/firebase.ts` | Identisch mit mvp72 |
+| `frontend/services/firebaseAuth.ts` | Identisch (nur SESSION_KEY umbenannt) |
+| `backend/internal/firebase/` | Vollstaendig (client, auth, agents, prompts) |
+| `backend/internal/middleware/auth.go` | FirebaseAuth + OptionalFirebaseAuth vorhanden |
+| `scripts/setup-firebase.sh` | 358 Zeilen, vollautomatisch |
+| `make setup-firebase` | Makefile-Target vorhanden |
 
-### Option C: Google OAuth direkt (ohne Firebase)
-- `/api/auth/login-provider` mit echtem Google OAuth 2.0 Flow implementieren
-- Backend leitet zu `accounts.google.com/o/oauth2/v2/auth` weiter
-- Callback verarbeitet den Authorization Code und erstellt/aktualisiert den User
+**Das Problem ist keine fehlende Implementierung, sondern fehlende Konfiguration.**
+
+## Loesung (Teil 1): Firebase konfigurieren
+
+```bash
+make setup-firebase
+```
+
+Dieses Script:
+1. Aktiviert Firebase APIs im GCP-Projekt
+2. Erstellt die Firebase Web-App
+3. Aktiviert Google als Sign-In-Provider
+4. Schreibt die Config in `.env.deploy` und `.env.local`
+
+## Loesung (Teil 2): Runtime Config Bootstrap
+
+`make setup-firebase` allein reicht **nicht** fuer Deployments. Das Frontend liest
+Firebase-Config aus `(globalThis as any).process?.env?.FIREBASE_API_KEY` — aber
+`process.env` existiert im Browser nicht. Der Backend-Endpoint `/api/config` liefert
+die Config, aber sie wurde nie in `globalThis.process.env` injiziert.
+
+**Fix in `frontend/index.tsx`:** Vor dem React-Render wird `/api/config` gefetcht
+und die Firebase-Werte in `globalThis.process.env` geschrieben. Damit gibt
+`isFirebaseConfigured()` beim ersten Render `true` zurueck.
+
+Nach Re-Deploy verwendet Google Login den echten OAuth-Popup-Flow.
 
 ## Verwandte Dokumente
 

@@ -172,6 +172,70 @@ make deploy
 
 ---
 
+## Firebase Authentication einrichten
+
+Firebase wird fuer Google OAuth (und optional Apple / Meta) verwendet. Ohne Firebase-Konfiguration nutzt die App einen lokalen Dev-Stub, der Social Logins ohne echte OAuth-Verifikation durchlaesst.
+
+### Automatisch: `make setup-firebase`
+
+```bash
+make setup-firebase
+```
+
+Das Script fuehrt 6 Schritte aus:
+
+| Schritt | Aktion | Ergebnis |
+|---------|--------|----------|
+| 1/6 | GCP APIs aktivieren | `firebase`, `identitytoolkit`, `firebaseauth`, `firestore`, `apikeys` |
+| 2/6 | Firebase zum GCP-Projekt hinzufuegen | Firebase-Projekt verknuepft |
+| 3/6 | Firebase Web-App erstellen | App-ID generiert (z.B. `1:...:web:...`) |
+| 4/6 | Web-App-Konfiguration abrufen | `apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId`, `appId` |
+| 5/6 | Auth-Provider aktivieren | Email/Password + Google Sign-In |
+| 6/6 | Config in Env-Dateien schreiben | `.env.local` und `.env.deploy` aktualisiert |
+
+### Env-Variablen (nach Setup)
+
+```bash
+# In .env.local (fuer docker-compose / lokale Entwicklung):
+FIREBASE_API_KEY=AIzaSy...
+FIREBASE_AUTH_DOMAIN=<project-id>.firebaseapp.com
+FIREBASE_PROJECT_ID=<project-id>
+FIREBASE_STORAGE_BUCKET=<project-id>.firebasestorage.app
+FIREBASE_MESSAGING_SENDER_ID=1041496140898
+FIREBASE_APP_ID=1:<id>:web:<hash>
+```
+
+### Manuelle Schritte (nach dem Script)
+
+1. **Authorized Domains hinzufuegen** — Firebase Console > Authentication > Settings > Authorized domains
+   - `localhost` (fuer lokale Entwicklung)
+   - Cloud Run URL (z.B. `future-skillr-....run.app`)
+
+2. **Apple / Meta Provider** (optional) — Firebase Console > Authentication > Sign-in method
+   - Apple erfordert einen Apple Developer Account
+   - Meta erfordert einen Meta Business Account
+
+### Neu starten nach Setup
+
+```bash
+make local-stage-down && make local-stage
+# App oeffnen: http://localhost:9090
+# Google Login verwendet jetzt den echten OAuth-Flow
+```
+
+### Pruefen ob Firebase aktiv ist
+
+Im Startup-Log des Backends:
+```
+# Mit Firebase:
+Firebase auth initialized (project=gen-lang-client-0456368718)
+
+# Ohne Firebase (Fallback):
+Firebase not configured — using local session auth for admin routes
+```
+
+---
+
 ## Staging lokal testen
 
 Bevor du in die Cloud deployst, kannst du lokal mit Docker Compose testen:

@@ -99,6 +99,7 @@ Each feature, concept, and architecture decision is classified into one of three
 | FR-076 | Solid Pod Connection | `[CORE]` | done | |
 | FR-077 | Pod Data Sync | `[CORE]` | done | |
 | FR-078 | Pod Data Viewer | `[CORE]` | done | |
+| FR-127 | Pod Connection Health Gate | `[CORE]` | draft | Hide Pod-Link panel when infra unavailable; 503 instead of 500; readiness probe |
 | FR-086* | Partner Branding | `[CORE]` | done | Brand config system |
 
 ### V1.0 — "Zeig es der Welt" (Mixed: CORE for production, SELECT for nice-to-have)
@@ -180,6 +181,7 @@ Each feature, concept, and architecture decision is classified into one of three
 | FR-119 | Partner Preview Page | `[CORE]` | specified | Public `?partner=slug` page showing partner branding + Lernreisen |
 | FR-120 | Partner Content Pack Admin | `[CORE]` | specified | Admin `?partner-admin=slug` page for managing partner content |
 | FR-121 | Space Service International Example Partner | `[CORE]` | specified | SSI seed data, brand config, fallback constants |
+| FR-126 | Infrastructure Health LED | `[CORE]` | draft | KafScale + LFS-Proxy status LED in Content Pack Editor; disables submission when unavailable |
 
 ### V2.0 — SkillR-Specific Features (SELECT)
 
@@ -199,6 +201,13 @@ Each feature, concept, and architecture decision is classified into one of three
 | FR-094* | Report Generation Pipeline | `[SELECT]` | draft | Automated reports |
 
 > Note: FRs marked with `*` have number collisions with V2.0 platform FRs. In the SkillR roadmap, these will be renumbered using `FR-S*` prefix.
+
+### Infrastructure Feature Requests (IFR)
+
+| IFR | Title | Scope | Status | Notes |
+|-----|-------|-------|--------|-------|
+| IFR-001 | Lerning-Data-Room Integration | `[CORE]` | draft | KafScale Broker, LFS-Proxy, KafMirror, app-instance gateway (Redis + Postgres), maindfull.LEARNING platform services |
+| IFR-002 | Video CDN Stage via LFS-Proxy | `[CORE]` | draft | S3 video hosting, HLS transcoding, CDN edge delivery — LFS-Proxy drives the Video CDN Stage |
 
 ### Design Feature Requests (DFR)
 
