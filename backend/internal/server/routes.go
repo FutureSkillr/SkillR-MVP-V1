@@ -99,6 +99,19 @@ func RegisterRoutes(e *echo.Echo, deps *Dependencies) {
 		v1.POST("/portfolio/artifacts/:id/link-endorsement", deps.Artifact.LinkEndorsement)
 	}
 
+	// Portfolio Entries
+	if deps.PortfolioEntries != nil {
+		entries := v1.Group("/portfolio/entries")
+		entries.GET("", deps.PortfolioEntries.List)
+		entries.POST("", deps.PortfolioEntries.Create)
+		entries.PUT("/:id", deps.PortfolioEntries.Update)
+		entries.DELETE("/:id", deps.PortfolioEntries.Delete)
+		entries.POST("/demo", deps.PortfolioEntries.CreateDemo)
+		v1.GET("/portfolio/export", deps.PortfolioEntries.Export)
+		// Public page (no auth)
+		e.GET("/api/v1/portfolio/page/:userId", deps.PortfolioEntries.PublicPage)
+	}
+
 	// Journal
 	if deps.Journal != nil {
 		v1.GET("/portfolio/journal", deps.Journal.List)
@@ -129,12 +142,23 @@ func RegisterRoutes(e *echo.Echo, deps *Dependencies) {
 
 	// Pod endpoints (FR-076, FR-077, FR-078)
 	if deps.Pod != nil {
+		// Readiness probe — public, no auth (FR-127)
+		e.GET("/api/v1/pod/readiness", deps.Pod.Readiness)
+
 		pod := v1.Group("/pod")
 		pod.POST("/connect", deps.Pod.Connect)
 		pod.DELETE("/connect", deps.Pod.Disconnect)
 		pod.GET("/status", deps.Pod.Status)
 		pod.POST("/sync", deps.Pod.Sync)
 		pod.GET("/data", deps.Pod.Data)
+	} else {
+		// Fallback: Solid not configured — readiness always returns unavailable (FR-127)
+		e.GET("/api/v1/pod/readiness", func(c echo.Context) error {
+			return c.JSON(200, map[string]interface{}{
+				"available": false,
+				"reason":    "not_configured",
+			})
+		})
 	}
 
 	// AI endpoints — registered outside v1 auth group with optional auth.
@@ -184,6 +208,16 @@ func RegisterRoutes(e *echo.Echo, deps *Dependencies) {
 		sessCompat.PUT("/:id", deps.Session.Update)
 		sessCompat.PATCH("/:id/end", deps.Session.Update)
 		sessCompat.DELETE("/:id", deps.Session.Delete)
+	}
+
+	// Admin: Infrastructure status (FR-126 — requires admin role)
+	{
+		var infraAdminMws []echo.MiddlewareFunc
+		if deps.FirebaseAuthMiddleware != nil {
+			infraAdminMws = append(infraAdminMws, deps.FirebaseAuthMiddleware)
+		}
+		infraAdminMws = append(infraAdminMws, middleware.RequireAdmin())
+		e.GET("/api/admin/infra", deps.Health.InfraStatus, infraAdminMws...)
 	}
 
 	// Admin: Prompts (requires admin role)
@@ -368,6 +402,7 @@ type Dependencies struct {
 	Journal                JournalHandler
 	Engagement             EngagementHandler
 	Lernreise              LernreiseHandler
+	PortfolioEntries       PortfolioEntriesHandler
 	Pod                    PodHandler
 	AI                     AIHandler
 	AdminPrompts           AdminPromptHandler
@@ -472,12 +507,23 @@ type AdminAgentHandler interface {
 	Invoke(c echo.Context) error
 }
 
+type PortfolioEntriesHandler interface {
+	List(c echo.Context) error
+	Create(c echo.Context) error
+	Update(c echo.Context) error
+	Delete(c echo.Context) error
+	CreateDemo(c echo.Context) error
+	Export(c echo.Context) error
+	PublicPage(c echo.Context) error
+}
+
 type PodHandler interface {
 	Connect(c echo.Context) error
 	Disconnect(c echo.Context) error
 	Status(c echo.Context) error
 	Sync(c echo.Context) error
 	Data(c echo.Context) error
+	Readiness(c echo.Context) error
 }
 
 type LernreiseHandler interface {

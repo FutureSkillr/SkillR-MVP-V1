@@ -132,7 +132,7 @@ func TestDetailedHealth_ReturnsFullStatus(t *testing.T) {
 	if !ok {
 		t.Fatal("components is not a map")
 	}
-	for _, comp := range []string{"postgres", "redis", "ai", "honeycomb"} {
+	for _, comp := range []string{"postgres", "redis", "ai", "honeycomb", "pod"} {
 		c, ok := components[comp].(map[string]interface{})
 		if !ok {
 			t.Errorf("component %s missing or not a map", comp)
@@ -220,5 +220,54 @@ func TestConfig_ReturnsFirebaseConfig(t *testing.T) {
 	fb := resp["firebase"].(map[string]interface{})
 	if fb["projectId"] != "test-project" {
 		t.Errorf("expected test-project, got %v", fb["projectId"])
+	}
+}
+
+func TestDetailedHealth_PodUnavailableByDefault(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/health/detailed?token=tok", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	h := NewHealthHandler(nil, nil, "v1", "tok")
+
+	if err := h.DetailedHealth(c); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var resp map[string]interface{}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+
+	components := resp["components"].(map[string]interface{})
+	podComp := components["pod"].(map[string]interface{})
+	if podComp["status"] != "unavailable" {
+		t.Errorf("expected pod unavailable, got %v", podComp["status"])
+	}
+}
+
+func TestDetailedHealth_PodAvailableAfterSetSolidPod(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/health/detailed?token=tok", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	h := NewHealthHandler(nil, nil, "v1", "tok")
+	h.SetSolidPod(true, true)
+
+	if err := h.DetailedHealth(c); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var resp map[string]interface{}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+
+	components := resp["components"].(map[string]interface{})
+	podComp := components["pod"].(map[string]interface{})
+	if podComp["status"] != "ok" {
+		t.Errorf("expected pod ok after SetSolidPod(true, true), got %v", podComp["status"])
 	}
 }
