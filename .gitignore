@@ -39,6 +39,7 @@ credentials/
 *.eps
 *.zip
 frontend/graphx-design/co-funded_de/
+frontend/graphx-design/portfolio-001/
 
 # k6 load test reports (regenerated on each run)
 k6/reports/*.json
