@@ -1,6 +1,7 @@
 import { getFirestore, doc, setDoc, getDoc, type Firestore } from 'firebase/firestore';
 import { getFirebaseApp, isFirebaseConfigured } from './firebase';
 import { getFirebaseAuth } from './firebase';
+import { userKey as buildUserKey } from './userStorage';
 
 let db: Firestore | null = null;
 
@@ -32,7 +33,8 @@ function debouncedWrite(key: string, fn: () => Promise<void>, delayMs = 500): vo
 
 // Save state to Firestore (or localStorage fallback)
 export async function saveUserState(key: string, data: unknown): Promise<void> {
-  const localKey = `skillr-${key}`;
+  const uid = getCurrentUid();
+  const localKey = buildUserKey(`skillr-${key}`, uid ?? undefined);
 
   // Always save to localStorage as cache
   try {
@@ -40,7 +42,6 @@ export async function saveUserState(key: string, data: unknown): Promise<void> {
   } catch { /* ignore */ }
 
   const firestore = getDB();
-  const uid = getCurrentUid();
   if (!firestore || !uid) return;
 
   debouncedWrite(`${uid}/${key}`, async () => {
@@ -51,10 +52,9 @@ export async function saveUserState(key: string, data: unknown): Promise<void> {
 
 // Load state from Firestore (or localStorage fallback)
 export async function loadUserState<T>(key: string, fallback: T): Promise<T> {
-  const localKey = `skillr-${key}`;
-
   const firestore = getDB();
   const uid = getCurrentUid();
+  const localKey = buildUserKey(`skillr-${key}`, uid ?? undefined);
 
   if (firestore && uid) {
     try {
@@ -110,7 +110,8 @@ export async function migrateLocalStorageToFirestore(): Promise<void> {
   }
 }
 
-// Clear user state (on logout)
+// Clear anonymous cache keys (on logout).
+// User-keyed data (e.g. skillr-state-{uid}) is preserved for next login.
 export function clearLocalState(): void {
   const keys = ['skillr-state', 'skillr-vuca-state', 'skillr-voice-enabled'];
   for (const key of keys) {

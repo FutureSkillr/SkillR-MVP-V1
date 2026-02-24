@@ -56,7 +56,7 @@ describe('firestore service (localStorage fallback mode)', () => {
   });
 
   describe('clearLocalState', () => {
-    it('removes all skillr keys', () => {
+    it('removes anonymous skillr keys', () => {
       localStorage.setItem('skillr-state', '{}');
       localStorage.setItem('skillr-vuca-state', '{}');
       localStorage.setItem('skillr-voice-enabled', 'true');
@@ -68,6 +68,16 @@ describe('firestore service (localStorage fallback mode)', () => {
       expect(localStorage.getItem('skillr-vuca-state')).toBeNull();
       expect(localStorage.getItem('skillr-voice-enabled')).toBeNull();
       expect(localStorage.getItem('other-key')).toBe('keep');
+    });
+
+    it('preserves user-keyed data', () => {
+      localStorage.setItem('skillr-state', '{}');
+      localStorage.setItem('skillr-state-user1', '{"user":"one"}');
+
+      clearLocalState();
+
+      expect(localStorage.getItem('skillr-state')).toBeNull();
+      expect(localStorage.getItem('skillr-state-user1')).toBe('{"user":"one"}');
     });
   });
 });

@@ -17,6 +17,12 @@ import { getFirebaseErrorMessage } from './firebaseErrors';
 import type { AuthUser, AuthProvider, UserRole } from '../types/auth';
 
 const SESSION_KEY = 'skillr-session';
+const TOKEN_KEY = 'skillr-token';
+
+async function storeFirebaseToken(fbUser: FirebaseUser): Promise<void> {
+  const token = await fbUser.getIdToken();
+  localStorage.setItem(TOKEN_KEY, token);
+}
 
 async function firebaseUserToAuthUser(
   fbUser: FirebaseUser,
@@ -58,6 +64,7 @@ export async function firebaseLoginWithProvider(provider: AuthProvider): Promise
     const providerInstance = getProviderInstance(provider);
     const result = await signInWithPopup(auth, providerInstance);
     const authUser = await firebaseUserToAuthUser(result.user, provider);
+    await storeFirebaseToken(result.user);
     localStorage.setItem(SESSION_KEY, JSON.stringify(authUser));
     return authUser;
   } catch (error) {
@@ -78,6 +85,7 @@ export async function firebaseRegister(
     const authUser = await firebaseUserToAuthUser(result.user, 'email');
     // Override displayName since the token may not reflect it yet
     authUser.displayName = displayName;
+    await storeFirebaseToken(result.user);
     localStorage.setItem(SESSION_KEY, JSON.stringify(authUser));
     return authUser;
   } catch (error) {
@@ -90,6 +98,7 @@ export async function firebaseLogin(email: string, password: string): Promise<Au
     const auth = getFirebaseAuth();
     const result = await signInWithEmailAndPassword(auth, email, password);
     const authUser = await firebaseUserToAuthUser(result.user, 'email');
+    await storeFirebaseToken(result.user);
     localStorage.setItem(SESSION_KEY, JSON.stringify(authUser));
     return authUser;
   } catch (error) {
@@ -105,6 +114,7 @@ export async function firebaseLogout(): Promise<void> {
     // Ignore sign-out errors
   }
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 /**
@@ -119,6 +129,7 @@ export async function refreshAuthUser(): Promise<AuthUser | null> {
     if (!fbUser) return null;
 
     const tokenResult = await fbUser.getIdTokenResult(true);
+    localStorage.setItem(TOKEN_KEY, tokenResult.token);
     const role: UserRole = tokenResult.claims.role === 'admin' ? 'admin' : 'user';
 
     // Read existing session to preserve provider info

@@ -10,6 +10,7 @@ import { BusinessConfigTab } from './admin/BusinessConfigTab';
 import { CampaignDashboard } from './admin/CampaignDashboard';
 import { DialogTraceViewer } from './admin/DialogTraceViewer';
 import { ContentPackEditor } from './admin/ContentPackEditor';
+import { InfraDashboard } from './admin/InfraDashboard';
 import { LegalFooter } from './legal/LegalFooter';
 import type { AuthUser } from '../types/auth';
 import type { AdminTab } from '../types/admin';
@@ -43,6 +44,7 @@ const ADMIN_LABELS: Record<AdminTab, string> = {
   dialogs: 'Dialog-Trace',
   campaigns: 'Kampagnen',
   legal: 'Geschaeftsdaten',
+  infra: 'Infrastruktur',
 };
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -233,6 +235,7 @@ export const Layout: React.FC<LayoutProps> = ({
               {adminTab === 'dialogs' && <DialogTraceViewer />}
               {adminTab === 'campaigns' && <CampaignDashboard />}
               {adminTab === 'legal' && <BusinessConfigTab />}
+              {adminTab === 'infra' && <InfraDashboard />}
             </>
           ) : (
             children

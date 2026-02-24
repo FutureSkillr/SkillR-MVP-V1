@@ -22,6 +22,13 @@ import { getCurrentUser, logout as authLogout, seedDefaultAdmin } from './servic
 import { refreshAuthUser } from './services/firebaseAuth';
 import { isFirebaseConfigured } from './services/firebase';
 import { updateIntroCoach, loadIntroState, transferIntroToProfile } from './services/introStorage';
+import {
+  setCurrentUserId,
+  loadUserData,
+  saveUserData,
+  migrateAnonymousToUser,
+  clearCurrentSession,
+} from './services/userStorage';
 import type { UserProfile, OnboardingInsights } from './types/user';
 import { getDialectForCoach } from './types/user';
 import type { JourneyType, Station, StationResult } from './types/journey';
@@ -74,55 +81,57 @@ interface AppState {
   activeStation: Station | null;
 }
 
-function loadState(isLoggedIn: boolean): AppState {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      const storedView = parsed.view as ViewState;
-      let view: ViewState;
-      if (isLoggedIn) {
-        // Logged in: skip welcome, login, and intro views — restore saved view or go to landing
-        const preAuthViews: ViewState[] = ['welcome', 'login', 'intro-coach-select', 'intro-chat', 'intro-register', 'datenschutz', 'impressum'];
-        view = preAuthViews.includes(storedView) ? 'landing' : storedView;
-      } else {
-        // Not logged in: always start at the public welcome page
-        view = 'welcome';
-      }
-      return {
-        ...parsed,
-        view,
-        activeStation: parsed.activeStation || null,
-      };
+const FRESH_STATE: AppState = {
+  view: 'welcome',
+  profile: createInitialProfile(),
+  stationResults: [],
+  activeJourney: null,
+  activeStation: null,
+};
+
+function loadState(isLoggedIn: boolean, userId?: string): AppState {
+  const stored = loadUserData<AppState | null>(STORAGE_KEY, null, userId);
+  if (stored) {
+    const storedView = stored.view as ViewState;
+    let view: ViewState;
+    if (isLoggedIn) {
+      const preAuthViews: ViewState[] = ['welcome', 'login', 'intro-coach-select', 'intro-chat', 'intro-register', 'datenschutz', 'impressum'];
+      view = preAuthViews.includes(storedView) ? 'landing' : storedView;
+    } else {
+      view = 'welcome';
     }
-  } catch {
-    // ignore
+    return {
+      ...stored,
+      view,
+      activeStation: stored.activeStation || null,
+    };
   }
   return {
+    ...FRESH_STATE,
     view: isLoggedIn ? 'landing' : 'welcome',
     profile: createInitialProfile(),
-    stationResults: [],
-    activeJourney: null,
-    activeStation: null,
   };
 }
 
-function saveState(state: AppState) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // ignore
-  }
+function saveState(state: AppState, userId?: string) {
+  saveUserData(STORAGE_KEY, state, userId);
 }
 
 // Seed default admin user for local development (no-op if users exist)
 seedDefaultAdmin();
 
 const App: React.FC = () => {
-  const [authUser, setAuthUser] = useState<AuthUser | null>(() => getCurrentUser());
-  const [state, setState] = useState<AppState>(() => loadState(!!getCurrentUser()));
+  const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
+    const user = getCurrentUser();
+    if (user) setCurrentUserId(user.id);
+    return user;
+  });
+  const [state, setState] = useState<AppState>(() => {
+    const user = getCurrentUser();
+    return loadState(!!user, user?.id);
+  });
   const [voiceEnabled, setVoiceEnabled] = useState<boolean>(() => {
-    try { return localStorage.getItem(VOICE_STORAGE_KEY) === 'true'; } catch { return false; }
+    try { return loadUserData<string>(VOICE_STORAGE_KEY, 'false') === 'true'; } catch { return false; }
   });
   const [introCoachId, setIntroCoachId] = useState<CoachId | null>(() => loadIntroState()?.coachId ?? null);
   const [cookieModalOpen, setCookieModalOpen] = useState(false);
@@ -132,10 +141,10 @@ const App: React.FC = () => {
   const onboardingStartTime = useRef<number>(0);
   const stationStartTime = useRef<number>(0);
 
-  // Persist on change
+  // Persist on change (write to the current user's slot)
   useEffect(() => {
-    saveState(state);
-  }, [state]);
+    saveState(state, authUser?.id);
+  }, [state, authUser?.id]);
 
   // Refresh admin role from Firebase custom claims on mount
   useEffect(() => {
@@ -143,6 +152,17 @@ const App: React.FC = () => {
     refreshAuthUser().then((updated) => {
       if (updated) setAuthUser(updated);
     });
+  }, []);
+
+  // Refresh Firebase ID token every 50 minutes (tokens expire after 1 hour)
+  useEffect(() => {
+    if (!isFirebaseConfigured()) return;
+    const interval = setInterval(() => {
+      refreshAuthUser().then((updated) => {
+        if (updated) setAuthUser(updated);
+      });
+    }, 50 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   // FR-113: Capture UTM parameters from URL on first visit
@@ -204,34 +224,57 @@ const App: React.FC = () => {
 
   // Auth handlers
   const handleLogin = useCallback((user: AuthUser) => {
-    setAuthUser(user);
-    // Transfer any intro XP/interests into the profile
+    // 1. Set current user ID for all storage operations
+    setCurrentUserId(user.id);
+
+    // 2. Migrate any anonymous data to user-keyed storage (first-time only)
+    migrateAnonymousToUser(user.id);
+
+    // 3. Load the user's persisted state
+    const userState = loadState(true, user.id);
+
+    // 4. Transfer any intro XP/interests into the profile
     const introResult = transferIntroToProfile();
     trackPageView('login', 'landing');
     trackPixelCompleteRegistration(introResult?.interests?.join(', '));
-    setState((prev) => {
-      const profile = { ...prev.profile };
-      if (introResult) {
-        if (introResult.coachId) {
-          profile.coachId = introResult.coachId;
-          profile.voiceDialect = getDialectForCoach(introResult.coachId);
-        }
-        profile.onboardingInsights = profile.onboardingInsights || {
-          interests: introResult.interests,
-          strengths: [],
-          preferredStyle: 'hands-on' as const,
-          recommendedJourney: 'vuca' as const,
-          summary: '',
-        };
+
+    const profile = { ...userState.profile };
+    if (introResult) {
+      if (introResult.coachId) {
+        profile.coachId = introResult.coachId;
+        profile.voiceDialect = getDialectForCoach(introResult.coachId);
       }
-      return { ...prev, view: 'landing' as ViewState, profile };
-    });
+      profile.onboardingInsights = profile.onboardingInsights || {
+        interests: introResult.interests,
+        strengths: [],
+        preferredStyle: 'hands-on' as const,
+        recommendedJourney: 'vuca' as const,
+        summary: '',
+      };
+    }
+
+    // 5. Load user's voice preference
+    setVoiceEnabled(loadUserData<string>(VOICE_STORAGE_KEY, 'false', user.id) === 'true');
+
+    setAuthUser(user);
+    setState({ ...userState, view: 'landing' as ViewState, profile });
   }, []);
 
   const handleLogout = useCallback(async () => {
     authLogout();
+    // Clear anonymous keys so the next user doesn't see stale data
+    clearCurrentSession();
+    setCurrentUserId(null);
     setAuthUser(null);
-    setState((prev) => ({ ...prev, view: 'welcome' }));
+    // Reset React state to fresh defaults
+    setState({
+      view: 'welcome',
+      profile: createInitialProfile(),
+      stationResults: [],
+      activeJourney: null,
+      activeStation: null,
+    });
+    setVoiceEnabled(false);
   }, []);
 
   // Landing -> Onboarding
@@ -350,7 +393,7 @@ const App: React.FC = () => {
   const handleToggleVoice = useCallback(() => {
     setVoiceEnabled((prev) => {
       const next = !prev;
-      try { localStorage.setItem(VOICE_STORAGE_KEY, String(next)); } catch { /* ignore */ }
+      saveUserData(VOICE_STORAGE_KEY, String(next));
       return next;
     });
   }, []);

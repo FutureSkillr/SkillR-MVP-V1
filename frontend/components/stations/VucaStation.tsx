@@ -21,6 +21,7 @@ import type { VucaStationState, CourseContent, VucaCurriculum } from '../../type
 import type { VoiceDialect } from '../../types/user';
 import type { CoachId } from '../../types/intro';
 import { createInitialVucaState, isVucaComplete } from '../../types/vuca';
+import { userKey, loadUserData, saveUserData } from '../../services/userStorage';
 
 interface VucaStationProps {
   station: Station;
@@ -34,17 +35,11 @@ interface VucaStationProps {
 const VUCA_STORAGE_KEY = 'skillr-vuca-state';
 
 function loadVucaState(): VucaStationState {
-  try {
-    const stored = localStorage.getItem(VUCA_STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch { /* ignore */ }
-  return createInitialVucaState();
+  return loadUserData<VucaStationState>(VUCA_STORAGE_KEY, createInitialVucaState());
 }
 
 function saveVucaState(state: VucaStationState): void {
-  try {
-    localStorage.setItem(VUCA_STORAGE_KEY, JSON.stringify(state));
-  } catch { /* ignore */ }
+  saveUserData(VUCA_STORAGE_KEY, state);
 }
 
 export const VucaStation: React.FC<VucaStationProps> = ({
@@ -220,8 +215,8 @@ export const VucaStation: React.FC<VucaStationProps> = ({
         summary: `VUCA-Reise abgeschlossen! Berufsziel: ${vucaState.goal}. Alle 4 Dimensionen erreicht.`,
         completedAt: Date.now(),
       };
-      // Clear persisted state
-      localStorage.removeItem(VUCA_STORAGE_KEY);
+      // Clear persisted state (user-keyed)
+      try { localStorage.removeItem(userKey(VUCA_STORAGE_KEY)); } catch { /* ignore */ }
       setVucaState(newState);
       setTimeout(() => onComplete(result), 1500);
     } else {
