@@ -402,6 +402,7 @@ func NewConfigHandler(cfg *config.Config) *ConfigHandler {
 }
 
 func (h *ConfigHandler) Config(c echo.Context) error {
+	devMode := os.Getenv("K_SERVICE") == "" && os.Getenv("CLOUD_RUN") == ""
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"firebase": map[string]string{
 			"apiKey":            h.cfg.FirebaseAPIKey,
@@ -412,6 +413,7 @@ func (h *ConfigHandler) Config(c echo.Context) error {
 			"appId":             h.cfg.FirebaseAppID,
 		},
 		"sessionToken": issueSessionToken(),
+		"devMode":      devMode,
 	})
 }
 

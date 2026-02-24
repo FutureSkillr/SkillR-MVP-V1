@@ -13,6 +13,7 @@ import { ContentPackEditor } from './admin/ContentPackEditor';
 import { InfraDashboard } from './admin/InfraDashboard';
 import { PageFlowGraph } from './admin/PageFlowGraph';
 import { LegalFooter } from './legal/LegalFooter';
+import { isDevMode } from '../services/devMode';
 import type { AuthUser } from '../types/auth';
 import type { AdminTab } from '../types/admin';
 
@@ -83,7 +84,7 @@ export const Layout: React.FC<LayoutProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  const isAdmin = authUser?.role === 'admin';
+  const isAdmin = authUser?.role === 'admin' || isDevMode();
 
   return (
     <div className="min-h-screen flex flex-col">

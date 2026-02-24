@@ -11,18 +11,21 @@ async function bootstrap() {
     const res = await fetch('/api/config');
     if (res.ok) {
       const cfg = await res.json();
+      const g = globalThis as any;
+      g.process = g.process || {};
+      g.process.env = g.process.env || {};
       if (cfg?.firebase) {
-        const g = globalThis as any;
-        g.process = g.process || {};
-        g.process.env = {
-          ...(g.process.env || {}),
+        Object.assign(g.process.env, {
           FIREBASE_API_KEY: cfg.firebase.apiKey,
           FIREBASE_AUTH_DOMAIN: cfg.firebase.authDomain,
           FIREBASE_PROJECT_ID: cfg.firebase.projectId,
           FIREBASE_STORAGE_BUCKET: cfg.firebase.storageBucket,
           FIREBASE_MESSAGING_SENDER_ID: cfg.firebase.messagingSenderId,
           FIREBASE_APP_ID: cfg.firebase.appId,
-        };
+        });
+      }
+      if (cfg?.devMode) {
+        g.process.env.SKILLR_DEV_MODE = 'true';
       }
     }
   } catch {
